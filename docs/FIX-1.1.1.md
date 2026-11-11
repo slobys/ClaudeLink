@@ -1,6 +1,6 @@
 # 1.1.1 客户端启动、更新与发布
 
-验证日期：2026-11-11（Asia/Shanghai）。
+验证日期：2026-11-12（Asia/Shanghai）。
 
 ## 桌面客户端与 CLI
 
@@ -34,7 +34,7 @@ Windows.Graphics.Capture 会在捕获对象四周显示黄色提示框。排查�
 
 - 主要新增：Services/ClaudeDesktop.cs、Services/ReleaseUpdater.cs、MainWindow.Updates.cs、FeatureSmoke.cs、ReleaseProbe.cs、scripts/sign-release.ps1、scripts/ReleaseSigning.cs、GitHub Actions 工作流。
 - 主要修改：Models.cs、MainWindow.xaml/.cs、App.xaml.cs、UiSmoke.cs、IntegrationSmoke.cs、安装器、版本与打包脚本、指南与许可证。
-- 31 项核心断言、12 份官方内核配置、62 项集成断言、5 项 WPF 交互断言、10 张窗口渲染、6 项安装升级检查通过。
+- 31 项核心断言、12 份官方内核配置、64 项集成断言、5 项 WPF 交互断言、10 张窗口渲染、6 项安装升级检查通过。
 - 未重新接管用户实际 TUN、修改 IPv6 或时区，也未执行用户真实 Claude 任务；本轮更新下载/损坏/取消通过本地 HTTP 处理器模拟验证。在线正式 Release 验证结果发布后另行记录。
-- GitHub Windows VM 暴露了 Get-NetAdapter -Physical 在无物理网卡时的 ObjectNotFound；改为查询完整列表后按 HardwareInterface 过滤。虚拟网卡和混合网卡用独立 PowerShell 数据验证，本机新旧查询的活动物理网卡选择一致。真实查询失败仍保留失败状态。
+- GitHub Windows VM 的一张网卡没有 IPv6 绑定，Get-NetAdapterBinding 返回 CmdletizationQuery_NotFound。新版仅把该错误识别为无绑定；权限或其他读取错误仍失败。同时支持纯虚拟网卡空列表，独立数据覆盖纯虚拟、混合、缺失绑定和权限失败；本机新旧查询的活动物理网卡选择一致。
 - 公开仓库与发布包排除节点、订阅、数据目录、私钥和原始附件。临时测试路径从公开集成报告中省略。

@@ -1,6 +1,6 @@
 # v1.1.1 验证记录
 
-验证日期：2026-11-11（Asia/Shanghai）。本轮测试未更改 Windows 时区或显示语言。
+验证日期：2026-11-12（Asia/Shanghai）。本轮测试未更改 Windows 时区或显示语言。
 
 环境：Windows 11 x64，系统报告 10.0.26300；项目内 .NET SDK 10.0.404；自包含 Microsoft.NETCore.App / Microsoft.WindowsDesktop.App 10.0.15；官方 sing-box 1.14.4。
 
@@ -11,7 +11,7 @@
 | 编译 | WPF 与核心项目成功构建，0 警告、0 错误 | scripts/build.ps1 |
 | 解析与数据逻辑 | 31 项断言通过 | artifacts/test-configs/results.json |
 | 官方内核配置检查 | 11 份节点配置 + 1 份 TUN 配置全部通过 | sing-box check |
-| 本地集成 | 62 项断言通过 | artifacts/integration-results.json |
+| 本地集成 | 64 项断言通过 | artifacts/integration-results.json |
 | 桌面与更新 | MSIX 桌面检测、实际 GUI 激活、URI 与 CLI 区分、签名/下载/损坏/取消检查通过 | artifacts/desktop-update-results.json、desktop-launch-results.json |
 | 浏览器语言 | Chrome / Edge 各完成 en-US、zh-CN 的原生网页语言与 HTTP 请求头检查 | artifacts/browser-language-results.json |
 | WPF 表单 | 5 项实际交互断言通过，含桌面/CLI 切换 | artifacts/ui-check/ui-results.json |

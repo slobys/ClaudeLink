@@ -11,7 +11,7 @@ public sealed class EnvironmentJournal
 public static class WindowsEnvironment
 {
     // Get-NetAdapter -Physical can throw ObjectNotFound on VM-only hosts; filter the complete adapter list instead.
-    internal const string EnabledIPv6Query = "$ids=@(Get-NetAdapter | Where-Object {$_.HardwareInterface -and $_.Status -eq 'Up'} | ForEach-Object {$a=$_;$b=Get-NetAdapterBinding -Name $a.Name -ComponentID ms_tcpip6;if($b.Enabled){$a.InterfaceGuid.ToString()}});ConvertTo-Json -InputObject $ids -Compress";
+    internal const string EnabledIPv6Query = "$ids=@(Get-NetAdapter | Where-Object {$_.HardwareInterface -and $_.Status -eq 'Up'} | ForEach-Object {$a=$_;$b=$null;try{$b=Get-NetAdapterBinding -Name $a.Name -ComponentID ms_tcpip6 -ErrorAction Stop}catch{if($_.FullyQualifiedErrorId -notlike 'CmdletizationQuery_NotFound,*'){throw}};if($b.Enabled){$a.InterfaceGuid.ToString()}});ConvertTo-Json -InputObject $ids -Compress";
     public static async Task<bool> IPv6DisabledAsync()
     {
         try { return (await ReadEnabledIPv6AdaptersAsync()).Count == 0; }

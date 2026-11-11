@@ -272,6 +272,11 @@ public static class IntegrationSmoke
         var physicalFixture = await ProcessTools.PowerShellAsync("function Get-NetAdapter {[pscustomobject]@{HardwareInterface=$true;Status='Up';Name='physical';InterfaceGuid='f76dc73e-76e8-46ad-bb5d-d40b341cb3cb'};[pscustomobject]@{HardwareInterface=$false;Status='Up';Name='virtual'}};function Get-NetAdapterBinding {param($Name,$ComponentID);if($Name -ne 'physical'){throw 'Unexpected adapter'};[pscustomobject]@{Enabled=$true}};" + WindowsEnvironment.EnabledIPv6Query);
         assert(physicalFixture.Code == 0 && JsonNode.Parse(physicalFixture.Output)!.AsArray().Single()!.ToString() == "f76dc73e-76e8-46ad-bb5d-d40b341cb3cb",
             "Physical IPv6 filtering preserves enabled real adapters and excludes virtual adapters");
+        var missingFixture = await ProcessTools.PowerShellAsync("function Get-NetAdapter {[pscustomobject]@{HardwareInterface=$true;Status='Up';Name='unbound'}};function Get-NetAdapterBinding {Write-Error -ErrorId 'CmdletizationQuery_NotFound' -Message 'fixture binding absent' -ErrorAction Stop};" + WindowsEnvironment.EnabledIPv6Query);
+        assert(missingFixture.Code == 0 && JsonNode.Parse(missingFixture.Output)!.AsArray().Count == 0,
+            "A physical adapter without the IPv6 binding is correctly treated as unbound");
+        var deniedFixture = await ProcessTools.PowerShellAsync("function Get-NetAdapter {[pscustomobject]@{HardwareInterface=$true;Status='Up';Name='denied'}};function Get-NetAdapterBinding {throw 'fixture access denied'};" + WindowsEnvironment.EnabledIPv6Query);
+        assert(deniedFixture.Code != 0, "Binding access failures remain failures rather than being called IPv6 disabled");
         var diagnostics = new SessionDiagnostics(AppPaths.Root);
         diagnostics.RedactNode(JsonNode.Parse("""{"type":"trojan","server":"fixture-secret-host.invalid","password":"fixture-secret-password"}""")!);
         var sanitized = diagnostics.Sanitize("fixture-secret-password at fixture-secret-host.invalid https://example.invalid/?token=fixture-token");
