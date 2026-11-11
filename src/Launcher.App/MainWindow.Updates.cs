@@ -8,6 +8,7 @@ public partial class MainWindow
     private UpdateOffer? availableUpdate;
     private string? downloadedUpdate;
     private bool checkingUpdates, downloadingUpdate, installingUpdate;
+    private bool retryUpdatesAfterConnection;
     private CancellationTokenSource? updateCancellation;
 
     public void FillSmokeUpdate()
@@ -50,7 +51,19 @@ public partial class MainWindow
         {
             if (ReferenceEquals(updateCancellation, cancellation)) updateCancellation = null;
             checkingUpdates = false; ManualUpdateButton.IsEnabled = true;
+            if (retryUpdatesAfterConnection)
+            {
+                retryUpdatesAfterConnection = false;
+                if (session.Connected && settings.AutoCheckUpdates) _ = CheckUpdatesAsync(true);
+            }
         }
+    }
+
+    private void CheckUpdatesAfterConnection()
+    {
+        if (!settings.AutoCheckUpdates || downloadingUpdate || installingUpdate) return;
+        if (checkingUpdates) retryUpdatesAfterConnection = true;
+        else _ = CheckUpdatesAsync(true);
     }
 
     private async void CheckUpdate_Click(object sender, RoutedEventArgs e) => await CheckUpdatesAsync(false);

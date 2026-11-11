@@ -10,11 +10,12 @@ public sealed class EnvironmentJournal
 
 public static class WindowsEnvironment
 {
+    // Get-NetAdapter -Physical can throw ObjectNotFound on VM-only hosts; filter the complete adapter list instead.
+    internal const string EnabledIPv6Query = "$ids=@(Get-NetAdapter | Where-Object {$_.HardwareInterface -and $_.Status -eq 'Up'} | ForEach-Object {$a=$_;$b=Get-NetAdapterBinding -Name $a.Name -ComponentID ms_tcpip6;if($b.Enabled){$a.InterfaceGuid.ToString()}});ConvertTo-Json -InputObject $ids -Compress";
     public static async Task<bool> IPv6DisabledAsync()
     {
-        var (code, output) = await ProcessTools.PowerShellAsync(
-            "$ids=@(Get-NetAdapter -Physical | Where-Object Status -eq 'Up' | ForEach-Object {Get-NetAdapterBinding -Name $_.Name -ComponentID ms_tcpip6} | Where-Object Enabled);$ids.Count");
-        return code == 0 && int.TryParse(output.Trim(), out var count) && count == 0;
+        try { return (await ReadEnabledIPv6AdaptersAsync()).Count == 0; }
+        catch (IOException) { return false; }
     }
     public static async Task ApplyIPv6Async(string journalPath)
     {
@@ -36,8 +37,7 @@ public static class WindowsEnvironment
     }
     public static async Task<List<string>> ReadEnabledIPv6AdaptersAsync()
     {
-        var (code, output) = await ProcessTools.PowerShellAsync(
-            "$ids=@(Get-NetAdapter -Physical | Where-Object Status -eq 'Up' | ForEach-Object {$a=$_;$b=Get-NetAdapterBinding -Name $a.Name -ComponentID ms_tcpip6;if($b.Enabled){$a.InterfaceGuid.ToString()}});ConvertTo-Json -InputObject $ids -Compress");
+        var (code, output) = await ProcessTools.PowerShellAsync(EnabledIPv6Query);
         if (code != 0) throw new IOException("无法读取活动物理网卡的 IPv6 状态。");
         List<string> ids;
         try { ids = JsonSerializer.Deserialize<List<string>>(output.Trim().TrimStart('\uFEFF')) ?? []; }

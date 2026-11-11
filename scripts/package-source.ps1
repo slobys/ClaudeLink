@@ -1,7 +1,7 @@
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 $artifacts=Join-Path $projectRoot 'artifacts'
-$destination=Join-Path $artifacts 'ClaudeLink-Source-1.1.0.zip'
+$destination=Join-Path $artifacts 'ClaudeLink-Source-1.1.1.zip'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 if(Test-Path -LiteralPath $destination){Remove-Item -LiteralPath $destination}
 $archive=[IO.Compression.ZipFile]::Open($destination,[IO.Compression.ZipArchiveMode]::Create)

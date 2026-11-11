@@ -1,4 +1,4 @@
-# Claude Link / Claude Network Launcher 1.1.0
+# Claude Link / Claude Network Launcher 1.1.1
 
 Windows x64 中文网络启动器：节点与订阅管理、内置代理 / TUN、官方 Claude 桌面客户端 Code 页面启动，并保留 CLI 模式。
 
@@ -6,14 +6,14 @@ Windows x64 中文网络启动器：节点与订阅管理、内置代理 / TUN�
 
 ## 安装和使用
 
-- 安装版：artifacts/ClaudeLink-Setup-1.1.0.exe，按当前用户安装，不要求预装 .NET。
-- 便携版：artifacts/ClaudeLink-Portable-1.1.0-win-x64.zip，解压运行。
+- 安装版：artifacts/ClaudeLink-Setup-1.1.1.exe，按当前用户安装，不要求预装 .NET。
+- 便携版：artifacts/ClaudeLink-Portable-1.1.1-win-x64.zip，解压运行。
 - 独立程序：artifacts/publish/ClaudeNetworkLauncher.exe，单个 EXE 包含运行环境和代理内核。
 - 使用指南：docs/使用指南.md；验证记录：docs/VALIDATION.md。
 
 首次安装：从 Releases 下载 Setup EXE，退出旧版后覆盖安装即可保留节点和订阅。添加节点或订阅后，选择项目文件夹，点击「准备并打开 Claude 桌面客户端」。桌面模式自动选择必需的 TUN，按系统提示允许管理员授权；Claude 会确认项目文件夹。环境设置可切换为 CLI 命令行。
 
-1.1.0 起，启动时检查正式版本；发现更新会显示按钮，下载校验后点击「安装并重启」。1.0.x 请先手动安装本版一次。更新保留配置，安装前恢复临时网络环境，不关闭 Claude 桌面应用或项目。
+1.1.1 起，启动时检查正式版本；发现更新会显示按钮，下载校验后点击「安装并重启」。1.0.x 请先手动安装本版一次。更新保留配置，安装前恢复临时网络环境，不关闭 Claude 桌面应用或项目。
 
 ## 功能
 

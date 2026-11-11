@@ -266,6 +266,12 @@ public static class IntegrationSmoke
             "PowerShell structured output remains valid despite progress and warnings");
         var adapters = await WindowsEnvironment.ReadEnabledIPv6AdaptersAsync();
         assert(adapters.All(id => Guid.TryParse(id, out _)), "Actual physical IPv6 state read succeeds without modifying bindings");
+        var virtualFixture = await ProcessTools.PowerShellAsync("function Get-NetAdapter {[pscustomobject]@{HardwareInterface=$false;Status='Up';Name='virtual'}};function Get-NetAdapterBinding {throw 'Virtual binding must not be queried'};" + WindowsEnvironment.EnabledIPv6Query);
+        assert(virtualFixture.Code == 0 && JsonNode.Parse(virtualFixture.Output)!.AsArray().Count == 0,
+            "Virtual-only Windows host yields an empty physical IPv6 list without ObjectNotFound");
+        var physicalFixture = await ProcessTools.PowerShellAsync("function Get-NetAdapter {[pscustomobject]@{HardwareInterface=$true;Status='Up';Name='physical';InterfaceGuid='f76dc73e-76e8-46ad-bb5d-d40b341cb3cb'};[pscustomobject]@{HardwareInterface=$false;Status='Up';Name='virtual'}};function Get-NetAdapterBinding {param($Name,$ComponentID);if($Name -ne 'physical'){throw 'Unexpected adapter'};[pscustomobject]@{Enabled=$true}};" + WindowsEnvironment.EnabledIPv6Query);
+        assert(physicalFixture.Code == 0 && JsonNode.Parse(physicalFixture.Output)!.AsArray().Single()!.ToString() == "f76dc73e-76e8-46ad-bb5d-d40b341cb3cb",
+            "Physical IPv6 filtering preserves enabled real adapters and excludes virtual adapters");
         var diagnostics = new SessionDiagnostics(AppPaths.Root);
         diagnostics.RedactNode(JsonNode.Parse("""{"type":"trojan","server":"fixture-secret-host.invalid","password":"fixture-secret-password"}""")!);
         var sanitized = diagnostics.Sanitize("fixture-secret-password at fixture-secret-host.invalid https://example.invalid/?token=fixture-token");

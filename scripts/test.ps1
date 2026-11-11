@@ -34,7 +34,7 @@ if(-not $SkipInstaller){
     $testRoot=[IO.Path]::GetFullPath($testRoot).TrimEnd('\')
     $expectedParent=[IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')
     if([IO.Path]::GetDirectoryName($testRoot) -ne $expectedParent){throw 'Test root containment check failed.'}
-    $setup=Join-Path $artifacts 'ClaudeLink-Setup-1.1.0.exe'
+    $setup=Join-Path $artifacts 'ClaudeLink-Setup-1.1.1.exe'
     $registryPath='HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ClaudeLink.Test.'+$testGuid
     $env:CLAUDELINK_SETUP_TEST_ROOT=$testRoot
     try{

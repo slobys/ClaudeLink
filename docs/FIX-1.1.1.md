@@ -1,4 +1,4 @@
-# 1.1.0 客户端启动、更新与发布
+# 1.1.1 客户端启动、更新与发布
 
 验证日期：2026-11-11（Asia/Shanghai）。
 
@@ -24,6 +24,8 @@ Windows.Graphics.Capture 会在捕获对象四周显示黄色提示框。排查�
 
 启动时默认检查 GitHub 正式 Release，新版本显示按钮。可手动检查、关闭自动检查、取消下载；下载完成后由用户点击安装并重启。离线不阻止原功能。
 
+节点连接成功后会通过本地代理重新检查一次，启动时的检查若仍在进行则排队重试，避免网络准备前的失败让更新按钮一直缺失。
+
 清单限定产品、版本、附件名称和 GitHub 项目，使用内置 P-256 公钥验证 ECDSA/SHA-256 签名。安装包检查大小和 SHA-256，签名不符、文件损坏、跨仓库来源和旧版本均拒绝。下载不直接执行；安装前再次校验、保存偏好、停止网络并恢复环境，安装器按 PID 与启动时间等待旧进程退出后升级并重启。CLI 工作尚未结束时不能安装更新。
 
 发布密钥在源码和安装包之外由当前 Windows 用户 DPAPI 保护。构建和签名脚本不输出私钥。安装器用有限进程查询识别真正的安装目录，修复其他目录的管理员助手误拦截安装的问题。
@@ -32,6 +34,7 @@ Windows.Graphics.Capture 会在捕获对象四周显示黄色提示框。排查�
 
 - 主要新增：Services/ClaudeDesktop.cs、Services/ReleaseUpdater.cs、MainWindow.Updates.cs、FeatureSmoke.cs、ReleaseProbe.cs、scripts/sign-release.ps1、scripts/ReleaseSigning.cs、GitHub Actions 工作流。
 - 主要修改：Models.cs、MainWindow.xaml/.cs、App.xaml.cs、UiSmoke.cs、IntegrationSmoke.cs、安装器、版本与打包脚本、指南与许可证。
-- 31 项核心断言、12 份官方内核配置、60 项集成断言、5 项 WPF 交互断言、10 张窗口渲染、6 项安装升级检查通过。
+- 31 项核心断言、12 份官方内核配置、62 项集成断言、5 项 WPF 交互断言、10 张窗口渲染、6 项安装升级检查通过。
 - 未重新接管用户实际 TUN、修改 IPv6 或时区，也未执行用户真实 Claude 任务；本轮更新下载/损坏/取消通过本地 HTTP 处理器模拟验证。在线正式 Release 验证结果发布后另行记录。
+- GitHub Windows VM 暴露了 Get-NetAdapter -Physical 在无物理网卡时的 ObjectNotFound；改为查询完整列表后按 HardwareInterface 过滤。虚拟网卡和混合网卡用独立 PowerShell 数据验证，本机新旧查询的活动物理网卡选择一致。真实查询失败仍保留失败状态。
 - 公开仓库与发布包排除节点、订阅、数据目录、私钥和原始附件。临时测试路径从公开集成报告中省略。

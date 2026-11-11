@@ -216,6 +216,7 @@ public partial class MainWindow : Window
         await session.StartAsync(settings, node);
         activeTun = settings.TunEnabled; activeIPv6 = settings.DisableIPv6; activeTimeZone = settings.MatchTimeZone;
         report = null; Log(activeTun ? "内置 TUN 与本地代理已启动。" : "内置进程代理已启动。");
+        CheckUpdatesAfterConnection();
         UpdateState();
     }
     private async Task CheckNowAsync()
