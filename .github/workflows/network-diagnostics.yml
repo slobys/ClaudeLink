@@ -1,0 +1,26 @@
+name: Diagnose Windows adapter support
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnostics:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - name: Query read-only NetAdapter support in Windows PowerShell
+        shell: pwsh
+        run: |
+          $query = @'
+          $ErrorActionPreference='Stop';$ProgressPreference='SilentlyContinue'
+          try {
+            Get-NetAdapter | Select-Object Name,HardwareInterface,Status | ConvertTo-Json -Compress
+            $physical=@(Get-NetAdapter | Where-Object {$_.HardwareInterface -and $_.Status -eq 'Up'})
+            foreach($adapter in $physical){Get-NetAdapterBinding -Name $adapter.Name -ComponentID ms_tcpip6 | Select-Object Name,ComponentID,Enabled | ConvertTo-Json -Compress}
+            'QUERY_OK'
+          } catch {
+            [pscustomobject]@{ErrorId=$_.FullyQualifiedErrorId;ErrorType=$_.Exception.GetType().FullName;ErrorMessage=$_.Exception.Message} | ConvertTo-Json -Compress
+          }
+          '@
+          $encoded=[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($query))
+          & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -EncodedCommand $encoded
