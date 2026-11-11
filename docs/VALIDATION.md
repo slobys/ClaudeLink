@@ -1,6 +1,6 @@
-# v1.1.1 验证记录
+# v1.1.2 验证记录
 
-验证日期：2026-11-12（Asia/Shanghai）。本轮测试未更改 Windows 时区或显示语言。
+验证日期：2026-11-11（America/Los_Angeles）。本轮测试未更改 Windows 时区或显示语言。
 
 环境：Windows 11 x64，系统报告 10.0.26300；项目内 .NET SDK 10.0.404；自包含 Microsoft.NETCore.App / Microsoft.WindowsDesktop.App 10.0.15；官方 sing-box 1.14.4。
 

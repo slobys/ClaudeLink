@@ -19,7 +19,7 @@
       <StackPanel><TextBlock Text="独立代理内核" Foreground="#DCE6E3" FontSize="12"/>
        <TextBlock Text="sing-box 1.14.4 · x64" Foreground="#A8B6B3" FontSize="11" Margin="0,5,0,0"/></StackPanel>
      </Border>
-     <TextBlock Text="v1.1.1   /   本地加密存储" Foreground="#A8B6B3" FontSize="11"/>
+     <TextBlock Text="v1.1.2   /   本地加密存储" Foreground="#A8B6B3" FontSize="11"/>
     </StackPanel>
     <StackPanel>
      <Button x:Name="NavDashboard" Style="{StaticResource NavButton}" Content="工作台" Tag="Dashboard" Click="Navigate_Click"/>
@@ -212,7 +212,9 @@
     <Grid x:Name="LogsPage" Visibility="Collapsed">
      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
      <DockPanel Margin="0,0,0,14"><Button Content="清空显示" Click="ClearLogs_Click" DockPanel.Dock="Right"/><TextBlock Text="仅记录操作与结果，不记录订阅地址、密码或完整分享链接。" Style="{StaticResource MutedText}"/></DockPanel>
-     <TextBox Grid.Row="1" x:Name="LogBox" FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI" FontSize="12" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Background="#FCFCF8" Padding="18" AutomationProperties.Name="运行记录"/>
+     <TextBox Grid.Row="1" x:Name="LogBox" FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI" FontSize="16"
+      VerticalContentAlignment="Top" HorizontalContentAlignment="Left" TextAlignment="Left" TextBlock.LineHeight="26" TextBlock.LineStackingStrategy="BlockLineHeight"
+      IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Background="#FCFCF8" Padding="18" AutomationProperties.Name="运行记录"/>
     </Grid>
    </Grid>
    <DockPanel Grid.Row="3" Margin="0,17,0,0">
