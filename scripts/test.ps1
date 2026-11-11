@@ -18,9 +18,16 @@ foreach($config in Get-ChildItem -LiteralPath $configs -Filter '*.json' | Where-
 $app=Join-Path $artifacts 'publish\ClaudeNetworkLauncher.exe'
 $integration=Join-Path $artifacts 'integration-results.json'
 $process=Start-Process -FilePath $app -ArgumentList @('--integration-test',('"'+$integration+'"')) -WindowStyle Hidden -PassThru
-if(-not $process.WaitForExit(50000)){Stop-Process -Id $process.Id;throw 'Integration test timed out.'}
+$integrationDeadline=(Get-Date).AddMinutes(3)
+while(-not $process.WaitForExit(500)){
+    if((Get-Date) -gt $integrationDeadline){
+        Stop-Process -Id $process.Id
+        $lastCheck=if(Test-Path -LiteralPath $integration){(Get-Content -LiteralPath $integration -Raw | ConvertFrom-Json).Checks | Select-Object -Last 1}else{'No progress report'}
+        throw ('Integration test timed out after: '+$lastCheck)
+    }
+}
 $report=Get-Content -LiteralPath $integration -Raw | ConvertFrom-Json
-if($process.ExitCode -ne 0 -or $report.Failed){throw ('Integration test failed: '+$report.Failed)}
+if($process.ExitCode -ne 0 -or $report.Failed -or $report.InProgress){throw ('Integration test failed: '+$report.Failed)}
 if(-not $SkipUi){
     $ui=Join-Path $artifacts 'ui-check'
     $process=Start-Process -FilePath $app -ArgumentList @('--smoke-test',('"'+$ui+'"')) -WindowStyle Hidden -PassThru

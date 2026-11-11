@@ -19,6 +19,7 @@ public static class IntegrationSmoke
         {
             if (!condition) throw new InvalidOperationException("FAILED: " + name);
             checks.Add(name);
+            AppPaths.WriteJson(outputPath, new { Passed = checks.Count, Checks = checks, InProgress = true });
         }
         try
         {
@@ -159,7 +160,7 @@ public static class IntegrationSmoke
                 var acceptLanguage = System.Text.RegularExpressions.Regex.Match(page.LastRequest, @"(?im)^Accept-Language:\s*([^\r\n]+)").Groups[1].Value;
                 assert(acceptLanguage.StartsWith(language, StringComparison.OrdinalIgnoreCase),
                     browser.Name + " native HTTP Accept-Language follows selected " + language);
-                results.Add(new { Browser = browser.Name, Requested = language, NavigatorLanguage = actualLanguage, Languages = languages, AcceptLanguage = acceptLanguage, IntlLocale = state["locale"]!.ToString() });
+                results.Add(new { Browser = browser.Name, Mode = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true" ? "headless" : "window", Requested = language, NavigatorLanguage = actualLanguage, Languages = languages, AcceptLanguage = acceptLanguage, IntlLocale = state["locale"]!.ToString() });
                 AppPaths.WriteJson(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(outputPath))!, "browser-language-results.json"), results);
             }
         }
@@ -172,6 +173,8 @@ public static class IntegrationSmoke
         info.WindowStyle = ProcessWindowStyle.Hidden;
         info.ArgumentList.Add("--remote-debugging-port=0");
         info.ArgumentList.Add("--remote-debugging-address=127.0.0.1");
+        // Hosted runners have no interactive desktop. Keep local verification in the actual window mode.
+        if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true") info.ArgumentList.Add("--headless=new");
         using var process = Process.Start(info) ?? throw new IOException("Cannot start native browser test.");
         using var budget = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         using var socket = new ClientWebSocket();
