@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>ClaudeNetworkLauncher</AssemblyName>
+    <RootNamespace>Launcher.App</RootNamespace>
+    <Version>1.1.0</Version>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\App.ico</ApplicationIcon>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>none</DebugType>
+    <!-- This is a WPF application; WinForms is used only for NotifyIcon. WPF owns DPI. -->
+    <NoWarn>$(NoWarn);IL3000;WFO0003</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Launcher.Core\Launcher.Core.csproj" />
+    <EmbeddedResource Include="..\..\vendor\sing-box.exe" LogicalName="Core.sing-box.exe" />
+    <EmbeddedResource Include="..\..\vendor\core-manifest.json" LogicalName="Core.manifest.json" />
+    <EmbeddedResource Include="..\..\vendor\sing-box-LICENSE.txt" LogicalName="Core.LICENSE.txt" />
+  </ItemGroup>
+</Project>

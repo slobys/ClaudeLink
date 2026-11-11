@@ -1,0 +1,44 @@
+<Window x:Class="Launcher.App.NodeDialog" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="添加节点" Style="{StaticResource {x:Type Window}}" Width="660" Height="760" MinWidth="600" MinHeight="630" WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+ <Grid Margin="24" Background="{Binding Background, RelativeSource={RelativeSource AncestorType=Window}}"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <StackPanel Margin="0,0,0,17"><TextBlock Text="添加你的连接" FontSize="23" FontWeight="SemiBold"/><TextBlock Text="粘贴分享链接、订阅内容，或手动填写节点。" Style="{StaticResource MutedText}" Margin="0,8,0,0"/></StackPanel>
+  <TabControl x:Name="ModeTabs" Grid.Row="1" Background="Transparent" BorderBrush="#DDE1DA" Padding="15">
+   <TabItem Header="粘贴导入">
+    <Grid Margin="0,15,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <TextBlock Text="分享链接 / Base64 / Clash YAML / sing-box JSON" Style="{StaticResource MutedText}" Margin="0,0,0,10"/>
+     <TextBox x:Name="ImportBox" Grid.Row="1" AcceptsReturn="True" AcceptsTab="True" VerticalContentAlignment="Top" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas, Microsoft YaHei UI" FontSize="12" AutomationProperties.Name="节点分享链接或订阅内容"/>
+     <Button Grid.Row="2" Content="选择本地文件…" Click="BrowseImport_Click" HorizontalAlignment="Left" Margin="0,12,0,0"/>
+    </Grid>
+   </TabItem>
+   <TabItem Header="手动填写">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,14,10,0">
+     <TextBlock Text="节点名称"/><TextBox x:Name="NameBox" Margin="0,6,0,12"/>
+     <TextBlock Text="协议"/><ComboBox x:Name="ProtocolCombo" Margin="0,6,0,12" SelectionChanged="Protocol_Changed"/>
+     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="110"/></Grid.ColumnDefinitions>
+      <StackPanel Margin="0,0,12,12"><TextBlock Text="服务器地址"/><TextBox x:Name="ServerBox" Margin="0,6,0,0"/></StackPanel>
+      <StackPanel Grid.Column="1" Margin="0,0,0,12"><TextBlock Text="端口"/><TextBox x:Name="ServerPortBox" Text="443" Margin="0,6,0,0"/></StackPanel>
+     </Grid>
+     <TextBlock Text="UUID / 用户名（VLESS、VMess、TUIC 必填 UUID）"/><TextBox x:Name="UserBox" Margin="0,6,0,12"/>
+     <TextBlock Text="密码（Trojan / SS / Hysteria2 / TUIC）"/><PasswordBox x:Name="PasswordInput" Margin="0,6,0,12"/>
+     <TextBlock Text="Shadowsocks 加密方式 / VMess cipher"/><TextBox x:Name="CipherBox" Text="aes-128-gcm" Margin="0,6,0,12"/>
+     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <StackPanel Margin="0,0,12,12"><TextBlock Text="安全层"/><ComboBox x:Name="SecurityCombo" Margin="0,6,0,0"/></StackPanel>
+      <StackPanel Grid.Column="1" Margin="0,0,0,12"><TextBlock Text="传输方式"/><ComboBox x:Name="TransportCombo" Margin="0,6,0,0"/></StackPanel>
+     </Grid>
+     <TextBlock Text="TLS SNI / 服务器名"/><TextBox x:Name="SniBox" Margin="0,6,0,12"/>
+     <TextBlock Text="Reality 公钥（仅 Reality）"/><TextBox x:Name="PublicKeyBox" Margin="0,6,0,12"/>
+     <TextBlock Text="Reality short ID（可留空）"/><TextBox x:Name="ShortIdBox" Margin="0,6,0,12"/>
+     <TextBlock Text="VLESS flow（Vision 填 xtls-rprx-vision）"/><TextBox x:Name="FlowBox" Margin="0,6,0,12"/>
+     <TextBlock Text="WebSocket 路径 / gRPC serviceName"/><TextBox x:Name="PathBox" Text="/" Margin="0,6,0,12"/>
+     <TextBlock Text="WebSocket Host（可留空）"/><TextBox x:Name="HostBox" Margin="0,6,0,12"/>
+     <CheckBox x:Name="InsecureCheck" Content="跳过 TLS 证书校验（仅在节点明确要求时启用）"/>
+    </StackPanel></ScrollViewer>
+   </TabItem>
+  </TabControl>
+  <TextBlock x:Name="ErrorText" Grid.Row="2" Foreground="#AD3D2D" TextWrapping="Wrap" Margin="0,13,0,0" MaxHeight="90"/>
+  <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+   <Button Content="取消" IsCancel="True" Margin="0,0,10,0"/>
+   <Button x:Name="SaveButton" Content="导入节点" Style="{StaticResource PrimaryButton}" Click="Save_Click" IsDefault="True"/>
+  </StackPanel>
+ </Grid>
+</Window>

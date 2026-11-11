@@ -1,0 +1,15 @@
+.tools/
+artifacts/
+reference/
+backups/
+*.pfx
+*.p12
+*.key
+*.dat
+**/bin/
+**/obj/
+vendor/sing-box.exe
+vendor/*.zip
+!vendor/sing-box-1.14.4-source.zip
+*.user
+.vs/
