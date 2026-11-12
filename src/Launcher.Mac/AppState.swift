@@ -3,15 +3,16 @@ import SwiftUI
 
 @MainActor final class AppState: ObservableObject {
     @Published var settings=Settings(); @Published var page="工作台"; @Published var logs:[LogEntry]=[]; @Published var report:NetworkReport?
-    @Published var busy=false; @Published var connected=false; @Published var progress=""; @Published var error=""; @Published var offer:UpdateOffer?; @Published var downloaded:URL?; @Published var updateBusy=false; @Published var previewScrollCheck=false
+    @Published var busy=false; @Published var connected=false; @Published var progress=""; @Published var error=""; @Published var offer:UpdateOffer?; @Published var downloaded:URL?; @Published var updateBusy=false; @Published var previewScrollCheck=""
     @Published var editor=""; @Published var editorName=""; @Published var editorURL=""; @Published var editingNode:ProxyNode?; @Published var editingSubscription:Subscription?; @Published var showingNode=false; @Published var showingSubscription=false
     let session=Session(); var operation:Task<Void,Never>?; var monitor:Task<Void,Never>?; var updateTask:Task<Void,Never>?; var storageReadFailed=false
     var selectedNode:ProxyNode? { settings.Nodes.first { $0.Id == settings.SelectedNodeId } ?? settings.Nodes.first }
-    init() {
+    init(preview:Bool = false) {
+        if preview { fillPreview(); return }
         if CommandLine.arguments.contains("--ui-smoke") || CommandLine.arguments.contains("--shutdown-smoke") { AppPaths.root=FileManager.default.temporaryDirectory.appendingPathComponent("ClaudeLink-ui-"+UUID().uuidString); fillPreview(); return }
         do { settings=try SecureSettings.load(); log("启动器已就绪。节点与订阅使用登录钥匙串密钥加密保存。") } catch { storageReadFailed=true; self.error="读取配置失败，原文件已保留。请解锁登录钥匙串后重新打开。" }
         Task { do { try await session.recover() } catch { fail("临时环境恢复未完成，请点击“恢复临时设置”。") }; if settings.AutoCheckUpdates { await checkUpdate(manual:false) } }
-        monitor=Task { while !Task.isCancelled { try? await Task.sleep(for:.seconds(2)); if connected && !busy && !session.running { connected=false; log("代理会话已退出，请重新连接。",.error); do { try await session.recover() } catch { fail("临时环境尚未恢复，请点击恢复临时设置。") } } } }
+        monitor=Task { while !Task.isCancelled { try? await Task.sleep(for:.seconds(2)); if connected && !busy && !session.running { connected=false; report=nil; log("代理会话已退出，请重新连接。",.error); do { try await session.recover() } catch { fail("临时环境尚未恢复，请点击恢复临时设置。") } } } }
     }
     func log(_ text:String,_ level:Level = .info) { let clean=text.replacingOccurrences(of:#"https?://\S+"#,with:"[地址已隐藏]",options:.regularExpression); logs.append(LogEntry(message:clean,level:level)); if logs.count > 500 { logs.removeFirst(logs.count-500) } }
     func fail(_ text:String) { error=text; log(text,.error) }
@@ -42,7 +43,7 @@ import SwiftUI
         }
     }
     func saveQuietly() { guard !storageReadFailed else { fail("原配置未成功读取，已阻止覆盖。请解锁钥匙串后重新打开。 "); return }; do { try SecureSettings.save(settings) } catch { fail("配置保存失败，原配置已保留。") } }
-    func disconnect() { operation?.cancel(); busy=true; Task { defer { busy=false; progress="" }; do { try await session.stop(); connected=false; log("会话已结束，临时设置已恢复。",.success) } catch { fail(error.localizedDescription) } } }
+    func disconnect() { operation?.cancel(); busy=true; Task { defer { busy=false; progress="" }; do { try await session.stop(); connected=false; report=nil; log("会话已结束，临时设置已恢复。",.success) } catch { fail(error.localizedDescription) } } }
     func browser() { do { guard connected else { throw ClientError.message("请先连接节点。") }; try Launcher.browser(settings); log("已打开专用浏览器；所选语言 "+settings.ProcessLanguage+"。",.success) } catch { fail(error.localizedDescription) } }
     func importNode() { busy=true; Task { defer { busy=false }; do {
         let parsed=try await Bridge.parse(editor); guard !parsed.Nodes.isEmpty else { throw ClientError.message("未识别到支持的节点。") }

@@ -75,7 +75,7 @@ struct RootView:View {
                     ScrollView {
                         VStack(alignment:.leading,spacing:18) { pageContent }
                             .padding(.bottom,6).frame(maxWidth:.infinity,alignment:.leading)
-                    }.scrollIndicators(.automatic).onChange(of:model.previewScrollCheck) { if model.previewScrollCheck { reader.scrollTo("checks",anchor:.bottom) } }
+                    }.scrollIndicators(.automatic).onChange(of:model.previewScrollCheck) { if !model.previewScrollCheck.isEmpty { reader.scrollTo("checks",anchor:model.previewScrollCheck == "top" ? .top : .bottom) } }
                 }
             }
             HStack {

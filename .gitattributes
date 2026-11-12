@@ -1,0 +1,2 @@
+tests/fixtures/*.json* -text
+*.sh text eol=lf

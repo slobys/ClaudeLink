@@ -38,6 +38,9 @@ import Foundation
             var tampered=signed; tampered[tampered.count-2] ^= 1; rejected=false; do { _=try Updater.verified(tampered,validSignature) } catch { rejected=true }; try check(rejected,"Signed manifest rejects one-byte tampering")
             try check(shellQuote("a'b").contains("'\\''"),"Launch arguments preserve single quotes")
             try check(appleLiteral("a\"b\n").contains("\\\""),"Administrator dialog safely quotes paths")
+            let model=AppState(preview:true); model.connected=true; model.disconnect()
+            for _ in 0..<30 { if !model.busy { break }; try await Task.sleep(for:.milliseconds(100)) }
+            try check(!model.connected && model.report == nil,"Disconnect clears stale transport results and semantic metric colors")
             let result:[String:Any]=["Passed":checks.count,"Checks":checks,"Architecture":BuildInfo.arch,"OS":ProcessInfo.processInfo.operatingSystemVersionString]
             try JSONSerialization.data(withJSONObject:result,options:.prettyPrinted).write(to:URL(fileURLWithPath:CommandLine.arguments[1]))
         } catch { fputs("Native regression failed: \(error)\n",stderr); exit(1) }

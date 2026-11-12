@@ -64,7 +64,7 @@ for size in 16 32 128 256 512; do sips -z "$size" "$size" src/Launcher.App/Asset
 iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
 /usr/bin/codesign --force --sign - "$APP"
 /usr/bin/codesign --verify --deep --strict "$APP"
-"${SWIFT[@]}" src/Launcher.Mac/{Models,Utilities,Networking,Session,Updater,Tests}.swift "$OUT/BuildInfo.swift" -o "$APP/Contents/MacOS/ClaudeLinkTests" -framework SwiftUI -framework AppKit -framework Security -framework CryptoKit
+"${SWIFT[@]}" src/Launcher.Mac/{Models,Utilities,Networking,Session,Launcher,Updater,AppState,Tests}.swift "$OUT/BuildInfo.swift" -o "$APP/Contents/MacOS/ClaudeLinkTests" -framework SwiftUI -framework AppKit -framework Security -framework CryptoKit
 /usr/bin/codesign --force --sign - "$APP/Contents/MacOS/ClaudeLinkTests"
 "$APP/Contents/MacOS/ClaudeLinkTests" "$OUT/native-results.json"
 # The auxiliary test executable is kept outside the shipping app after the tests.
