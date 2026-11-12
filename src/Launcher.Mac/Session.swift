@@ -49,7 +49,7 @@ struct PendingSession: Codable { var stage: String; var mailbox: String; var non
             let nonce = UUID().uuidString.replacingOccurrences(of:"-",with:"")+UUID().uuidString.replacingOccurrences(of:"-",with:"")
             let stamp = try await Commands.run("/bin/ps",["-p",String(getpid()),"-o","lstart="])
             let control: [String:Any] = ["parent":getpid(),"parentStamp":String(decoding:stamp.output,as:UTF8.self).trimmingCharacters(in:.whitespacesAndNewlines),"mailbox":mailbox.path,"nonce":nonce,"port":port,"disableIPv6":settings.DisableIPv6]
-            let controlPath = mailbox.appendingPathComponent("control.json"); try AppPaths.write(JSONSerialization.data(withJSONObject:control),to:controlPath)
+            let controlPath = mailbox.appendingPathComponent("control.json"), controlData=try JSONSerialization.data(withJSONObject:control); try AppPaths.write(controlData,to:controlPath)
             let host = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/ClaudeLinkHost")
             let record = PendingSession(stage:stage,mailbox:mailbox.path,nonce:nonce); pending=record; try AppPaths.write(JSONEncoder().encode(record),to:pendingFile)
             // Test every ancestor before copying anything as root; no symlink staging paths.
@@ -59,6 +59,7 @@ struct PendingSession: Codable { var stage: String; var mailbox: String; var non
             script += "/usr/bin/install -m 755 "+shellQuote(host.path)+" "+shellQuote(stage+"/ClaudeLinkHost")+"\n/usr/bin/install -m 755 "+shellQuote(core.path)+" "+shellQuote(stage+"/sing-box")+"\n"
             for (source,name) in [(configPath,"config.json"),(controlPath,"control.json")] { script += "/usr/bin/install -m 600 "+shellQuote(source.path)+" "+shellQuote(stage+"/"+name)+"\n" }
             script += "[ \"$(/usr/bin/shasum -a 256 "+shellQuote(stage+"/ClaudeLinkHost")+" | /usr/bin/awk '{print $1}')\" = "+shellQuote(BuildInfo.hostHash)+" ]\n[ \"$(/usr/bin/shasum -a 256 "+shellQuote(stage+"/sing-box")+" | /usr/bin/awk '{print $1}')\" = "+shellQuote(BuildInfo.coreHash)+" ]\n"
+            for (name,hash) in [("config.json",sha256(config)),("control.json",sha256(controlData))] { script += "[ \"$(/usr/bin/shasum -a 256 "+shellQuote(stage+"/"+name)+" | /usr/bin/awk '{print $1}')\" = "+shellQuote(hash)+" ]\n" }
             script += "/usr/bin/nohup /usr/bin/env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin "+shellQuote(stage+"/ClaudeLinkHost")+" --run "+shellQuote(stage)+" >/dev/null 2>&1 </dev/null &"
             do { try await authorize(script) } catch { if !FileManager.default.fileExists(atPath:stage) { pending=nil; try? FileManager.default.removeItem(at:pendingFile) }; throw error }
         }
