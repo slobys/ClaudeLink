@@ -1,4 +1,20 @@
-# v1.3.0 验证记录
+# v1.3.1 验证记录
+
+修复 Windows 安装器继承启动器工作目录后，锁住自身安装目录而导致 `Directory.Move` 失败的问题。已用 v1.3.0 安装包在隔离安装目录内复现同类错误；v1.3.1 安装器在处理安装、更新和卸载前切换到系统目录，客户端启动安装器时也显式指定该目录，因此旧版客户端获取新的安装器后同样适用。
+
+应用代码为 `adfb04182bef724cd747db9be20fa7726b079659`：[Windows CI](https://github.com/slobys/ClaudeLink/actions/runs/43203200130)、[macOS 双架构 CI](https://github.com/slobys/ClaudeLink/actions/runs/43203200355)。后续验证记录和发布打包提交不改变已测试应用代码。
+
+| 层次 | 结果 |
+|---|---|
+| Windows 本地及 CI | 49 项核心断言、15 份官方内核配置、83 项隔离集成断言、14 项 WPF 交互、7 项安装检查通过 |
+| macOS arm64 / x64 | 各 51 项原生断言、14 项后台生命周期与恢复检查、1 项 GUI 退出检查通过；各生成 20 张原生视图 |
+| 原问题回归 | 从安装目录发起普通覆盖安装及 `/update … /restart` 均成功，验证等待拥有者退出、文件哈希、自动重启、保留未知文件及卸载 |
+
+原来的安装测试从仓库目录启动，没有覆盖“安装器的工作目录就是要替换的安装目录”的情形；本版两个覆盖安装分支均显式重现该条件。回归证据见源码包中的 `validation/installer-cwd-regression-results.json` 和 `validation/installer-results.json`。
+
+本机现有 v1.2.2 已在备份原程序和加密配置后，用同一 CI 安装包从原安装目录成功覆盖到 v1.3.1。安装后 EXE 与 CI 便携包哈希一致，注册版本正确，安装前后的加密配置文件逐字节一致；随后新版主窗口正常出现，未使用屏幕捕获。此结果证明本机安装修复，不代表真实住宅出口、账户授权或用户 Mac TUN 已验证。
+
+## v1.3.0 历史验证记录
 
 本版应用代码为 `974d2acb63a88f813241f8fe32de5d0eebd53dbc`：[Windows CI](https://github.com/slobys/ClaudeLink/actions/runs/43196823519)、[macOS 双架构 CI](https://github.com/slobys/ClaudeLink/actions/runs/43196823354)。后续设计文档和发布记录提交不改变已测试的应用代码。
 
