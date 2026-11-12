@@ -16,7 +16,7 @@ struct PendingSession: Codable { var stage: String; var mailbox: String; var non
     func recover() async throws {
         if pending == nil, let bytes = try? Data(contentsOf:pendingFile) { pending = try JSONDecoder().decode(PendingSession.self,from:bytes) }
         guard let pending else { return }
-        guard pending.stage.hasPrefix("/Library/Application Support/ClaudeLink/Sessions/"), UUID(uuidString:URL(fileURLWithPath:pending.stage).lastPathComponent) != nil else { throw ClientError.message("恢复记录无效，请检查本地配置。") }
+        guard pending.stage.hasPrefix("/private/var/db/ClaudeLink/Sessions/"), UUID(uuidString:URL(fileURLWithPath:pending.stage).lastPathComponent) != nil else { throw ClientError.message("恢复记录无效，请检查本地配置。") }
         try AppPaths.write(Data(pending.nonce.utf8),to:URL(fileURLWithPath:pending.mailbox).appendingPathComponent("stop"))
         for _ in 0..<40 { if status(pending)?.state != "running" { break }; try await Task.sleep(for:.milliseconds(100)) }
         // A stopped status proves restoration. Failed/missing status requires root-owned recovery.
@@ -45,7 +45,7 @@ struct PendingSession: Codable { var stage: String; var mailbox: String; var non
             guard !settings.DisableIPv6 && !settings.MatchTimeZone else { throw ClientError.message("临时系统环境设置需要启用 TUN 管理员会话。") }
             let p = Process(); p.executableURL=core; p.arguments=["run","-c",configPath.path]; p.standardOutput=FileHandle.nullDevice; p.standardError=FileHandle.nullDevice; try p.run(); process=p
         } else {
-            let stage = "/Library/Application Support/ClaudeLink/Sessions/"+id
+            let stage = "/private/var/db/ClaudeLink/Sessions/"+id
             let nonce = UUID().uuidString.replacingOccurrences(of:"-",with:"")+UUID().uuidString.replacingOccurrences(of:"-",with:"")
             let stamp = try await Commands.run("/bin/ps",["-p",String(getpid()),"-o","lstart="])
             let control: [String:Any] = ["parent":getpid(),"parentStamp":String(decoding:stamp.output,as:UTF8.self).trimmingCharacters(in:.whitespacesAndNewlines),"mailbox":mailbox.path,"nonce":nonce,"port":port,"disableIPv6":settings.DisableIPv6]
@@ -53,7 +53,7 @@ struct PendingSession: Codable { var stage: String; var mailbox: String; var non
             let host = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/ClaudeLinkHost")
             let record = PendingSession(stage:stage,mailbox:mailbox.path,nonce:nonce); pending=record; try AppPaths.write(JSONEncoder().encode(record),to:pendingFile)
             // Test every ancestor before copying anything as root; no symlink staging paths.
-            let dirs = ["/Library/Application Support/ClaudeLink","/Library/Application Support/ClaudeLink/Sessions",stage]
+            let dirs = ["/private","/private/var","/private/var/db","/private/var/db/ClaudeLink","/private/var/db/ClaudeLink/Sessions",stage]
             var script = "set -eu\numask 022\n"
             for directory in dirs { let q = shellQuote(directory); script += "if [ ! -e \(q) ]; then /bin/mkdir \(q); fi\n[ ! -L \(q) ] && [ \"$(/usr/bin/stat -f %u \(q))\" = 0 ] && [ \"$(/usr/bin/stat -f %Lp \(q))\" = 755 ]\n" }
             script += "/usr/bin/install -m 755 "+shellQuote(host.path)+" "+shellQuote(stage+"/ClaudeLinkHost")+"\n/usr/bin/install -m 755 "+shellQuote(core.path)+" "+shellQuote(stage+"/sing-box")+"\n"

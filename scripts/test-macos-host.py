@@ -1,13 +1,20 @@
 """Exercise the real root supervisor against loopback only, without routes or OS mutations."""
 import json, pathlib, subprocess, sys, time, uuid, os, hashlib
+import socket
 app, output = map(pathlib.Path, sys.argv[1:])
 checks = []
 def check(ok, message):
     if not ok: raise AssertionError(message)
     checks.append(message)
     print('PASS', message, flush=True)
+def wait_port(port):
+    for _ in range(100):
+        try:
+            with socket.create_connection(('127.0.0.1',port),.5): return True
+        except OSError: time.sleep(.1)
+    return False
 session_id = str(uuid.uuid4())
-stage = pathlib.Path('/Library/Application Support/ClaudeLink/Sessions') / session_id
+stage = pathlib.Path('/private/var/db/ClaudeLink/Sessions') / session_id
 mailbox = output/'host-test'
 mailbox.mkdir(mode=0o700, exist_ok=True)
 port=17992
@@ -30,9 +37,7 @@ try:
         if status.get('state') in ['running','failed']: break
         time.sleep(.1)
     check(status.get('state')=='running','Root supervisor starts official loopback core')
-    import socket
-    with socket.create_connection(('127.0.0.1',port),3): pass
-    check(True,'Owned local proxy accepts connections')
+    check(wait_port(port),'Owned local proxy accepts connections')
     check((stage/'config.json').stat().st_uid==0 and (stage/'config.json').stat().st_mode & 0o777 == 0o600,'Root config stays private in root-owned stage')
     (mailbox/'stop').write_text('incorrect-nonce')
     time.sleep(.5)
@@ -66,6 +71,7 @@ for scenario in ['parent-exit','host-crash']:
             if (recovery_stage/'status.json').exists() and json.loads((recovery_stage/'status.json').read_text()).get('state')=='running': break
             time.sleep(.1)
         check((recovery_stage/'status.json').exists() and json.loads((recovery_stage/'status.json').read_text())['state']=='running',scenario+' fixture starts')
+        if not wait_port(port): raise AssertionError(scenario+' proxy did not become ready')
         if guardian:
             guardian.terminate(); guardian.wait(timeout=5); child.wait(timeout=15)
             check(json.loads((recovery_stage/'status.json').read_text())['state']=='stopped','Parent exit automatically stops and restores supervisor session')

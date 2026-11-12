@@ -65,9 +65,9 @@ func restore(_ stage: URL,_ journal: inout HostJournal) throws {
 func hostMain() throws {
     guard getuid() == 0, CommandLine.arguments.count >= 3 else { throw HostFailure.invalid("需要管理员授权。") }
     let action = CommandLine.arguments[1], path = CommandLine.arguments[2]
-    let base = "/Library/Application Support/ClaudeLink/Sessions"
+    let base = "/private/var/db/ClaudeLink/Sessions"
     guard path.hasPrefix(base+"/"), UUID(uuidString:String(path.dropFirst(base.count+1))) != nil else { throw HostFailure.invalid("会话路径无效。") }
-    for directory in ["/Library/Application Support/ClaudeLink",base,path] { try privateRootDirectory(directory) }
+    for directory in ["/private","/private/var","/private/var/db","/private/var/db/ClaudeLink",base,path] { try privateRootDirectory(directory) }
     let stage = URL(fileURLWithPath:path), journalPath = stage.appendingPathComponent("journal.json"), statusPath = stage.appendingPathComponent("status.json")
     var journal = FileManager.default.fileExists(atPath:journalPath.path) ? try JSONDecoder().decode(HostJournal.self,from:Data(contentsOf:journalPath)) : HostJournal()
     let lock = open("/var/run/com.slobys.claudelink.lock",O_CREAT|O_RDWR|O_NOFOLLOW,0o600)

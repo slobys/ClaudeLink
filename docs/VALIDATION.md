@@ -1,6 +1,6 @@
 # v1.2.0 验证记录
 
-验证日期：2026-11-11（America/Los_Angeles）。本轮测试未更改 Windows 时区或显示语言。
+验证日期：2026-11-12（UTC）。本轮测试未更改用户 Windows 时区、显示语言或正在运行的代理会话。
 
 环境：Windows 11 x64，系统报告 10.0.26300；项目内 .NET SDK 10.0.404；自包含 Microsoft.NETCore.App / Microsoft.WindowsDesktop.App 10.0.15；官方 sing-box 1.14.4。
 
@@ -14,8 +14,8 @@
 | 本地集成 | 64 项断言通过 | artifacts/integration-results.json |
 | 桌面与更新 | MSIX 桌面检测、实际 GUI 激活、URI 与 CLI 区分、签名/下载/损坏/取消检查通过 | artifacts/desktop-update-results.json、desktop-launch-results.json |
 | 浏览器语言 | Chrome / Edge 各完成 en-US、zh-CN 的原生网页语言与 HTTP 请求头检查 | artifacts/browser-language-results.json |
-| WPF 表单 | 5 项实际交互断言通过，含桌面/CLI 切换 | artifacts/ui-check/ui-results.json |
-| 页面渲染 | 原有页面、CLI 设置、更新提示共 10 张图 | artifacts/ui-check |
+| WPF 表单 | 8 项实际交互断言通过，含桌面/CLI 切换、日志颜色与断开/恢复状态重置 | artifacts/ui-check/ui-results.json |
+| 页面渲染 | 五个页面、预检状态、节点对话框、CLI 设置和更新提示共 11 张图 | artifacts/ui-check |
 | 安装与卸载 | 6 项检查通过，含等待旧进程、升级及自动重启 | artifacts/installer-results.json |
 
 ## 本地集成覆盖
@@ -63,3 +63,11 @@
 - 未在 Windows 10 或 ARM64 实机运行；本包只发布 x64。
 
 发布文件哈希见 SHA256.json。第三方内核来源、版本和独立可执行文件哈希见 vendor/core-manifest.json。
+
+## 1.2.0 UI 与 macOS
+
+Windows 新增的 UI 断言验证：16px 日志从顶部排列，不同级别着色；实际原生结果模板绑定通过、注意、失败和待检测的不同背景；成功检测后断开、失败后恢复均重置灰色“待检测”。完整回归保持 31 项核心断言、12 份官方内核配置、64 项本地集成与 6 项安装检查。
+
+Mac 使用 macos-15 Apple Silicon 和 macos-15-intel 两种实际 GitHub runner 构建。原生检查涵盖共享解析桥接、订阅选择保持、Darwin utun 配置、官方内核校验、钥匙串 AES-GCM、损坏密文拒绝、API 与网页状态区分、固定公钥签名验证、篡改拒绝、参数引用、断开清空旧结果。root 后台只用回环代理测试启动、错误 nonce 拒绝、权限、正常退出、父进程退出、强制杀死后台后的持久恢复与端口释放。另验证原生页面渲染与 GUI 正常退出；截图由应用自身 NSView 绘制，不启用显示器屏幕捕获。
+
+没有用户 Mac 实机，因此没有声称已验证真实 TUN 默认路由、物理网卡 IPv6、系统时区变更、管理员交互授权、Claude 登录、真实订阅或完整更新覆盖。安装包为 ad-hoc 签名，无 Apple Developer ID 公证。Mac 更新签名清单独立于 Windows，Windows schema-1 格式保持兼容。
