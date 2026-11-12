@@ -123,6 +123,7 @@ public partial class MainWindow
     {
         CryptographicException => "更新签名或安装包校验失败，已停止更新。",
         HttpRequestException http when http.StatusCode == HttpStatusCode.NotFound => "暂未找到正式发布版本，可以稍后重试或打开 GitHub 项目。",
+        HttpRequestException http when http.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests => "GitHub 暂时拒绝请求或限制访问次数，可稍后重试，或点击「GitHub 项目与安装包」下载安装。",
         HttpRequestException => "无法连接 GitHub 更新服务，可在连接节点后重新检查。",
         IOException io when io.Message.Length < 120 && !io.Message.Contains("://") => io.Message,
         _ => "更新信息读取失败，当前程序和配置保持可用，可稍后重试。"

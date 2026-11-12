@@ -43,6 +43,37 @@ import Darwin
             let signed=try Data(contentsOf:fixture), validSignature=try Data(contentsOf:URL(fileURLWithPath:fixture.path+".sig")); let manifest=try Updater.verified(signed,validSignature)
             try check(manifest.Version == "0.0.0","Pinned release key verifies architecture-specific public fixture")
             var tampered=signed; tampered[tampered.count-2] ^= 1; rejected=false; do { _=try Updater.verified(tampered,validSignature) } catch { rejected=true }; try check(rejected,"Signed manifest rejects one-byte tampering")
+            let discoveryPath=fixture.deletingLastPathComponent().appendingPathComponent("discovery-macos-"+BuildInfo.arch+".json")
+            let discoveryBytes=try Data(contentsOf:discoveryPath), discoverySignature=try Data(contentsOf:URL(fileURLWithPath:discoveryPath.path+".sig"))
+            let updates=UpdateDiscoveryFixture(discoveryBytes,discoverySignature)
+            let offer=try await Updater.check(current:"1.0.0",fetch:updates.fetch)
+            try check(offer?.manifest.Version == "99.0.1" && updates.apiCalls == 0,"Public signed discovery succeeds with REST API 403 and makes no API request")
+            updates.apiCode=429
+            let throttled=try await Updater.check(current:"1.0.0",fetch:updates.fetch)
+            try check(throttled != nil && updates.apiCalls == 0,"REST API 429 does not block public signed discovery")
+            try check(updates.urls.contains(Updater.asset("99.0.1",updates.prefix+".sig")) && !updates.urls.contains(Updater.latest(updates.prefix+".sig")),"Signature request pins the manifest version during concurrent releases")
+            let equal=try await Updater.check(current:"99.0.1",fetch:updates.fetch), older=try await Updater.check(current:"100.0.0",fetch:updates.fetch)
+            try check(equal == nil && older == nil,"Public signed discovery does not offer equal or older releases")
+            updates.signature=Data(Data(repeating:0,count:64).base64EncodedString().utf8); rejected=false
+            do { _=try await Updater.check(current:"1.0.0",fetch:updates.fetch) } catch { rejected=true }
+            try check(rejected && updates.apiCalls == 0,"Invalid public signature fails closed without an API fallback")
+            updates.signature=discoverySignature
+            var badVersion=try JSONSerialization.jsonObject(with:discoveryBytes) as! [String:Any]; badVersion["Version"]="../other"
+            updates.bytes=try JSONSerialization.data(withJSONObject:badVersion); rejected=false
+            do { _=try await Updater.check(current:"1.0.0",fetch:updates.fetch) } catch { rejected=true }
+            try check(rejected && updates.apiCalls == 0,"Untrusted version cannot change the signature download path")
+            updates.bytes=Data(repeating:0,count:16385); rejected=false
+            do { _=try await Updater.check(current:"1.0.0",fetch:updates.fetch) } catch { rejected=true }
+            try check(rejected && updates.apiCalls == 0,"Oversized update manifest stops without a fallback")
+            updates.bytes=discoveryBytes; updates.cancel=true; rejected=false
+            do { _=try await Updater.check(current:"1.0.0",fetch:updates.fetch) } catch is CancellationError { rejected=true }
+            try check(rejected && updates.apiCalls == 0,"Cancelled discovery does not start another source")
+            updates.cancel=false; updates.latestCode=404; updates.apiCode=200
+            let backup=try await Updater.check(current:"1.0.0",fetch:updates.fetch)
+            try check(backup?.manifest.Version == "99.0.1" && updates.apiCalls == 1,"REST API route remains available when public latest download is unavailable")
+            updates.forgeAPI=true; rejected=false
+            do { _=try await Updater.check(current:"1.0.0",fetch:updates.fetch) } catch { rejected=true }
+            try check(rejected,"Fallback API metadata cannot redirect trust to a different host")
             try check(shellQuote("a'b").contains("'\\''"),"Launch arguments preserve single quotes")
             try check(appleLiteral("a\"b\n").contains("\\\""),"Administrator dialog safely quotes paths")
             let model=AppState(preview:true); model.connected=true; model.disconnect()
@@ -92,5 +123,29 @@ import Darwin
             let result:[String:Any]=["Passed":checks.count,"Checks":checks,"Architecture":BuildInfo.arch,"OS":ProcessInfo.processInfo.operatingSystemVersionString]
             try JSONSerialization.data(withJSONObject:result,options:.prettyPrinted).write(to:URL(fileURLWithPath:CommandLine.arguments[1]))
         } catch { fputs("Native regression failed: \(error)\n",stderr); exit(1) }
+    }
+}
+
+private final class UpdateDiscoveryFixture {
+    var bytes:Data; var signature:Data
+    var apiCode=403, latestCode=200, apiCalls=0
+    var cancel=false, forgeAPI=false
+    var urls:[String]=[]
+    let prefix="update-macos-"+BuildInfo.arch+".json"
+    init(_ bytes:Data,_ signature:Data) { self.bytes=bytes; self.signature=signature }
+    func fetch(_ url:String,_ limit:Int) async throws -> WebResponse {
+        urls.append(url)
+        if cancel { throw CancellationError() }
+        var code=200; var data=Data()
+        if url == Updater.latest(prefix) { code=latestCode; data=bytes }
+        else if url == "https://api.github.com/repos/"+Updater.repository+"/releases/latest" {
+            apiCalls += 1; code=apiCode
+            let names=[prefix,prefix+".sig","ClaudeLink-99.0.1-macos-"+BuildInfo.arch+".zip"]
+            let assets=names.map { ["name":$0,"browser_download_url":forgeAPI ? "https://example.invalid/forged" : Updater.asset("99.0.1",$0)] }
+            data=try JSONSerialization.data(withJSONObject:["draft":false,"prerelease":false,"tag_name":"v99.0.1","assets":assets])
+        } else if url == Updater.asset("99.0.1",prefix) { data=bytes }
+        else if url == Updater.asset("99.0.1",prefix+".sig") { data=signature }
+        else { code=404 }
+        return WebResponse(code:code,data:data,headers:[:])
     }
 }

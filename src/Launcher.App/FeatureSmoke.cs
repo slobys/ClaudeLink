@@ -58,6 +58,44 @@ public static class FeatureSmoke
         try { await ReleaseUpdater.CheckAsync(client, current: new Version(1, 0, 0), publicKey: publicKey); } catch (IOException) { rejected = true; }
         assert(rejected, "Update metadata cannot redirect manifest trust to another repository or host");
         fixture.Files[api] = Metadata();
+        var latest = ReleaseSettings.LatestAssetUri("update.json").AbsoluteUri;
+        fixture.Files[latest] = bytes;
+        fixture.Statuses[api] = HttpStatusCode.Forbidden;
+        var apiCalls = fixture.Urls.Count(x => x == api);
+        offer = await ReleaseUpdater.CheckAsync(client, current: new Version(1, 0, 0), publicKey: publicKey);
+        assert(offer?.Manifest.Version == manifest.Version && fixture.Urls.Count(x => x == api) == apiCalls,
+            "Signed public release discovery succeeds with REST API quota exhausted and makes no API request");
+        fixture.Statuses[api] = HttpStatusCode.TooManyRequests;
+        assert(await ReleaseUpdater.CheckAsync(client, current: new Version(1, 0, 0), publicKey: publicKey) != null
+            && fixture.Urls.Count(x => x == api) == apiCalls, "REST API 429 does not block signed public release discovery");
+        assert(fixture.Urls.Contains(ReleaseSettings.AssetUri(manifest.Version, "update.json.sig").AbsoluteUri)
+            && !fixture.Urls.Contains(ReleaseSettings.LatestAssetUri("update.json.sig").AbsoluteUri),
+            "Signature is pinned to the manifest version during concurrent releases");
+        assert(await ReleaseUpdater.CheckAsync(client, current: new Version(99, 0, 1), publicKey: publicKey) == null
+            && await ReleaseUpdater.CheckAsync(client, current: new Version(100, 0, 0), publicKey: publicKey) == null,
+            "Public signed discovery never offers equal or older releases");
+        fixture.Files[ReleaseSettings.AssetUri(manifest.Version, "update.json.sig").AbsoluteUri] = Encoding.UTF8.GetBytes(Convert.ToBase64String(new byte[64]));
+        rejected = false;
+        try { await ReleaseUpdater.CheckAsync(client, current: new Version(1, 0, 0), publicKey: publicKey); } catch (CryptographicException) { rejected = true; }
+        assert(rejected && fixture.Urls.Count(x => x == api) == apiCalls, "Invalid public signature fails closed without falling back to API metadata");
+        fixture.Files[ReleaseSettings.AssetUri(manifest.Version, "update.json.sig").AbsoluteUri] = Encoding.UTF8.GetBytes(signature);
+        fixture.Files[latest] = Encoding.UTF8.GetBytes("{\"Version\":\"../other\"}");
+        rejected = false;
+        try { await ReleaseUpdater.CheckAsync(client, current: new Version(1, 0, 0), publicKey: publicKey); } catch (IOException) { rejected = true; }
+        assert(rejected && fixture.Urls.Count(x => x == api) == apiCalls, "Untrusted manifest version cannot change the signature download path");
+        fixture.Files[latest] = new byte[16385];
+        rejected = false;
+        try { await ReleaseUpdater.CheckAsync(client, current: new Version(1, 0, 0), publicKey: publicKey); } catch (IOException) { rejected = true; }
+        assert(rejected && fixture.Urls.Count(x => x == api) == apiCalls, "Oversized public manifest is rejected without weakening trust checks");
+        fixture.Files[latest] = bytes;
+        fixture.DelayManifest = true;
+        rejected = false;
+        using (var cancellation = new CancellationTokenSource(60))
+        {
+            try { await ReleaseUpdater.CheckAsync(client, cancellation.Token, current: new Version(1, 0, 0), publicKey: publicKey); } catch (OperationCanceledException) { rejected = true; }
+        }
+        assert(rejected && fixture.Urls.Count(x => x == api) == apiCalls, "Cancelled update discovery stops without trying another source");
+        fixture.DelayManifest = false;
         var changedManifest = JsonSerializer.SerializeToUtf8Bytes(new UpdateManifest { Schema = 1, Repository = "other/repo", Version = manifest.Version, AssetName = manifest.AssetName, Size = manifest.Size, Sha256 = manifest.Sha256 });
         rejected = false;
         try { ReleaseUpdater.VerifyManifest(changedManifest, Convert.ToBase64String(key.SignData(changedManifest, HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation)), new Version(manifest.Version), publicKey); } catch (IOException) { rejected = true; }
@@ -94,12 +132,19 @@ public static class FeatureSmoke
     private sealed class UpdateFixture : HttpMessageHandler
     {
         public Dictionary<string, byte[]> Files { get; } = new();
+        public Dictionary<string, HttpStatusCode> Statuses { get; } = new();
+        public List<string> Urls { get; } = new();
+        public bool DelayManifest { get; set; }
         public bool DelayInstaller { get; set; }
         public int Requests { get; private set; }
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Requests++;
+            var url = request.RequestUri!.AbsoluteUri;
+            Urls.Add(url);
+            if (DelayManifest && url == ReleaseSettings.LatestAssetUri("update.json").AbsoluteUri) await Task.Delay(Timeout.Infinite, cancellationToken);
             if (DelayInstaller && request.RequestUri!.AbsolutePath.EndsWith(".exe", StringComparison.Ordinal)) await Task.Delay(Timeout.Infinite, cancellationToken);
+            if (Statuses.TryGetValue(url, out var status)) return new HttpResponseMessage(status);
             return Files.TryGetValue(request.RequestUri!.AbsoluteUri, out var bytes)
                 ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) }
                 : new HttpResponseMessage(HttpStatusCode.NotFound);

@@ -12,6 +12,7 @@ public static class ReleaseSettings
         get { var v = Assembly.GetExecutingAssembly().GetName().Version!; return new(v.Major, v.Minor, Math.Max(0, v.Build)); }
     }
     public static Uri ProjectPage => new("https://github.com/" + Repository);
+    public static Uri LatestAssetUri(string name) => new($"https://github.com/{Repository}/releases/latest/download/{Uri.EscapeDataString(name)}");
     public static Uri AssetUri(string version, string name) => new($"https://github.com/{Repository}/releases/download/v{version}/{Uri.EscapeDataString(name)}");
 }
 
@@ -43,7 +44,29 @@ public static class ReleaseUpdater
     {
         using var budget = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
         budget.CancelAfter(TimeSpan.FromSeconds(25));
-        var metadata = await ReadBoundedAsync(client, new Uri($"https://api.github.com/repos/{ReleaseSettings.Repository}/releases/latest"), 256 * 1024, budget.Token);
+        try
+        {
+            // Public release downloads do not consume the anonymous REST API quota.
+            var payload = await ReadBoundedAsync(client, ReleaseSettings.LatestAssetUri("update.json"), 16384, budget.Token);
+            var candidate = JsonSerializer.Deserialize<UpdateManifest>(payload) ?? throw new JsonException();
+            if (!TryVersion(candidate.Version, out var version)) throw new IOException("更新版本号无效。");
+            // Pin the signature to this version so a concurrent new release cannot mix two manifests.
+            var signature = await ReadBoundedAsync(client, ReleaseSettings.AssetUri(candidate.Version, "update.json.sig"), 1024, budget.Token);
+            var manifest = VerifyManifest(payload, Encoding.UTF8.GetString(signature).Trim(), version, publicKey);
+            if (version <= (current ?? ReleaseSettings.CurrentVersion)) return null;
+            return new(manifest, ReleaseSettings.AssetUri(manifest.Version, manifest.AssetName),
+                new Uri($"https://github.com/{ReleaseSettings.Repository}/releases/tag/v{manifest.Version}"));
+        }
+        catch (HttpRequestException)
+        {
+            // A transport failure can use the API route. Invalid signatures and cancellation never fall back.
+            return await CheckViaApiAsync(client, current, publicKey, budget.Token);
+        }
+    }
+
+    private static async Task<UpdateOffer?> CheckViaApiAsync(HttpClient client, Version? current, string publicKey, CancellationToken cancellation)
+    {
+        var metadata = await ReadBoundedAsync(client, new Uri($"https://api.github.com/repos/{ReleaseSettings.Repository}/releases/latest"), 256 * 1024, cancellation);
         var release = JsonNode.Parse(metadata) ?? throw new IOException("更新版本信息无效。");
         if (release["draft"]?.GetValue<bool>() == true || release["prerelease"]?.GetValue<bool>() == true) return null;
         var tag = release["tag_name"]?.ToString() ?? "";
@@ -58,8 +81,8 @@ public static class ReleaseUpdater
                 throw new IOException("更新附件来源不匹配，已停止。");
             return expected;
         }
-        var manifest = await ReadBoundedAsync(client, Asset("update.json"), 16384, budget.Token);
-        var signature = await ReadBoundedAsync(client, Asset("update.json.sig"), 1024, budget.Token);
+        var manifest = await ReadBoundedAsync(client, Asset("update.json"), 16384, cancellation);
+        var signature = await ReadBoundedAsync(client, Asset("update.json.sig"), 1024, cancellation);
         var parsed = VerifyManifest(manifest, Encoding.UTF8.GetString(signature).Trim(), version, publicKey);
         var download = Asset(parsed.AssetName);
         return new(parsed, download, new Uri($"https://github.com/{ReleaseSettings.Repository}/releases/tag/v{parsed.Version}"));
@@ -68,7 +91,7 @@ public static class ReleaseUpdater
     internal static bool TryVersion(string value, out Version version)
     {
         version = new(0, 0, 0);
-        return value.Length < 32 && Regex.IsMatch(value, @"^\d+\.\d+\.\d+$", RegexOptions.CultureInvariant)
+        return value is { Length: < 32 } && Regex.IsMatch(value, @"^\d+\.\d+\.\d+$", RegexOptions.CultureInvariant)
             && Version.TryParse(value, out version!);
     }
 
@@ -92,7 +115,9 @@ public static class ReleaseUpdater
 
     private static async Task<byte[]> ReadBoundedAsync(HttpClient client, Uri uri, int maximum, CancellationToken cancellation)
     {
-        using var response = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellation);
+        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        request.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true };
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellation);
         response.EnsureSuccessStatusCode();
         if (response.Content.Headers.ContentLength > maximum) throw new IOException("更新信息超过允许大小。");
         await using var stream = await response.Content.ReadAsStreamAsync(cancellation);

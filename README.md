@@ -1,4 +1,4 @@
-# Claude Link / Claude Network Launcher 1.2.1
+# Claude Link / Claude Network Launcher 1.2.2
 
 Windows x64 / macOS 15+ 中文网络启动器：节点与订阅管理、内置代理 / TUN、官方 Claude 桌面客户端 Code 页面启动，并保留 CLI 模式。Mac 同时提供 Apple 芯片 arm64 与 Intel x64 版本。
 
@@ -6,8 +6,8 @@ Windows x64 / macOS 15+ 中文网络启动器：节点与订阅管理、内置�
 
 ## 安装和使用
 
-- 安装版：artifacts/ClaudeLink-Setup-1.2.1.exe，按当前用户安装，不要求预装 .NET。
-- 便携版：artifacts/ClaudeLink-Portable-1.2.1-win-x64.zip，解压运行。
+- 安装版：artifacts/ClaudeLink-Setup-1.2.2.exe，按当前用户安装，不要求预装 .NET。
+- 便携版：artifacts/ClaudeLink-Portable-1.2.2-win-x64.zip，解压运行。
 - 独立程序：artifacts/publish/ClaudeNetworkLauncher.exe，单个 EXE 包含运行环境和代理内核。
 - 使用指南：docs/使用指南.md；验证记录：docs/VALIDATION.md。
 - Mac：下载对应芯片的 DMG，将 Claude Link 拖入“应用程序”；不确定芯片可在苹果菜单 → 关于本机查看。首次打开请参阅 [Mac 安装指南](docs/macOS.md)。
@@ -24,6 +24,7 @@ Windows x64 / macOS 15+ 中文网络启动器：节点与订阅管理、内置�
 - 进程代理和 TUN 模式，后者按需 UAC 授权。
 - 桌面模式自动发现普通安装版 / MSIX 商店版，使用官方 claude://code/new 链接；CLI 路径单独保存，避免混淆。
 - GitHub Releases 在线更新、下载进度与取消、ECDSA 发布签名和 SHA-256 校验、安装后自动重启。
+- 1.2.2 优先从 GitHub 最新正式发布直链读取签名清单，不依赖匿名 API 额度；直链网络失败时尝试 API 备用入口，签名失败则立即停止。1.2.1 及更早版本遇到接口限流时，请先覆盖安装本版一次。
 - 出口、API、地区与时区检测，保留 v1.3 严格预检选项，未知结果标记为未验证。
 - 专用核对浏览器优先 Chrome，可在环境设置选择 Chrome / Edge；独立配置应用所选语言，并提供实际语言核对页。
 - 可选临时 IPv6 和系统时区调整，先记恢复记录再修改，结束会话后尝试恢复。
