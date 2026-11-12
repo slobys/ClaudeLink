@@ -22,7 +22,8 @@ public sealed record LatencyPlan(JsonObject Config, Dictionary<string, string> T
 public static class NodeLatency
 {
     public const string Target = "https://www.gstatic.com/generate_204";
-    public const int TimeoutMs = 8000;
+    public const int TimeoutMs = 3000;
+    public const int Parallelism = 12;
     public static string Fingerprint(ProxyNode node, IReadOnlyList<ProxyNode> nodes)
     {
         try { return Hash(string.Join("|", ProxyChain.Resolve(node, nodes).Select(x => x.Id + ":" + x.Fingerprint))); }
@@ -33,6 +34,7 @@ public static class NodeLatency
     {
         if (port is < 1024 or > 65535 || secret.Length < 32 || secret.Any(c => !char.IsAsciiLetterOrDigit(c))) throw new ArgumentException("测速参数无效。");
         var tags = new Dictionary<string,string>(); var fingerprints = new Dictionary<string,string>(); var invalid = new List<string>(); var outbounds = new JsonArray();
+        var routes = new Dictionary<string,string>();
         foreach (var node in selected.DistinctBy(x => x.Id))
         {
             fingerprints[node.Id] = Fingerprint(node,nodes);
@@ -46,6 +48,10 @@ public static class NodeLatency
                     if (i>0) outbound["detour"] = "e-" + Hash(node.Id);
                     entries.Add(outbound);
                 }
+                // Aliases of the same complete route share one probe; identity/cache keys remain per node.
+                var route = Hash(string.Join("|",hops.Select(x=>x.Fingerprint)));
+                if(routes.TryGetValue(route,out var sharedTag)) { tags.Add(node.Id,sharedTag); continue; }
+                routes.Add(route,tag);
                 foreach (var entry in entries) outbounds.Add(entry);
                 tags.Add(node.Id,tag);
             }

@@ -49,6 +49,27 @@ public static partial class IntegrationSmoke
         await NodeLatencyProbe.RunAsync([tlsNode],[tlsNode],(id,result)=>results[id]=result,CancellationToken.None,$"https://127.0.0.1:{untrusted.Port}/latency",900);
         assert(results[tlsNode.Id].State==LatencyState.Failed && untrusted.Requests==0,"HTTPS latency rejects an untrusted certificate without bypassing TLS verification");
         assert(!SessionController.PendingRecovery().Any(),"Unprivileged latency does not create environment recovery records or change network settings");
+        await BenchmarkLatencyAsync(assert);
+    }
+    private static async Task BenchmarkLatencyAsync(Action<bool,string> assert)
+    {
+        await using var origin=new LatencyFixture();
+        await using var fast=new DelayRelay(origin.Port,40,benchmark:true);
+        await using var stalled=new DelayRelay(origin.Port,9000,benchmark:true);
+        var nodes=Enumerable.Range(0,24).Select(i=>NodeImporter.Parse($"http://bench-{i}:secret@127.0.0.1:{(i%2==0 ? stalled.Port : fast.Port)}#Benchmark").Nodes.Single()).ToList();
+        async Task<(long TotalMs,long LastHealthyMs,ConcurrentDictionary<string,NodeLatencyResult> Results)> Run(int workers,int timeout)
+        {
+            var watch=Stopwatch.StartNew();long lastHealthy=0;var results=new ConcurrentDictionary<string,NodeLatencyResult>();
+            await NodeLatencyProbe.RunAsync(nodes,nodes,(id,result)=>{results[id]=result;if(result.HasDelay)Interlocked.Exchange(ref lastHealthy,watch.ElapsedMilliseconds);},CancellationToken.None,$"HTTP://127.0.0.1:{origin.Port}/latency",timeout,parallelism:workers);
+            return (watch.ElapsedMilliseconds,lastHealthy,results);
+        }
+        var legacy=await Run(4,8000);var current=await Run(NodeLatency.Parallelism,NodeLatency.TimeoutMs);
+        assert(current.Results.Count==24 && current.Results.Values.Count(x=>x.HasDelay)==12 && current.Results.Values.Count(x=>x.State==LatencyState.Timeout)==12,"Fast batch preserves healthy results and distinguishes all stalled nodes");
+        assert(current.TotalMs<legacy.TotalMs*0.65 && current.LastHealthyMs<legacy.LastHealthyMs*0.5,"Bounded 12-worker fast profile improves batch and healthy-node completion over the legacy 4-worker profile");
+        var alias=NodeImporter.Parse(nodes[1].OutboundJson).Nodes.Single();var before=origin.Requests;var aliases=new ConcurrentDictionary<string,NodeLatencyResult>();
+        await NodeLatencyProbe.RunAsync([nodes[1],alias],[nodes[1],alias],(id,result)=>aliases[id]=result,CancellationToken.None,$"HTTP://127.0.0.1:{origin.Port}/latency");
+        assert(origin.Requests-before==1 && aliases.Count==2 && aliases.Values.All(x=>x.HasDelay),"Equivalent route aliases share one fresh network probe while retaining per-node results");
+        AppPaths.WriteJson(Path.Combine(AppPaths.Root,"latency-performance.json"),new { Fixture="24 unique loopback HTTP routes: 12 healthy, 12 stalled", Legacy=new{Concurrency=4,TimeoutMs=8000,legacy.TotalMs,legacy.LastHealthyMs},Current=new{Concurrency=NodeLatency.Parallelism,TimeoutMs=NodeLatency.TimeoutMs,current.TotalMs,current.LastHealthyMs},Speedup=Math.Round((double)legacy.TotalMs/current.TotalMs,2),AliasRequests=origin.Requests-before,LiveNodesTested=false });
     }
     private static async Task<bool> LatencyPortClosed(int port) { for(var i=0;i<30;i++) {if(await IsPortClosedAsync(port))return true;await Task.Delay(50);}return false; }
     private static long GetStarted(int pid) { try { using var p=Process.GetProcessById(pid);return p.StartTime.ToUniversalTime().Ticks; } catch(ArgumentException) { return 0; } }
@@ -86,13 +107,14 @@ public static partial class IntegrationSmoke
     {
         private readonly TcpListener listener=new(IPAddress.Loopback,0);private readonly CancellationTokenSource stop=new();private readonly Task loop;private readonly int target,delay;private int requests;
         public int Port {get;} public int Requests=>requests;
-        public DelayRelay(int target,int delay) {this.target=target;this.delay=delay;listener.Start();Port=((IPEndPoint)listener.LocalEndpoint).Port;loop=Listen();}
+        private readonly List<string> acceptedCredentials;
+        public DelayRelay(int target,int delay,bool benchmark=false) {this.target=target;this.delay=delay;acceptedCredentials=(benchmark ? Enumerable.Range(0,24).Select(x=>$"bench-{x}:secret") : new[]{"user:secret"}).Select(x=>Convert.ToBase64String(Encoding.UTF8.GetBytes(x))).ToList();listener.Start();Port=((IPEndPoint)listener.LocalEndpoint).Port;loop=Listen();}
         private async Task Listen() {try { while(!stop.IsCancellationRequested) {var client=await listener.AcceptTcpClientAsync(stop.Token);_=Serve(client);} } catch(OperationCanceledException) { } }
         private async Task Serve(TcpClient client)
         {
             using(client)try {
                 var stream=client.GetStream();var header=await ReadHeader(stream,stop.Token);
-                if(!header.Contains(Convert.ToBase64String(Encoding.UTF8.GetBytes("user:secret")))) {await stream.WriteAsync(Encoding.ASCII.GetBytes("HTTP/1.1 407 Proxy Authentication Required\r\n\r\n"),stop.Token);return;}
+                if(!acceptedCredentials.Any(header.Contains)) {await stream.WriteAsync(Encoding.ASCII.GetBytes("HTTP/1.1 407 Proxy Authentication Required\r\n\r\n"),stop.Token);return;}
                 Interlocked.Increment(ref requests);await Task.Delay(delay,stop.Token);using var upstream=new TcpClient();await upstream.ConnectAsync(IPAddress.Loopback,target,stop.Token);
                 await stream.WriteAsync(Encoding.ASCII.GetBytes("HTTP/1.1 200 Connection established\r\n\r\n"),stop.Token);
                 await Task.WhenAny(stream.CopyToAsync(upstream.GetStream(),stop.Token),upstream.GetStream().CopyToAsync(stream,stop.Token));

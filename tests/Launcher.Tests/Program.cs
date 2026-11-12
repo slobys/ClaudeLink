@@ -127,5 +127,9 @@ var delaySamples=new[]{ new NodeLatencyResult("x",LatencyState.Failed),new("x",L
 Assert(NodeLatency.Sort(delaySamples,x=>x,1).Take(3).Select(x=>x.Milliseconds).SequenceEqual(new int?[]{80,80,400}) && NodeLatency.Sort(delaySamples,x=>x,2).Take(3).Select(x=>x.Milliseconds).SequenceEqual(new int?[]{400,80,80}),"Both delay sort directions keep measured values first with stable ties");
 Assert(NodeLatency.Sort(delaySamples,x=>x,2).Skip(3).Select(x=>x.State).SequenceEqual(new[]{LatencyState.Failed,LatencyState.Pending,LatencyState.Timeout}) && NodeLatency.Sort(delaySamples,x=>x,0).SequenceEqual(delaySamples),"Untested and failed nodes remain last; original ordering can be restored");
 File.WriteAllText(Path.Combine(output,"latency.json"),latencyPlan.Config.ToJsonString(JsonDefaults.Pretty));
+var latencyAlias=One(vless.OutboundJson);
+var aliasPlan=NodeLatency.Build([vless,latencyAlias],[vless,latencyAlias],19876,new string('c',64));
+Assert(aliasPlan.Tags[vless.Id]==aliasPlan.Tags[latencyAlias.Id] && aliasPlan.Config["outbounds"]!.AsArray().Count==2 && aliasPlan.Fingerprints[vless.Id]!=aliasPlan.Fingerprints[latencyAlias.Id],"Equivalent routes share a probe without sharing node identity or cache validity");
+Assert(NodeLatency.TimeoutMs==3000 && NodeLatency.Parallelism==12,"Fast latency profile uses bounded 12-way concurrency and a three second timeout");
 File.WriteAllText(Path.Combine(output, "results.json"), System.Text.Json.JsonSerializer.Serialize(new { Passed = checks.Count, Checks = checks }, JsonDefaults.Pretty));
 Console.WriteLine($"All {checks.Count} regression assertions passed.");

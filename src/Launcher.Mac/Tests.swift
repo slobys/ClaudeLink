@@ -25,6 +25,7 @@ import Darwin
             latencyPreview.nodeTestTask=Task { try? await Task.sleep(for:.seconds(60)) };latencyPreview.testNodes(latencyPreview.settings.Nodes)
             try check(latencyPreview.nodeTestTask?.isCancelled == true,"Latency cancel action cancels the active native task")
             await latencyPreview.stopNodeTest();latencyPreview.nodeTesting=false
+            try check(NodeLatency.timeout == 3000 && NodeLatency.parallelism == 12,"Fast native latency profile uses bounded 12-way concurrency and three second requests")
             let privacyScript=try BrowserPrivacy.script()
             try check(BrowserPrivacy.checkURL == "https://ip.net.coffee/claude/" && privacyScript.contains("ipMaskToggle") && privacyScript.replacingOccurrences(of:"\\/",with:"/").contains("https://ip.net.coffee") && !privacyScript.contains("__CLAUDELINK_ORIGIN__"),"Dedicated browser bundles scoped IP-hiding script and a single requested destination")
             let parsed=try await Bridge.parse("socks5://user:secret@127.0.0.1:1080#Local")

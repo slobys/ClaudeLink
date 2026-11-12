@@ -57,7 +57,8 @@ import SwiftUI
             guard let confirmSheet=window.sheets.first?.contentView else { throw ClientError.message("Missing launch confirmation sheet") }; try saveView(confirmSheet,to:url.appendingPathComponent("launch-confirmation.png"))
             var many=model.launchConfirmation!; many.reasons=(1...18).map { "检查示例 \($0)：此项目尚未验证，请返回结果页面核对网络、地区与环境设置。" }; model.launchConfirmation=many; try await Task.sleep(for:.milliseconds(700))
             if let longSheet=window.sheets.first?.contentView { try saveView(longSheet,to:url.appendingPathComponent("launch-confirmation-long.png")) }; model.resolveLaunch(false)
-            try Data("{\"CapturedViews\":20,\"NativeViews\":true,\"ScreenCapture\":false}".utf8).write(to:url.appendingPathComponent("ui-results.json")); exit(0)
+            let pngCount=try FileManager.default.contentsOfDirectory(at:url,includingPropertiesForKeys:nil).filter{$0.pathExtension == "png"}.count
+            try JSONSerialization.data(withJSONObject:["CapturedViews":pngCount,"NativeViews":true,"ScreenCapture":false]).write(to:url.appendingPathComponent("ui-results.json")); exit(0)
         } catch { fputs("Native rendering failed\n",stderr); exit(1) }
     }
     @MainActor func saveView(_ view:NSView,to url:URL) throws {

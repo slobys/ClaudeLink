@@ -54,7 +54,9 @@ def start(server):
     servers.append(server)
     return server.server_address[1]
 
-def relay(target, delay):
+def relay(target, delay, benchmark=False):
+    import base64
+    credentials = [base64.b64encode(f"bench-{i}:secret".encode()) for i in range(24)] if benchmark else [b"dXNlcjpzZWNyZXQ="]
     class Relay(socketserver.BaseRequestHandler):
         requests = 0
         def handle(self):
@@ -66,7 +68,7 @@ def relay(target, delay):
                     if not part:
                         return
                     header += part
-                if b"dXNlcjpzZWNyZXQ=" not in header:
+                if not any(value in header for value in credentials):
                     self.request.sendall(b"HTTP/1.1 407 Proxy Authentication Required\r\n\r\n")
                     return
                 type(self).requests += 1
@@ -87,12 +89,12 @@ def relay(target, delay):
                 pass
     return start(Server(("127.0.0.1", 0), Relay)), Relay
 
-def api(port, path, auth=True):
+def api(port, path, auth=True, wait=4):
     request = urllib.request.Request(f"http://127.0.0.1:{port}/{path}")
     if auth:
         request.add_header("Authorization", "Bearer " + secret)
     try:
-        with opener.open(request, timeout=4) as response:
+        with opener.open(request, timeout=wait) as response:
             return response.status, json.load(response)
     except urllib.error.HTTPError as error:
         return error.code, {}
@@ -140,8 +142,8 @@ try:
     slow, _ = relay(target_port, .28)
     timeout, _ = relay(target_port, 2.2)
     entry, entry_class = relay(fast, .02)
-    def node(identity, port, auth=True):
-        return dict(Id=identity, Name="Fixture", GroupId="manual", OutboundJson=json.dumps(dict(type="http", server="127.0.0.1", server_port=port, username="user" if auth else "bad", password="secret" if auth else "bad")), ChainNodeIds=[])
+    def node(identity, port, auth=True, username="user"):
+        return dict(Id=identity, Name="Fixture", GroupId="manual", OutboundJson=json.dumps(dict(type="http", server="127.0.0.1", server_port=port, username=username if auth else "bad", password="secret" if auth else "bad")), ChainNodeIds=[])
     nodes = [node("fast", fast), node("slow", slow), node("timeout", timeout), node("bad", fast, False)]
     entry_node = node("entry", entry)
     nodes.append(dict(Id="chain", Name="Fixture chain", OutboundJson="{}", ChainNodeIds=["entry", "fast"]))
@@ -177,6 +179,33 @@ try:
     owner.wait(timeout=5)
     child.wait(timeout=8)
     check(not open_port(port) and not (root / "config.json").exists(), "Parent death also stops the unprivileged latency core without environment changes")
+    healthy_port, _ = relay(target_port, .04, benchmark=True)
+    stalled_port, _ = relay(target_port, 9, benchmark=True)
+    benchmark_nodes = [node(f"bench-{i}", stalled_port if i % 2 == 0 else healthy_port, username=f"bench-{i}") for i in range(24)]
+    def benchmark(workers, deadline):
+        began = time.monotonic()
+        child, root, controller, plan = launch(benchmark_nodes, benchmark_nodes, os.getpid())
+        def measure_one(item):
+            query = urllib.parse.urlencode(dict(timeout=deadline, url=target))
+            code, body = api(controller, f"proxies/{plan['Tags'][item['Id']]}/delay?{query}", wait=deadline/1000+2)
+            return code, body, (time.monotonic()-began)*1000
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+            records = list(pool.map(measure_one, benchmark_nodes))
+        (root / "cancel").touch()
+        child.wait(timeout=8)
+        return dict(Concurrency=workers, TimeoutMs=deadline, TotalMs=round((time.monotonic()-began)*1000), LastHealthyMs=round(max(item[2] for item in records if item[0] == 200)), Healthy=sum(item[0] == 200 for item in records), TimedOut=sum(item[0] == 504 for item in records))
+    legacy, current = benchmark(4, 8000), benchmark(12, 3000)
+    check(current["Healthy"] == 12 and current["TimedOut"] == 12, "Fast batch preserves healthy routes and distinguishes all stalled routes")
+    check(current["TotalMs"] < legacy["TotalMs"]*.65 and current["LastHealthyMs"] < legacy["LastHealthyMs"]*.5, "Fast bounded profile improves batch and healthy-node completion over legacy settings")
+    alias = dict(benchmark_nodes[1], Id="alias")
+    child, root, controller, plan = launch([benchmark_nodes[1], alias], [benchmark_nodes[1], alias], os.getpid())
+    before = TLSHandler.requests
+    query = urllib.parse.urlencode(dict(timeout=3000, url=target))
+    code, _ = api(controller, f"proxies/{plan['Tags'][alias['Id']]}/delay?{query}")
+    check(code == 200 and TLSHandler.requests-before == 1 and len(set(plan["Tags"].values())) == 1, "Identical route aliases retain separate IDs and share a fresh probe")
+    (root / "cancel").touch()
+    child.wait(timeout=8)
+    output.with_name("latency-performance.json").write_text(json.dumps(dict(Fixture="24 unique loopback HTTP routes: 12 healthy, 12 stalled", Legacy=legacy, Current=current, Speedup=round(legacy["TotalMs"]/current["TotalMs"], 2), LiveNodesTested=False), indent=2))
     output.write_text(json.dumps(dict(Passed=len(checks), Checks=checks, LoopbackOnly=True, LiveTunTested=False), indent=2))
 finally:
     for child, root in helpers:

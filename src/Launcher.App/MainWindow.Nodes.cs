@@ -1,12 +1,17 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using Launcher.App.Services;
 
 namespace Launcher.App;
 
 public partial class MainWindow
 {
+    private ObservableCollection<NodeRow> nodeRows = new();
+    private Dictionary<string,NodeRow> visibleNodeRows = new();
+    private List<NodeRow> originalNodeRows = new();
     private Style? nodeCardBaseStyle;
     private double nodeCardWidth;
     private void NodeGridSizeChanged(object sender, SizeChangedEventArgs e)
@@ -25,8 +30,20 @@ public partial class MainWindow
         ActiveChainText.Visibility=node?.IsChain == true ? Visibility.Visible : Visibility.Collapsed;
         ActiveChainText.Text=node?.IsChain == true ? "本机 → "+ProxyChain.Path(node,settings.Nodes)+" → 目标网站" : "";
     }
-    public sealed record NodeRow(ProxyNode Node, string Group, IReadOnlyList<ProxyNode> Available, bool Current, NodeLatencyResult? Latency = null)
+    public sealed class NodeRow(ProxyNode node, string group, IReadOnlyList<ProxyNode> available, bool current, NodeLatencyResult? latency = null) : INotifyPropertyChanged
     {
+        public ProxyNode Node { get; } = node;
+        public string Group { get; } = group;
+        public IReadOnlyList<ProxyNode> Available { get; } = available;
+        public bool Current { get; } = current;
+        public NodeLatencyResult? Latency { get; private set; } = latency;
+        public event PropertyChangedEventHandler? PropertyChanged;
+        public void UpdateLatency(NodeLatencyResult result)
+        {
+            Latency=result;
+            foreach(var name in new[]{nameof(Latency),nameof(State),nameof(Tone),nameof(LatencyHint)})
+                PropertyChanged?.Invoke(this,new PropertyChangedEventArgs(name));
+        }
         private NodeRegion? Region => NodeRegion.ForNode(Node, Available);
         private static readonly Dictionary<string, BitmapImage> Flags = new();
         public string Name => Region == null ? Node.Name : Node.Name.Replace(Region.Emoji, "").Trim();
@@ -40,7 +57,7 @@ public partial class MainWindow
         public string ProtocolLabel => Protocol + (Current ? " · 当前" : "");
         public string State => Invalid ? "节点失效" : Latency?.Text ?? "未测速";
         public string Tone => Invalid ? "Error" : Latency?.Tone ?? "Pending";
-        public string LatencyHint => Latency == null ? "点击一键测速，检测当前筛选结果。" : $"{Latency.MeasuredAt:HH:mm:ss} · {State}\n通过节点访问 HTTPS 测试地址；超时上限 8 秒。\n颜色仅供比较延迟，不代表账户状态。";
+        public string LatencyHint => Latency == null ? "点击一键测速，检测当前筛选结果。" : $"{Latency.MeasuredAt:HH:mm:ss} · {State}\n通过节点访问 HTTPS 测试地址；快速测速等待上限 {NodeLatency.TimeoutMs/1000} 秒。超时可重试。\n颜色仅供比较延迟，不代表账户状态。";
         public BitmapImage? Flag
         {
             get
@@ -82,8 +99,11 @@ public partial class MainWindow
                 .Where(x => (group == "all" || x.Node.GroupId == group)
                     && (region == "all" || (NodeRegion.ForNode(x.Node, settings.Nodes)?.Code ?? "unknown") == region)
                     && (query.Length == 0 || $"{x.Name} {x.Protocol} {x.Group} {x.RegionLabel} {NodeRegion.ForNode(x.Node,settings.Nodes)?.Code} {x.Server} {x.Description}".Contains(query, StringComparison.OrdinalIgnoreCase))).ToList();
+            originalNodeRows = rows;
+            visibleNodeRows = rows.ToDictionary(x=>x.Node.Id);
             rows = NodeLatency.Sort(rows, x => x.Latency, NodeSort?.SelectedIndex ?? 0).ToList();
-            NodesGrid.ItemsSource = rows;
+            nodeRows = new ObservableCollection<NodeRow>(rows);
+            NodesGrid.ItemsSource = nodeRows;
             NodesGrid.SelectedItem = rows.FirstOrDefault(x => x.Current);
             NodesEmpty.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             NodesEmpty.Text = settings.Nodes.Count == 0 ? "还没有节点\n添加分享链接，或前往订阅管理导入订阅。" : "没有匹配节点\n清空搜索或更换地区与分组。";
@@ -91,6 +111,14 @@ public partial class MainWindow
             NodeCountText.Text = $"显示 {rows.Count} / {settings.Nodes.Count} · {settings.Nodes.Count(x => x.IsChain)} 条链路";
         }
         finally { refreshing = prior; }
+    }
+    private void SortLiveNodeRows()
+    {
+        if((NodeSort?.SelectedIndex ?? 0)==0)return;
+        var ordered=NodeLatency.Sort(originalNodeRows,x=>x.Latency,NodeSort!.SelectedIndex).ToList();
+        var prior=refreshing;refreshing=true;
+        try { for(var i=0;i<ordered.Count;i++) { var position=nodeRows.IndexOf(ordered[i]); if(position!=i)nodeRows.Move(position,i); } }
+        finally { refreshing=prior; }
     }
     private void NodeFilterChanged(object sender, RoutedEventArgs e) { if (!refreshing && settings != null) RefreshNodeCards(); }
     private void NodeCardSelected(object sender, SelectionChangedEventArgs e)

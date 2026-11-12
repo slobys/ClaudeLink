@@ -10,7 +10,8 @@ struct NodeLatencyResult {
 }
 enum NodeLatency {
     static let target="https://www.gstatic.com/generate_204"
-    static let timeout=8000
+    static let timeout=3000
+    static let parallelism=12
     static func fingerprint(_ node:ProxyNode,_ nodes:[ProxyNode]) -> String {
         // Native cache key only; the bridge independently validates the actual outbounds.
         let hops=node.isChain ? node.ChainNodeIds.compactMap { id in nodes.first{$0.Id == id} } : [node]
@@ -72,7 +73,7 @@ enum NodeLatency {
             try Task.checkCancellation()
             let child=Process(); child.executableURL=Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/ClaudeLinkHost"); child.arguments=["--latency",root.path]; child.standardOutput=FileHandle.nullDevice; child.standardError=FileHandle.nullDevice
             try child.run(); process=child
-            let configuration=URLSessionConfiguration.ephemeral; configuration.connectionProxyDictionary=[:]; configuration.urlCache=nil
+            let configuration=URLSessionConfiguration.ephemeral; configuration.connectionProxyDictionary=[:]; configuration.urlCache=nil; configuration.httpMaximumConnectionsPerHost=NodeLatency.parallelism
             let client=URLSession(configuration:configuration); defer { client.invalidateAndCancel() }
             let base=URL(string:"http://127.0.0.1:\(port)")!; var ready=false
             for _ in 0..<60 {
@@ -83,14 +84,14 @@ enum NodeLatency {
             }
             guard ready else { throw ClientError.message("测速内核未能启动，请稍后重试。") }
             try? FileManager.default.removeItem(at:root.appendingPathComponent("config.json"))
-            // Four workers share one isolated core. Each API request targets an explicit outbound tag.
-            let entries=Array(tags); var next=0
-            try await withThrowingTaskGroup(of:(String,LatencyState,Int?).self) { group in
-                func enqueue(_ item:(key:String,value:String)) {
-                    group.addTask { await changed(item.key,.running,nil); let value=try await NodeLatency.measure(client,base,secret,item.value); return (item.key,value.0,value.1) }
+            // Equivalent aliases share one route probe. Network workers only enqueue state for the UI.
+            let entries=Dictionary(grouping:tags,by:{$0.value}).map { (tag:$0.key,ids:$0.value.map(\.key)) }; var next=0
+            try await withThrowingTaskGroup(of:([String],LatencyState,Int?).self) { group in
+                func enqueue(_ item:(tag:String,ids:[String])) {
+                    group.addTask { for id in item.ids { await changed(id,.running,nil) }; let value=try await NodeLatency.measure(client,base,secret,item.tag); return (item.ids,value.0,value.1) }
                 }
-                while next<min(4,entries.count) { enqueue(entries[next]); next+=1 }
-                while let result=try await group.next() { changed(result.0,result.1,result.2); try Task.checkCancellation(); if next<entries.count { enqueue(entries[next]); next+=1 } }
+                while next<min(NodeLatency.parallelism,entries.count) { enqueue(entries[next]); next+=1 }
+                while let result=try await group.next() { for id in result.0 { changed(id,result.1,result.2) }; try Task.checkCancellation(); if next<entries.count { enqueue(entries[next]); next+=1 } }
             }
             await stop()
         } catch { await stop(); throw error }
@@ -105,17 +106,30 @@ extension AppState {
         if nodeTesting { nodeTestTask?.cancel(); return }
         guard !busy && !connected && !nodes.isEmpty else { return }
         nodeTesting=true; var completed=0; nodeTestProgress="测速 0 / \(nodes.count)"
-        for node in nodes { nodeLatencies[node.Id]=NodeLatencyResult(fingerprint:NodeLatency.fingerprint(node,settings.Nodes),state:.pending) }
         let available=settings.Nodes
+        let fingerprints=Dictionary(uniqueKeysWithValues:nodes.map{($0.Id,NodeLatency.fingerprint($0,available))})
+        var initial=nodeLatencies
+        for node in nodes { initial[node.Id]=NodeLatencyResult(fingerprint:fingerprints[node.Id]!,state:.pending) }
+        nodeLatencies=initial
         nodeTestTask=Task {
+            var pending:[String:NodeLatencyResult]=[:]
+            @MainActor func flush() {
+                guard !pending.isEmpty else { return }
+                var merged=nodeLatencies; merged.merge(pending,uniquingKeysWith: { _,new in new }); nodeLatencies=merged
+                pending.removeAll(keepingCapacity:true); nodeTestProgress="测速 \(completed) / \(nodes.count)"
+            }
+            let paint=Task { do { while !Task.isCancelled { try await Task.sleep(for:.milliseconds(100)); flush() } } catch {} }
             defer {
-                for node in nodes { if let result=nodeLatencies[node.Id], result.state == .pending || result.state == .running { nodeLatencies[node.Id]=NodeLatencyResult(fingerprint:NodeLatency.fingerprint(node,available),state:Task.isCancelled ? .cancelled : .failed) } }
+                paint.cancel(); flush()
+                var final=nodeLatencies
+                for node in nodes { if let result=final[node.Id], result.state == .pending || result.state == .running { final[node.Id]=NodeLatencyResult(fingerprint:fingerprints[node.Id]!,state:Task.isCancelled ? .cancelled : .failed) } }
+                nodeLatencies=final
                 nodeTestProgress="\(Task.isCancelled ? "已取消" : "已完成") · 完成 \(completed) / \(nodes.count)"; nodeTesting=false; nodeTestTask=nil
             }
             do { try await nodeProbe.run(nodes,available) { id,state,ms in
-                guard let node=available.first(where:{$0.Id == id}) else { return }
-                self.nodeLatencies[id]=NodeLatencyResult(fingerprint:NodeLatency.fingerprint(node,available),state:state,milliseconds:ms)
-                if state != .running { completed+=1 }; self.nodeTestProgress="测速 \(completed) / \(nodes.count)"
+                guard let fingerprint=fingerprints[id] else { return }
+                pending[id]=NodeLatencyResult(fingerprint:fingerprint,state:state,milliseconds:ms)
+                if state != .running { completed+=1 }
             }; log("节点 HTTP 延迟测试完成。",.success) }
             catch is CancellationError { log("测速已取消，已完成的结果已保留。",.info) }
             catch { fail("测速未完成，请检查网络或稍后重试。") }

@@ -11,7 +11,7 @@ namespace Launcher.App.Services;
 public static class NodeLatencyProbe
 {
     public static async Task RunAsync(IReadOnlyList<ProxyNode> nodes, IReadOnlyList<ProxyNode> available,
-        Action<string,NodeLatencyResult> changed, CancellationToken token, string target = NodeLatency.Target, int timeoutMs = NodeLatency.TimeoutMs, Action<int,int>? started = null)
+        Action<string,NodeLatencyResult> changed, CancellationToken token, string target = NodeLatency.Target, int timeoutMs = NodeLatency.TimeoutMs, Action<int,int>? started = null, int parallelism = NodeLatency.Parallelism)
     {
         using var listener = new TcpListener(IPAddress.Loopback,0); listener.Start(); var port=((IPEndPoint)listener.LocalEndpoint).Port; listener.Stop();
         var secret=Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(32));
@@ -27,7 +27,7 @@ public static class NodeLatencyProbe
             token.ThrowIfCancellationRequested();
             core=Process.Start(ProcessTools.Hidden(CoreAssets.Ensure(),"run","-c",path)) ?? throw new IOException("无法启动测速内核。");
             job=new CoreJob(core);
-            using var client=new HttpClient(new SocketsHttpHandler { UseProxy=false }) { BaseAddress=new Uri($"http://127.0.0.1:{port}"), Timeout=TimeSpan.FromMilliseconds(NodeLatency.TimeoutMs+2000) };
+            using var client=new HttpClient(new SocketsHttpHandler { UseProxy=false }) { BaseAddress=new Uri($"http://127.0.0.1:{port}"), Timeout=TimeSpan.FromMilliseconds(Math.Max(timeoutMs,NodeLatency.TimeoutMs)+2000) };
             client.DefaultRequestHeaders.Authorization=new AuthenticationHeaderValue("Bearer",secret);
             var ready=false;
             for(var i=0;i<60;i++)
@@ -38,11 +38,11 @@ public static class NodeLatencyProbe
             }
             if(!ready)throw new IOException("测速内核未能启动，请稍后重试。");
             File.Delete(path); started?.Invoke(port,core.Id);
-            await Parallel.ForEachAsync(plan.Tags,new ParallelOptions { MaxDegreeOfParallelism=4,CancellationToken=token },async (item,ct)=>
+            await Parallel.ForEachAsync(plan.Tags.GroupBy(x=>x.Value),new ParallelOptions { MaxDegreeOfParallelism=parallelism,CancellationToken=token },async (group,ct)=>
             {
-                changed(item.Key,new(plan.Fingerprints[item.Key],LatencyState.Running));
-                var result=await MeasureAsync(client,item.Value,target,timeoutMs,ct);
-                changed(item.Key,new(plan.Fingerprints[item.Key],result.State,result.Milliseconds));
+                foreach(var item in group) changed(item.Key,new(plan.Fingerprints[item.Key],LatencyState.Running));
+                var result=await MeasureAsync(client,group.Key,target,timeoutMs,ct);
+                foreach(var item in group) changed(item.Key,new(plan.Fingerprints[item.Key],result.State,result.Milliseconds));
             });
         }
         finally

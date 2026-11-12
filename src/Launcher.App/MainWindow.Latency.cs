@@ -1,4 +1,6 @@
 using System.Windows;
+using System.Collections.Concurrent;
+using System.Windows.Threading;
 using Launcher.App.Services;
 
 namespace Launcher.App;
@@ -25,25 +27,47 @@ public partial class MainWindow
         using var cancellation=new CancellationTokenSource(); nodeTestCancellation=cancellation; nodeTesting=true;
         foreach(var node in nodes) nodeLatencies[node.Id]=new(NodeLatency.Fingerprint(node,settings.Nodes),LatencyState.Pending);
         var completed=0; NodeTestProgress.Text=$"测速 0 / {nodes.Count}"; UpdateState(); RefreshNodeCards();
-        // Await UI dispatch so no stale queued callback can overwrite a subsequent batch.
-        nodeTestTask=NodeLatencyProbe.RunAsync(nodes,settings.Nodes,(id,result)=>Dispatcher.Invoke(()=>
+        var updates=new ConcurrentQueue<(string Id,NodeLatencyResult Result)>();
+        void Flush()
         {
-            nodeLatencies[id]=result;
-            if(result.State!=LatencyState.Running)completed++;
-            NodeTestProgress.Text=$"测速 {completed} / {nodes.Count}"; RefreshNodeCards();
-        }),cancellation.Token);
-        try { await nodeTestTask; StatusText.Text=$"测速完成：{completed} 个节点；可按延迟排序。"; Log("节点 HTTP 延迟测试完成。",LogKind.Success); }
+            var changed=false;
+            while(updates.TryDequeue(out var update))
+            {
+                ApplyNodeLatency(update.Id,update.Result);
+                if(update.Result.State!=LatencyState.Running)completed++;
+                changed=true;
+            }
+            if(changed) { NodeTestProgress.Text=$"测速 {completed} / {nodes.Count}"; SortLiveNodeRows(); }
+        }
+        // Network workers never wait for WPF layout. Only changed rows are notified, at most 10 batches/second.
+        var timer=new DispatcherTimer(DispatcherPriority.Background) { Interval=TimeSpan.FromMilliseconds(100) };
+        timer.Tick+=(_,_)=>Flush();timer.Start();
+        nodeTestTask=NodeLatencyProbe.RunAsync(nodes,settings.Nodes,(id,result)=>updates.Enqueue((id,result)),cancellation.Token);
+        try { await nodeTestTask; Flush(); StatusText.Text=$"测速完成：{completed} 个节点；可按延迟排序。"; Log("节点 HTTP 延迟测试完成。",LogKind.Success); }
         catch(OperationCanceledException) { StatusText.Text="测速已取消，已完成的结果已保留。"; }
         catch(Exception) { StatusText.Text="测速未完成，请检查网络或稍后重试。"; Log("节点测速未完成。",LogKind.Warning); }
         finally
         {
+            timer.Stop();Flush();
             var cancelled=cancellation.IsCancellationRequested;
             foreach(var node in nodes)
                 if(nodeLatencies[node.Id].State is LatencyState.Pending or LatencyState.Running)
                     nodeLatencies[node.Id]=new(NodeLatency.Fingerprint(node,settings.Nodes),cancelled ? LatencyState.Cancelled : LatencyState.Failed);
             NodeTestProgress.Text=cancelled ? $"已取消 · 完成 {completed} / {nodes.Count}" : $"已完成 {completed} / {nodes.Count}";
-            nodeTesting=false; nodeTestCancellation=null; nodeTestTask=null; RefreshNodeCards(); UpdateState();
+            foreach(var node in nodes)if(visibleNodeRows.TryGetValue(node.Id,out var row))row.UpdateLatency(nodeLatencies[node.Id]);
+            SortLiveNodeRows();nodeTesting=false; nodeTestCancellation=null; nodeTestTask=null; UpdateState();
         }
+    }
+    private void ApplyNodeLatency(string id,NodeLatencyResult result)
+    {
+        nodeLatencies[id]=result;
+        if(visibleNodeRows.TryGetValue(id,out var row))row.UpdateLatency(result);
+    }
+    internal void PreviewIncrementalLatency(string id,int milliseconds)
+    {
+        if(!smoke)throw new InvalidOperationException("Preview requires isolated UI smoke mode.");
+        var node=settings.Nodes.Single(x=>x.Id==id);
+        ApplyNodeLatency(id,new(NodeLatency.Fingerprint(node,settings.Nodes),LatencyState.Success,milliseconds));SortLiveNodeRows();
     }
     private async Task StopNodeTestAsync()
     {

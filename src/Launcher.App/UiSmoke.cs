@@ -59,6 +59,13 @@ public static class UiSmoke
         if(descending.First().Latency?.HasDelay!=true || descending.Last().Latency?.HasDelay==true)throw new InvalidOperationException("Unmeasured nodes must stay last in both sort directions.");
         assertions.Add("Latency states fit compact cards, measured nodes sort in both directions, and selection stays unchanged");
         sorter.SelectedIndex=0;
+        var stableSource=cards.ItemsSource;
+        var stableRow=cards.Items.OfType<MainWindow.NodeRow>().First(x=>!x.Current);
+        var chosenId=cards.Items.OfType<MainWindow.NodeRow>().Single(x=>x.Current).Node.Id;
+        window.PreviewIncrementalLatency(stableRow.Node.Id,51);
+        await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
+        if(!ReferenceEquals(stableSource,cards.ItemsSource) || !ReferenceEquals(stableRow,cards.Items.OfType<MainWindow.NodeRow>().Single(x=>x.Node.Id==stableRow.Node.Id)) || stableRow.State!="51 ms" || cards.Items.OfType<MainWindow.NodeRow>().Single(x=>x.Current).Node.Id!=chosenId)throw new InvalidOperationException("Incremental latency updates rebuilt the grid or changed selection.");
+        assertions.Add("Streaming latency updates keep the collection, row objects and selected node intact");
         window.PreviewNodeTest(true);
         if(((Button)window.FindName("ConnectButton")).IsEnabled || ((WrapPanel)window.FindName("NodeActions")).IsEnabled || !((Button)window.FindName("NodeTestButton")).IsEnabled)throw new InvalidOperationException("Latency progress must block connect and mutations while keeping cancel enabled.");
         Capture(window,Path.Combine(directory,"nodes-latency-running.png"));

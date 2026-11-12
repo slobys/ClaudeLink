@@ -98,7 +98,7 @@ private struct NodeTile:View {
             }
             Text(subtitle).font(.system(size:12)).lineLimit(1).foregroundStyle(Palette.color("Muted")).help(subtitle)
             Spacer(minLength:0)
-            HStack { Text((node.isChain ? "链式 · 2 跳" : node.kind)+(current ? " · 当前" : "")).font(.system(size:12,weight:.semibold)); Spacer(); Text(invalid ? "节点失效" : latency?.text ?? "未测速").font(.system(size:11,weight:.semibold)).foregroundStyle(Palette.color(tone)).padding(.horizontal,8).padding(.vertical,5).background(Palette.color(tone+"Bg"),in:RoundedRectangle(cornerRadius:7)).help("通过节点访问 HTTPS 测试地址；超时上限 8 秒。颜色仅供比较延迟。") }
+            HStack { Text((node.isChain ? "链式 · 2 跳" : node.kind)+(current ? " · 当前" : "")).font(.system(size:12,weight:.semibold)); Spacer(); Text(invalid ? "节点失效" : latency?.text ?? "未测速").font(.system(size:11,weight:.semibold)).foregroundStyle(Palette.color(tone)).padding(.horizontal,8).padding(.vertical,5).background(Palette.color(tone+"Bg"),in:RoundedRectangle(cornerRadius:7)).help("通过节点访问 HTTPS 测试地址；快速测速等待上限 3 秒，超时可重试。颜色仅供比较延迟。") }
         }.frame(maxWidth:.infinity,minHeight:70,maxHeight:70,alignment:.leading).padding(10).foregroundStyle(Palette.color("Ink")).background(Palette.color(current ? "AccentSubtle" : "Surface"),in:RoundedRectangle(cornerRadius:12)).overlay(RoundedRectangle(cornerRadius:12).stroke(Palette.color(current ? "Accent" : "Line"),lineWidth:1))
     }
 }
