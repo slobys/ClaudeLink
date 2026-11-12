@@ -195,6 +195,8 @@ Mac 验证来源为补齐路径／来源完整 help 的代码提交 `d339fed856c
 
 1.4.0 的局部扩展在同一三行卡片中加入 HTTP 延迟，未改变全局颜色、字体、标志或密度。核对源码为 `MainWindow.Nodes.cs`、`MainWindow.Latency.cs`、`MainWindow.xaml` 的节点页、`NodeCatalog.swift` 与 `Latency.swift`。Windows 原生自绘证据位于 `.impeccable/review/latency-windows/`：`nodes-latency.png`、`nodes-latency-running.png`、`nodes-user-width.png`、`nodes-small.png`、`nodes-empty.png`，分别覆盖延迟状态、取消与禁用、用户宽度四列、窄窗重排及空结果；独立 finish review 为 ship，无 material 项。Mac 最终来源为补充动态可访问值的代码提交 `33d32a0`；两架构原生 CI `43233056492` 均成功，各含 57 项原生、7 项延迟、14 项后台、1 项退出检查及 22 张实际 PNG。`.impeccable/review/latency-macos/` 中的 `节点管理.png`、`nodes-latency.png`、`nodes-latency-running.png`、`nodes-small.png`、`nodes-empty.png` 已由该 CI 的最终原生自绘图覆盖并逐一确认有效。独立 Mac finish review 原唯一 material 项为自定义可访问名称遗漏选择与延迟信息；最终 verdict 将动态 `accessibilityValue` 修复评为 resolved，remaining 为 clear，disposition 为 ship。该 verdict 仅覆盖原修复项，不扩大为重新整页无问题认证或用户 Mac 真实 VoiceOver 验收。所有示例均不证明用户真实节点、账户、Mac 实机路由或授权已验证。
 
+1.4.1 是对上述节点流程的局部性能修复：将短超时、有界并发和结果批量回显落实到既有原生界面，颜色、字级、卡片密度与动态可访问值保持不变。Windows 本机完整验证含 57 项核心、16 份官方配置、94 项集成、17 项 UI 与 7 项安装检查；CI `43238417845` 成功。`.impeccable/review/1.4.1/windows/` 中的延迟、运行中、用户宽度、窄窗和空结果图用于核对布局、结果和取消入口；卡片对象复用与选择保持由增量交互断言验证，独立 finish review 为 ship，无 material 项。Mac 两架构 CI `43238417795` 均成功，其中 Apple 芯片证据含 58 项原生、10 项延迟、14 项后台、1 项退出检查及 22 张原生视图；`.impeccable/review/1.4.1/macos/` 的对应五张图用于核对同一界面流程，独立 Mac finish review 完整结论为 ship，无 material 项。24 条唯一模拟线路（一半正常、一半等待超时）的 Windows 网络参数隔离复测为 25.038 秒→3.962 秒，约 6.32 倍；Apple 芯片的同类隔离参数对比为约 5.64 倍。两者分开记录，不把 Windows 比值推广到 Mac 或用户节点。这不是用户真实节点测速、旧版完整界面耗时或帧率实测，不能据此证明真实 Mac、账户或 VoiceOver 已验收。
+
 ## Colors
 
 色板以清晰的操作蓝和冷中性色为底，绿色、琥珀色、红色与信息蓝只传达具体结果或反馈。设计面板 sidecar 中的 tonalRamp 为这些色值派生的八级展示色带，不属于运行时颜色令牌；产品仅使用前置颜色表中的规范色值。
@@ -331,7 +333,9 @@ Mac `NodeChoice` 的可访问名称提供节点名称、地区与协议，动态
 
 延迟排序提供原始顺序、低到高、高到低三种选择。两种延迟排序均将有效毫秒值放在前面，未测、失败等无数值状态放在后面；相同值保持原先相对顺序。排序不能修改当前节点 ID。结果仅缓存在本次应用进程；节点或链路任一跳的连接配置变化后，旧结果不再展示为有效测速。
 
-测试经独立、非管理员内核访问 `https://www.gstatic.com/generate_204`，每请求等待上限 8 秒、最多同时 4 个请求。界面称为 HTTP 延迟，不将其包装为下载带宽、Claude 登录测试或账户安全评估。两端原生控件和进度位置保持各自实现，不把文档预览的网页控件当成产品运行层。
+测试经独立、非管理员内核访问 `https://www.gstatic.com/generate_204`，快速测速每请求等待上限 3 秒，最多同时测试 12 条不同线路。完整线路配置完全相同的节点共享本次新测试，仍保留每个节点的独立身份、缓存校验和结果；不以旧缓存冒充新测。超时只表示本轮 3 秒内未及时返回，可重试，不直接断言节点永久不可用。界面称为 HTTP 端到端延迟，不将其包装为裸 TCP／ping、下载带宽、Claude 登录测试或账户安全评估。两端原生控件和进度位置保持各自实现，不把文档预览的网页控件当成产品运行层。
+
+网络回调先收集结果，按 100 ms 批次回显，不能让网络工作线程同步等待整表重绘。Windows 通过 `INotifyPropertyChanged` 更新既有卡片，只在需要排序时使用 `ObservableCollection.Move` 移动条目，保持集合、行对象与当前选择；Mac 的每主机连接上限同步为 12，收集后批量发布。完成或取消前最后清空待回显结果，保留已完成项及动态可访问结果值，不因提速丢失结果或取消入口。
 
 ### Two-hop chain editor
 
@@ -375,6 +379,7 @@ Windows 日志使用只读 RichTextBox／FlowDocument，内边距 18；Mac 使�
 - **Do** 在节点筛选区常驻名称推断地区及测速边界的说明，同时保留延迟数值／状态文字、独立选择图形和空结果引导。
 - **Do** 让节点网格按 190 宽度预算保持最多四列，以 8 间距、10 内边距、70 内容高度和 14／Semibold 名称提高密度，按三行同时保留旗帜、地区、来源或路径、协议、状态和完整内容提示。
 - **Do** 在测速期间保留取消和进度，将无数值结果排在有效延迟后面，排序后保持当前选择。
+- **Do** 以有界并发、短超时及 100 ms 批量回显改善测速等待，复用已有卡片并在完成／取消时清空待回显结果。
 - **Do** 在链路编辑与工作台显示本机、入口、最终出口、目标网站的顺序，并将校验错误留在表单内。
 
 ### Don't:
