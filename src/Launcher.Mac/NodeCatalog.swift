@@ -42,13 +42,26 @@ struct NodeCatalog:View {
     private var tiles:some View {
         LazyVGrid(columns:[GridItem(.adaptive(minimum:230,maximum:370),spacing:12)],alignment:.leading,spacing:12) {
                 ForEach(filtered) { node in
-                    Button { model.selectNode(node) } label: { NodeTile(node:node,model:model) }.buttonStyle(.plain).disabled(model.busy || model.connected)
-                        .accessibilityLabel(node.Name+"，"+(NodeRegion.resolve(node,model.settings.Nodes)?.Name ?? "未识别地区")+"，"+node.kind)
+                    NodeChoice(node:node,model:model)
                 }
         }
     }
     private var footer:some View {
         HStack { Text("显示 \(filtered.count) / \(model.settings.Nodes.count) · \(model.settings.Nodes.filter{$0.isChain}.count) 条链路"); Spacer(); Text("点击卡片选择，切换前请先断开。") }.font(.system(size:12)).foregroundStyle(Palette.color("Muted"))
+    }
+}
+private struct NodeChoice:View {
+    var node:ProxyNode
+    @ObservedObject var model:AppState
+    private var label:String {
+        let region=NodeRegion.resolve(node,model.settings.Nodes)?.Name ?? "未识别地区"
+        return "\(node.Name)，\(region)，\(node.kind)"
+    }
+    var body:some View {
+        Button { model.selectNode(node) } label: { NodeTile(node:node,model:model) }
+            .buttonStyle(.plain)
+            .disabled(model.busy || model.connected)
+            .accessibilityLabel(Text(label))
     }
 }
 private struct NodeTile:View {
