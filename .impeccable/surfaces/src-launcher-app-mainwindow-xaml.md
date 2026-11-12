@@ -23,3 +23,17 @@ User-pinned override: restore the original charcoal #202C2D, coral #E49B7D and c
 Replace application-owned Windows MessageBox prompts and the Mac launch alert with the existing white/slate/blue control language. Launch confirmation separates API transport, unverified checks and the decision. Default to returning to checks, preserve the report on both decisions, and keep action buttons available with long content.
 
 Fresh installations preselect TUN, strict network checks, temporary IPv6-off and timezone matching, en-US and Chrome-first auto selection. Preserve existing explicit preferences and personal data. Only a user-initiated authorized connection applies system changes. The web probe and browser check target https://claude.ai/login; HTTP 403 is an automated-probe result, not proof of browser failure or account suspension.
+
+## 1.3.0 scoped extension
+
+THESIS: Make node choice easier through the user's NaiLink-style country cards and an explicit two-hop chain for a user-supplied final exit. This remains an Operate extension of the existing desktop surface, not a replacement visual world.
+
+OWN-WORLD: Preserve white/slate/blue controls and the charcoal/coral/cream mark. Use bundled country flags; native WPF geometry and macOS SF Symbols carry selection and unknown-region icons. Status includes text as well as color.
+
+STORY: Find a node through search, region or group; select its card. For a chain, add both nodes, choose entry and final exit, review local → entry → final exit → destination, save and use it from the workbench. Missing hops remain invalid; never silently substitute another exit or bypass a failed entry.
+
+FIRST VIEWPORT: Actions, search and region/group filters lead into a responsive card grid. Cards show a flag, name, protocol and source or path. A visible note says that regions come from names, not measured exit locations. One click selects; the Windows double-click also opens the workbench.
+
+FORM: Repeated information cards are explicitly pinned by the user's NaiLink reference. The chain editor protects route selection with two named pickers, a neutral initial name, visible direction, inline errors and explicit save/cancel. Two hops only; HTTP exits carry TCP traffic. No independent QUALITY BAR card or approved comp was created for this precisely specified local extension.
+
+FINISH: Review wide/small node views, no-match state, valid and invalid chain editor and workbench on both native platforms. Render native view content without screen capture. Record test boundaries separately from real user TUN, residential-IP and account validation; finish with independent review and scoped documentation.

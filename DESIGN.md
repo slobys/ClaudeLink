@@ -109,6 +109,21 @@ components:
     textColor: '{colors.Ink}'
     rounded: '{rounded.card}'
     padding: '{spacing.card-inset}'
+  node-card:
+    backgroundColor: '{colors.Surface}'
+    textColor: '{colors.Ink}'
+    rounded: '{rounded.card}'
+    padding: 16px
+  node-card-selected:
+    backgroundColor: '{colors.AccentSubtle}'
+    textColor: '{colors.Ink}'
+    rounded: '{rounded.card}'
+    padding: 16px
+  chain-route:
+    backgroundColor: '{colors.AccentSubtle}'
+    textColor: '{colors.Ink}'
+    rounded: '{rounded.dialog-tone}'
+    padding: 14px
   result-success:
     backgroundColor: '{colors.SuccessBg}'
     textColor: '{colors.Success}'
@@ -166,6 +181,8 @@ components:
 证据范围：已核对 `src/Launcher.App/App.xaml`、`Theme/Colors.xaml`、`MainWindow.xaml`、`NodeDialog.xaml` 及状态／日志绑定，和 `src/Launcher.Mac/Views.swift`、`Models.swift`、`App.swift`。渲染抽样包括 `.impeccable/review/checks.png`、`logs.png`、`macos-arm64/工作台.png`、`macos-arm64/subscription-editor-empty.png` 与 `macos-x64/checks.png`；完整原生审查图位于同一 review 目录。未使用 HTML 检测器；原生截图审查不构成键盘全流程或用户 Mac 真实路由验证。
 
 1.2.1 扩展另核对 `design/brand.svg`、`BrandAssets.cs`、`AppDialog.xaml`／`.xaml.cs`、`LaunchConfirmationView.swift` 及图标导出脚本；对应证据为 `.impeccable/review/1.2.1/windows/` 中的 `brand-scales.png`、`launch-confirmation.png`、`launch-confirmation-long.png`、`notice-error.png`、`dashboard.png`、`settings-presets.png`，和 `macos-arm64/` 中的启动确认普通／长内容截图与 `环境设置.png`。这些图用于核对外观与内容边界，不证明真实账号、Mac 键盘全流程或 TUN 已获授权并验证。
+
+1.3.0 局部扩展核对 `MainWindow.xaml`、`MainWindow.Nodes.cs`、`ChainDialog.xaml`／`.xaml.cs`、`NodeCatalog.swift` 和 `NodePresentation.swift`。同一应用提交 `974d2ac` 的 Windows 原生自绘证据为 `.impeccable/review/1.3.0/windows/` 下的 `nodes.png`、`nodes-small.png`、`nodes-empty.png`、`chain-editor.png`、`chain-editor-error.png` 与 `dashboard.png`；Mac 对应图为 `macos-x64/` 下的 `节点管理.png`、`nodes-small.png`、`nodes-empty.png`、`chain-editor.png`、`chain-editor-error.png` 与 `工作台.png`，`macos-arm64/` 同样保留完整证据。所有节点均为示例，原生内容由应用自身绘制，未启用屏幕捕获；Windows 与两种 Mac 架构的原生 CI 已通过。隔离夹具另验证双跳 HTTP 及入口失效不旁路，不能据此推断真实用户 TUN、出口住宅属性、账户授权或键盘全流程已验收。
 
 ## Colors
 
@@ -239,7 +256,9 @@ components:
 
 窗口缩小时保留侧栏与内容阅读顺序，长表单及检查结果纵向滚动。WPF 操作组使用 WrapPanel 按可用宽度换行，表格采用弹性列宽；Mac 在声明的最小宽度内保留 HStack 操作组，不虚构移动布局。Mac 自身截图中 1280 × 850 与最小尺寸的证据分别保存在 review 架构目录。
 
-表单标签、控件与辅助说明保持相邻，间距使用已出现的 6／8／10／12；组之间使用 16／20，卡片统一使用 22。日志从容器顶部开始，较早记录在上，新记录追加在下；新记录到达时可滚动到尾部，不倒置时间顺序。
+节点页按操作、搜索及地区／分组筛选、常驻地区说明、卡片网格、数量与选择提示的阅读顺序排列。Windows 网格使用 ListBox／WrapPanel，按可用宽度约每 250 个逻辑单位计算列数并均分卡片宽度；Mac 使用 LazyVGrid 的自适应列（最小 230、最大 370）。卡片间距为 12、内边距为 16，内部内容高度为 112；缩小窗口减少列数，保持纵向浏览。
+
+表单标签、控件与辅助说明保持相邻，间距使用已出现的 6／8／10／12；组之间使用 16／20，普通任务卡片使用 22。日志从容器顶部开始，较早记录在上，新记录追加在下；新记录到达时可滚动到尾部，不倒置时间顺序。
 
 ## Elevation & Depth
 
@@ -279,7 +298,25 @@ Mac 使用原生 roundedBorder TextField、Picker、Toggle 与 TextEditor。Inpu
 
 ### Cards / Lists
 
-普通 Card 为 Surface、Line 细边界、圆角 12、内边距 22。状态摘要卡可减少内边距，保持相同材料。Windows 节点／订阅使用原生只读 DataGrid：行高 48、全行单选、无网格线、SurfaceAlt 表头与交替行、AccentSubtle 选中行。Mac 使用卡片内的横向记录和 Divider，保留原生行内按钮。没有记录时显示文字引导，不展示假的节点或成功统计。
+普通 Card 为 Surface、Line 细边界、圆角 12、内边距 22。状态摘要卡可减少内边距，保持相同材料。Windows 订阅仍使用原生只读 DataGrid：行高 48、全行单选、无网格线、SurfaceAlt 表头与交替行、AccentSubtle 选中行。Mac 订阅使用卡片内的横向记录和 Divider，保留原生行内按钮。节点管理使用下述地区卡片；没有记录时显示文字引导，不展示假的节点或成功统计。
+
+### Node region cards
+
+节点卡片是用户 NaiLink 参考所指定的局部信息组织：左上为地区国旗或未知地区图形，标题为节点名称，随后显示地区、来源分组或链路路径，底部为协议及状态。名称采用 15／Semibold，地区和来源为 12，状态为 11／Semibold；长名称与路径单行截断，保留代码中已有的原生提示。链路显示“链式 · 2 跳”，地区按最终出口节点的名称推断。
+
+卡片保留三态文字：“待连接”使用 Pending／PendingBg，“当前选择”使用 Accent／AccentSubtle，“节点失效”使用 Error／ErrorBg，失效状态优先于选择状态。选中卡片使用 AccentSubtle 工作面与 Accent 边界；选中表示保存的节点选择，不表示连接或检查通过。WPF 以圆环和勾选 Path 表达选择，未知地区用椭圆及地球经纬线几何；Mac 使用 circle、checkmark.circle.fill 和 globe SF Symbols。图形与状态文字配合，不用文字字符充当选择图标。WPF 悬停使用 SurfaceAlt 与 Accent 边界，键盘焦点边界增为 2；Mac 保留原生按钮焦点行为。
+
+搜索名称、地区、协议或分组，并与地区及分组筛选组合使用。筛选区下方常驻“地区按节点名称识别，非实测出口；实际出口以连接检测为准。”，不能仅放进悬停提示。底部显示已显示／总数及链路数，空库与无匹配节点使用不同引导；Mac 在有筛选时另提供“清空筛选”。单击卡片保存当前选择并清除旧检测报告；Windows 双击或“前往工作台”另进入工作台。连接中的会话先断开再切换，不能把选择动作解释成立即连接。
+
+42 个内置国旗为未经修改的 Twemoji v15.1.0 PNG，地区名称映射取自 NaiLink 的名称提示规则；来源与许可见 `docs/THIRD-PARTY-NOTICES.md`、`vendor/Twemoji-LICENSE.txt` 和 `vendor/NaiLink-LICENSE.txt`。这些素材不是 AI 生成图，名称映射不构成地理位置或住宅 IP 检测。
+
+### Two-hop chain editor
+
+两端沿用白色表单、Ink 标签、Muted 辅助说明和蓝色保存按钮。链路名称初始为中性的“新建双跳链路”；“入口节点”和“最终出口”为分别命名的原生选择器，下方浅蓝路径块按“本机 → 入口节点 → 最终出口 → 目标网站”显示方向，工作台也显示已选链路的完整方向。Windows 对话框宽 650，Mac sheet 内容宽 600；两端内边距为 28，路径块内边距 14、圆角 10。路径指明用户所选的节点，不为它们背书住宅属性。
+
+仅保存两个有效且不同的普通节点，拒绝缺失、重复或嵌套链路；缺少任一跳时保持无效，不替换出口或绕过失败入口。保存失败在表单内使用 Error 文字说明，保留输入与取消入口。Windows 取消为默认／取消动作，Mac 保存为默认动作、取消为 Escape；不把两端原生键盘分配写成统一行为。HTTP 出口用于网页和 API 等 TCP 流量；UDP 需要节点额外支持，该限制常驻路径下方。
+
+链路保存为节点记录，其 `ChainNodeIds` 按入口、最终出口顺序引用已有节点 ID；`SelectedNodeId` 保存所选链路 ID，沿用 Windows 用户加密与 Mac Keychain 支持的本机设置存储。链路不复制入口或出口凭据。保存成功选中该链路并清空搜索、地区及分组筛选；筛选是当前界面状态，不承诺跨重启持久化。
 
 ### Check rows / Status badges
 
@@ -299,7 +336,7 @@ Mac 的 `LaunchConfirmationView` 使用原生 sheet，宽 620、内边距 26，�
 
 Windows 日志使用只读 RichTextBox／FlowDocument，内边距 18；Mac 使用 ScrollView／LazyVStack，内边距 20。两者均保留时间、级别和正文，长文字自然折行，支持选择；信息日志正文用 Ink，成功、注意和错误正文使用各自语义前景。Mac 级别 Label 额外带 SF Symbols，Windows 级别是文字。
 
-`.impeccable/design.json` 的 HTML/CSS 仅供设计面板隔离预览：提取 WPF 的主要／次要按钮、输入、导航、卡片、检查行、日志、原始矢量标志与启动确认材料。预览不作为产品实现或原生交互验收，不能用浏览器预览替代 WPF／SwiftUI 截图或原生操作测试。
+`.impeccable/design.json` 的 HTML/CSS 仅供设计面板隔离预览：提取 WPF 的主要／次要按钮、输入、导航、卡片、检查行、日志、原始矢量标志、启动确认、节点卡片与双跳编辑材料。节点预览使用未知地区的内联地球图形，不替代产品内置国旗。预览不作为产品实现或原生交互验收，不能用浏览器预览替代 WPF／SwiftUI 截图或原生操作测试。
 
 ## Do's and Don'ts
 
@@ -312,6 +349,8 @@ Windows 日志使用只读 RichTextBox／FlowDocument，内边距 18；Mac 使�
 - **Do** 保留原生焦点反馈、可访问名称、禁用状态及系统授权流程。
 - **Do** 从 design/brand.svg 派生标志资源，保持暖色身份资产与操作蓝的边界。
 - **Do** 在启动确认中分开呈现 API 传输结果、待核对项目和用户决定，并让返回检查与继续启动在长内容下仍可见。
+- **Do** 在节点筛选区常驻名称推断地区的说明，同时保留三态文字、原生选择图形和空结果引导。
+- **Do** 在链路编辑与工作台显示本机、入口、最终出口、目标网站的顺序，并将校验错误留在表单内。
 
 ### Don't:
 
@@ -321,5 +360,7 @@ Windows 日志使用只读 RichTextBox／FlowDocument，内边距 18；Mac 使�
 - **Don't** 以网页样式替换 macOS 原生控件，也不要把 WPF 控件高度套用到 Mac。
 - **Don't** 为操作界面新增装饰字体、大面积渐变、卡片阴影或与结果无关的状态颜色。
 - **Don't** 把界面示例截图当作用户网络、登录、键盘操作或管理员授权已经验证的证据。
+- **Don't** 把国旗、名称推断地区或“当前选择”当成实测出口、住宅 IP 或连接成功。
+- **Don't** 在链路缺失或入口失败时替换出口、旁路直连，或把 HTTP 出口描述为已验证支持 UDP。
 
 未提升为系统规则的遗留项：Windows 标志下的 `NETWORK LAUNCHER` 小号英文眉题仅记录为本版残留排法，不推广成新页面的标题模式；未消费的 AccentHover 不作为交互规范。此次仅文档化，未修改这些产品代码。
