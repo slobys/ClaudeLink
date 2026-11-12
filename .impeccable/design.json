@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-12T01:43:18Z",
+  "generatedAt": "2026-11-12T03:09:34Z",
   "title": "Design System: Claude Link",
   "extensions": {
     "colorMeta": {
@@ -288,6 +288,51 @@
           "oklch(0.860 0.0023 258.32)",
           "oklch(0.950 0.0008 258.32)"
         ]
+      },
+      "BrandCharcoal": {
+        "role": "neutral",
+        "displayName": "标志深炭",
+        "canonical": "#202C2D",
+        "tonalRamp": [
+          "oklch(0.150 0.0041 202.60)",
+          "oklch(0.260 0.0091 202.60)",
+          "oklch(0.380 0.0132 202.60)",
+          "oklch(0.500 0.0165 202.60)",
+          "oklch(0.620 0.0165 202.60)",
+          "oklch(0.740 0.0132 202.60)",
+          "oklch(0.860 0.0082 202.60)",
+          "oklch(0.950 0.0030 202.60)"
+        ]
+      },
+      "BrandCoral": {
+        "role": "secondary",
+        "displayName": "标志珊瑚",
+        "canonical": "#E49B7D",
+        "tonalRamp": [
+          "oklch(0.150 0.0244 43.15)",
+          "oklch(0.260 0.0536 43.15)",
+          "oklch(0.380 0.0780 43.15)",
+          "oklch(0.500 0.0975 43.15)",
+          "oklch(0.620 0.0975 43.15)",
+          "oklch(0.740 0.0780 43.15)",
+          "oklch(0.860 0.0487 43.15)",
+          "oklch(0.950 0.0175 43.15)"
+        ]
+      },
+      "BrandCream": {
+        "role": "neutral",
+        "displayName": "标志米白",
+        "canonical": "#F4EBDF",
+        "tonalRamp": [
+          "oklch(0.150 0.0047 75.32)",
+          "oklch(0.260 0.0103 75.32)",
+          "oklch(0.380 0.0150 75.32)",
+          "oklch(0.500 0.0187 75.32)",
+          "oklch(0.620 0.0187 75.32)",
+          "oklch(0.740 0.0150 75.32)",
+          "oklch(0.860 0.0094 75.32)",
+          "oklch(0.950 0.0034 75.32)"
+        ]
       }
     },
     "typographyMeta": {
@@ -428,18 +473,40 @@
       "description": "16 单位日志正文的文档预览。产品使用 RichTextBox 或 LazyVStack，按时间追加；不由此代码实现。",
       "html": "<div class=\"ds-logs\"><p><time>08:49:10</time><b>信息</b><span>启动器已就绪。</span></p><p class=\"ds-log-success\"><time>08:49:11</time><b>完成</b><span>已停止代理并恢复临时环境。</span></p></div>",
       "css": ".ds-logs {font-family:\"Segoe UI\",\"Microsoft YaHei UI\",system-ui;padding:18px;border:1px solid #D8E1EC;border-radius:12px;background:#FFFFFF;color:#18283D;font-size:16px;line-height:26px;} .ds-logs p {display:flex;gap:14px;margin:0 0 9px;align-items:flex-start;} .ds-logs time {font-family:Consolas,monospace;color:#5C6D82;} .ds-logs b {color:#175CD3;font-weight:600;} .ds-logs .ds-log-success b,.ds-logs .ds-log-success span {color:#067647;}"
+    },
+    {
+      "name": "应用标志",
+      "kind": "custom",
+      "refersTo": "brand-mark",
+      "description": "直接内联 design/brand.svg 的原始几何与三色，仅作身份资产预览。WPF 侧栏使用冻结 DrawingImage；系统图标由原生渲染器以 4 倍超采样导出，Mac ICNS 从 PNG 派生。",
+      "html": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" width=\"42\" height=\"42\" class=\"ds-brand-mark\" role=\"img\" aria-label=\"Claude Link\">\n  <title>Claude Link</title>\n  <desc>Original code-drawn mark; legacy coral, cream and charcoal palette restored. Source geometry for native UI and installer icons.</desc>\n  <rect x=\"7\" y=\"7\" width=\"242\" height=\"242\" rx=\"55\" fill=\"#202C2D\"/>\n  <path d=\"M160 181 A63.5 66 0 1 1 158 72\" fill=\"none\" stroke=\"#E49B7D\" stroke-width=\"24\"/>\n  <path d=\"M154 53 H210 V109 H192 V84 L131 146 L117 132 L178 71 H154 Z\" fill=\"#F4EBDF\"/>\n</svg>",
+      "css": ".ds-brand-mark {display:inline-block;width:42px;height:42px;vertical-align:middle;}"
+    },
+    {
+      "name": "启动确认",
+      "kind": "custom",
+      "refersTo": "dialog",
+      "description": "AppDialog 的材料与内容层级预览：API 传输、未验证项目与用户决定分开，长内容滚动且底栏可见。原生默认动作为返回检查；Mac 使用 LaunchConfirmationView sheet。本预览不验证原生键盘、账户或网络。",
+      "html": "<section class=\"ds-launch\" role=\"dialog\" aria-label=\"确认启动 Claude\"><header class=\"ds-launch-header\"><span class=\"ds-launch-tone\"><svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><path d=\"M10 2L19 18H1Z M10 7v4 M10 14v.5\"/></svg></span><div><h2>确认启动 Claude</h2><p>部分网络检查需要核对，请确认后再打开应用。</p></div></header><div class=\"ds-launch-body\"><div class=\"ds-launch-api\"><strong>API HTTPS 可达 · HTTP 401</strong><small>此项仅表示网络连通性，尚未验证账户授权。</small></div><p>以下项目未通过或尚未验证：</p><div class=\"ds-launch-issue\"><svg viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M8 1L15 14H1Z M8 5v4 M8 11v1\"/></svg><span>Claude 登录页自动探测返回 HTTP 403（需浏览器确认）</span></div><small class=\"ds-launch-note\">继续启动不会改变检测结论；这些检查不判断账号封禁风险。</small></div><footer class=\"ds-launch-footer\"><button class=\"ds-launch-back\">返回检查</button><button class=\"ds-launch-confirm\">仍要启动</button></footer></section>",
+      "css": ".ds-launch {font-family:\"Segoe UI\",\"Microsoft YaHei UI\",system-ui;width:600px;max-width:100%;background:#FFFFFF;color:#18283D;font-size:14px;} .ds-launch-header {display:flex;align-items:flex-start;gap:16px;padding:24px 26px 18px;} .ds-launch-tone {display:grid;place-items:center;width:42px;height:42px;flex-shrink:0;background:#FFFAEB;border-radius:10px;} .ds-launch-tone svg {width:22px;height:22px;fill:none;stroke:#92400E;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;} .ds-launch-header h2 {font-size:21px;font-weight:600;margin:0;} .ds-launch-header p {font-size:14px;line-height:22px;color:#5C6D82;margin:8px 0 0;} .ds-launch-body {max-height:360px;overflow-y:auto;padding:0 26px 24px;} .ds-launch-api {background:#ECFDF3;border-radius:8px;padding:12px 14px;margin-bottom:16px;} .ds-launch-api strong {color:#067647;font-weight:600;} .ds-launch-api small {display:block;color:#5C6D82;font-size:12px;margin-top:5px;} .ds-launch-body p {line-height:23px;} .ds-launch-issue {display:flex;gap:7px;align-items:flex-start;padding:10px 12px;margin:10px 0 3px;background:#FFFAEB;color:#92400E;border-radius:8px;line-height:22px;} .ds-launch-issue svg {width:13px;height:13px;flex-shrink:0;margin-top:4px;fill:none;stroke:#92400E;stroke-width:1.4;stroke-linejoin:round;} .ds-launch-note {display:block;color:#5C6D82;font-size:12px;margin-top:12px;} .ds-launch-footer {display:flex;flex-wrap:wrap;justify-content:flex-end;gap:12px;padding:17px 26px;background:#F8FAFC;border-top:1px solid #D8E1EC;} .ds-launch-footer button {font:inherit;min-width:112px;min-height:40px;padding:10px 16px;border:1px solid #D8E1EC;border-radius:8px;background:#F8FAFC;color:#18283D;} .ds-launch-footer .ds-launch-confirm {background:#2563EB;color:#FFFFFF;border-color:#2563EB;font-weight:600;} .ds-launch-footer button:hover {opacity:.82;} .ds-launch-footer button:active {opacity:.68;} .ds-launch-footer button:focus-visible {outline:2px solid #2563EB;outline-offset:2px;} .ds-launch-footer button:disabled {opacity:.42;}"
     }
   ],
   "narrative": {
     "northStar": "可读的原生网络工作台",
-    "overview": "界面以白色侧栏和白色工作面承载操作，浅冷灰蓝色背景区分区域，石板色文字建立阅读层级，蓝色标出当前导航与主要行动。密度服务于节点配置、连接检查和恢复操作，沿用桌面系统控件的交互习惯。\n\n两端共享颜色含义、卡片材料与中文状态语言，分别采用 WPF 与 SwiftUI 实现。系统字体、窗口外壳、选择器、菜单、焦点反馈和授权窗口遵循所在操作系统；统一的是视觉语义，而非强行复制控件像素。",
+    "overview": "界面以白色侧栏和白色工作面承载操作，浅冷灰蓝色背景区分区域，石板色文字建立阅读层级，蓝色标出当前导航与主要行动。密度服务于节点配置、连接检查和恢复操作，沿用桌面系统控件的交互习惯。\n\n两端共享颜色含义、卡片材料与中文状态语言，分别采用 WPF 与 SwiftUI 实现。系统字体、窗口外壳、选择器、菜单、焦点反馈和授权窗口遵循所在操作系统；统一的是视觉语义，而非强行复制控件像素。\n\n应用标志保留用户指定的深炭、珊瑚与米白三色，作为独立身份资产；操作蓝继续承担界面行动。启动确认与应用自有提示沿用白色工作面、石板文字和语义色，将检测事实与继续启动的决定分别呈现。",
     "keyCharacteristics": [
       "白色工作面、轻边界与蓝色操作重心。",
       "结果通过颜色、文字和图形共同表达，未知状态保留灰色。",
       "运行记录正文保持 16 个逻辑单位，按时间从上到下排列。",
-      "共享令牌与平台原生控件共同组成系统。"
+      "共享令牌与平台原生控件共同组成系统。",
+      "暖色标志保持独立，主题对话框延续工作台的阅读与操作层级。"
     ],
     "rules": [
+      {
+        "name": "标志边界",
+        "body": "标志沿用 `design/brand.svg` 的三色与几何；操作与结果继续使用既有共享颜色键。",
+        "section": "colors"
+      },
       {
         "name": "独立证据",
         "body": "代理已启动、API HTTPS 可达、网页检查与账户授权分别显示。一个检查通过不替代其他检查，未知结果使用 Pending。",
@@ -461,10 +528,13 @@
       "Do 在检查行同时保留状态文字、矢量图形和对应的前景／浅底色。",
       "Do 在断开或恢复后清除旧检测结果与旧结果颜色，重新显示灰色待检测。",
       "Do 保持日志正文大小与从上到下的时间顺序，允许复制文字和纵向滚动。",
-      "Do 保留原生焦点反馈、可访问名称、禁用状态及系统授权流程。"
+      "Do 保留原生焦点反馈、可访问名称、禁用状态及系统授权流程。",
+      "Do 从 design/brand.svg 派生标志资源，保持暖色身份资产与操作蓝的边界。",
+      "Do 在启动确认中分开呈现 API 传输结果、待核对项目和用户决定，并让返回检查与继续启动在长内容下仍可见。"
     ],
     "donts": [
       "Don't 把 API 401、网页 403 或代理启动合并成账户已获授权的结论。",
+      "Don't 从网页自动探测 403 推断浏览器访问失败、账号停用或封禁风险。",
       "Don't 用颜色单独表达检查结果，或用绿色填充尚未验证的结果。",
       "Don't 以网页样式替换 macOS 原生控件，也不要把 WPF 控件高度套用到 Mac。",
       "Don't 为操作界面新增装饰字体、大面积渐变、卡片阴影或与结果无关的状态颜色。",

@@ -21,6 +21,9 @@ colors:
   InfoBg: '#EFF8FF'
   Pending: '#475467'
   PendingBg: '#F2F4F7'
+  BrandCharcoal: '#202C2D'
+  BrandCoral: '#E49B7D'
+  BrandCream: '#F4EBDF'
 typography:
   headline-windows:
     fontFamily: Segoe UI, Microsoft YaHei UI
@@ -70,6 +73,7 @@ rounded:
   control: 8px
   card: 12px
   badge-windows: 14px
+  dialog-tone: 10px
 spacing:
   tight: 6px
   small: 8px
@@ -125,6 +129,16 @@ components:
     backgroundColor: '{colors.PendingBg}'
     textColor: '{colors.Pending}'
     rounded: '{rounded.control}'
+  brand-mark:
+    width: 42px
+    height: 42px
+  dialog:
+    backgroundColor: '{colors.Surface}'
+    textColor: '{colors.Ink}'
+  dialog-tone:
+    rounded: '{rounded.dialog-tone}'
+    width: 42px
+    height: 42px
 ---
 
 # Design System: Claude Link
@@ -137,16 +151,21 @@ components:
 
 两端共享颜色含义、卡片材料与中文状态语言，分别采用 WPF 与 SwiftUI 实现。系统字体、窗口外壳、选择器、菜单、焦点反馈和授权窗口遵循所在操作系统；统一的是视觉语义，而非强行复制控件像素。
 
+应用标志保留用户指定的深炭、珊瑚与米白三色，作为独立身份资产；操作蓝继续承担界面行动。启动确认与应用自有提示沿用白色工作面、石板文字和语义色，将检测事实与继续启动的决定分别呈现。
+
 **Key Characteristics:**
 
 - 白色工作面、轻边界与蓝色操作重心。
 - 结果通过颜色、文字和图形共同表达，未知状态保留灰色。
 - 运行记录正文保持 16 个逻辑单位，按时间从上到下排列。
 - 共享令牌与平台原生控件共同组成系统。
+- 暖色标志保持独立，主题对话框延续工作台的阅读与操作层级。
 
-此文档记录已经构建的原生桌面系统。颜色以 `design/tokens.json` 为运行时来源；本文件前置令牌是用于设计工具的提取快照。WPF 从 `Theme/Colors.xaml` 使用生成资源，Mac 从应用包中的 `tokens.json` 读取相同键。表头中的 `px` 是设计格式的可移植写法：WPF 对应 DIP，SwiftUI 对应 point，不是截图中的物理像素。没有额外的网页运行层。
+此文档记录已经构建的原生桌面系统。界面颜色以 `design/tokens.json` 为运行时来源，Brand 前缀颜色取自 `design/brand.svg`，不加入操作色板；本文件前置令牌是用于设计工具的提取快照。WPF 从 `Theme/Colors.xaml` 使用生成资源，Mac 从应用包中的 `tokens.json` 读取相同键。表头中的 `px` 是设计格式的可移植写法：WPF 对应 DIP，SwiftUI 对应 point，不是截图中的物理像素。没有额外的网页运行层。
 
 证据范围：已核对 `src/Launcher.App/App.xaml`、`Theme/Colors.xaml`、`MainWindow.xaml`、`NodeDialog.xaml` 及状态／日志绑定，和 `src/Launcher.Mac/Views.swift`、`Models.swift`、`App.swift`。渲染抽样包括 `.impeccable/review/checks.png`、`logs.png`、`macos-arm64/工作台.png`、`macos-arm64/subscription-editor-empty.png` 与 `macos-x64/checks.png`；完整原生审查图位于同一 review 目录。未使用 HTML 检测器；原生截图审查不构成键盘全流程或用户 Mac 真实路由验证。
+
+1.2.1 扩展另核对 `design/brand.svg`、`BrandAssets.cs`、`AppDialog.xaml`／`.xaml.cs`、`LaunchConfirmationView.swift` 及图标导出脚本；对应证据为 `.impeccable/review/1.2.1/windows/` 中的 `brand-scales.png`、`launch-confirmation.png`、`launch-confirmation-long.png`、`notice-error.png`、`dashboard.png`、`settings-presets.png`，和 `macos-arm64/` 中的启动确认普通／长内容截图与 `环境设置.png`。这些图用于核对外观与内容边界，不证明真实账号、Mac 键盘全流程或 TUN 已获授权并验证。
 
 ## Colors
 
@@ -156,6 +175,12 @@ components:
 
 - **操作蓝（Accent）**：主要按钮、输入焦点及当前导航；浅蓝选择底（AccentSubtle）用于选中导航、表格行和选择项。
 - **信息蓝（Info / InfoBg）**：信息级别、进行中反馈及更新提示。它说明情况，不暗示检查成功。
+
+### Secondary
+
+- **标志三色（BrandCharcoal / BrandCoral / BrandCream）**：深炭底、珊瑚开口环与米白向上箭头共同构成应用标志。它们只定义身份资产，不替换按钮、导航、成功或注意的语义颜色。
+
+**The 标志边界 Rule.** 标志沿用 `design/brand.svg` 的三色与几何；操作与结果继续使用既有共享颜色键。
 
 ### Neutral
 
@@ -230,7 +255,7 @@ components:
 
 控件边界主要为 1 个逻辑单位。Windows 键盘聚焦按钮边界增为 2；输入、密码框和选择器焦点改为 Accent 边界。图形是 WPF Path 或 OS 提供的 SF Symbols，不使用文字字符代替检查行图标。
 
-应用标志为 `scripts/create_icon.py` 绘制的蓝底白色连线箭头，运行时侧栏显示 42 × 42。`src/Launcher.App/Assets/App.png` 已嵌入程序绘制来源，ICO 与 ICNS 从该标志派生；它是应用身份资产，不扩展成操作图标集。没有经批准的独立栅格界面合成稿。
+应用标志的唯一几何来源为 `design/brand.svg`：深炭圆角底、珊瑚开口环、米白向上箭头。侧栏显示 42 × 42；WPF 由 `BrandAssets.Image` 从内嵌 SVG 读取几何并冻结为 DrawingImage，Mac 显示应用包图标。`scripts/create_icon.ps1` 先构建，再用项目 SDK 启动渲染器 DLL；`BrandAssets.Export` 对每个尺寸以 4 倍超采样渲染并高质量缩小，输出 1024px `App.png` 及 16／24／32／48／64／128／256 七尺寸 `App.ico`。PNG 内含来源元数据；Mac 构建从该 PNG 生成 ICNS。`create_icon.py` 仅是调用 PowerShell 脚本的兼容入口。安装器针对应用及快捷方式发出 `SHChangeNotify` 更新通知。标志不扩展成操作图标集，没有经批准的独立栅格界面合成稿。
 
 ## Components
 
@@ -245,6 +270,8 @@ WPF 悬停时边框容器透明度为 0.82，按下为 0.68，禁用为 0.42；�
 WPF TextBox、PasswordBox 和 ComboBox 使用白底、Ink、Line 边界与圆角 8，普通最小高度 40，文字／选择控件的内边距为横向 12、纵向 9。焦点使用 Accent 边界；TextBox 禁用时框架透明度为 0.5，ComboBox 禁用时框架为 0.5 且文字改为 Muted。保留原生选择、滚动、密码遮蔽和 ComboBox 弹出控件，不把输入框画成静态图片。
 
 Mac 使用原生 roundedBorder TextField、Picker、Toggle 与 TextEditor。InputField 以非交互提示层保证空值提示可读，输入本体具备独立的 accessibilityLabel。空值节点／订阅表单的保存按钮禁用；异步操作和已连接会话根据业务状态禁用不可修改的配置。禁用不借用绿色或红色表达成功或错误。
+
+首次安装的 TUN、严格预检、临时 IPv6-off 与时区匹配以已勾选选项呈现，语言为 en-US，浏览器自动选择并优先 Chrome；已有明确偏好继续显示其保存值。勾选表示会话预设，不是检测通过或系统已经修改；系统变更只随用户发起并完成授权的连接执行。
 
 ### Navigation
 
@@ -262,11 +289,17 @@ Mac 使用原生 roundedBorder TextField、Picker、Toggle 与 TextEditor。Inpu
 
 ### Feedback / Dialogs / Logs
 
-更新与进行中反馈使用 InfoBg；未完成恢复记录使用 WarningBg，给出可见恢复入口。忙碌时呈现进度文字和原生进度条，可取消的检测显示取消操作；错误包含可理解的文字。Windows 节点窗有标题、滚动表单、行内 Error 提示和底部取消／主操作；Mac 使用原生 sheet、alert 与文件选择器。空白保存维持禁用，取消仍保持次要按钮身份。
+更新与进行中反馈使用 InfoBg；未完成恢复记录使用 WarningBg，给出可见恢复入口。忙碌时呈现进度文字和原生进度条，可取消的检测显示取消操作；错误包含可理解的文字。Windows 节点窗有标题、滚动表单、行内 Error 提示和底部取消／主操作；Mac 使用原生 sheet、一般 alert 与文件选择器。空白保存维持禁用，取消仍保持次要按钮身份。
+
+应用自有 Windows 提示与确认使用 `AppDialog`，取代经典 MessageBox。白色窗体宽 600，标题 21／Semibold，语义图形置于 42 × 42、圆角 10 的浅色块中；头部内边距为横向 26／顶部 24。正文纵向滚动区最高 360，底部操作区使用 SurfaceAlt、Line 顶边界与横向 26／纵向 17 的内边距。信息和错误提示保留相应图形与语义色；单按钮提示以“确定”关闭。
+
+启动确认先呈现 API HTTPS 传输结果，再列出未通过或未验证的项目。API 401 可显示网络可达，同时明确尚未验证账户授权；`https://claude.ai/login` 的自动探测 403 使用注意色并提示浏览器核对，不能据此认定浏览器打不开或账号被停用。尾注说明继续启动不改变检测结论，且检查不判断账号封禁风险。底部“返回检查”为次要按钮、默认动作和取消动作，“仍要启动”为蓝色明确选择；两种选择均保留检测报告。
+
+Mac 的 `LaunchConfirmationView` 使用原生 sheet，宽 620、内边距 26，保留同样的标题、API 结果、注意列表和尾注层级；超过三条原因时列表以 280 高度滚动。Return 的默认动作为“返回检查”，Escape 返回检查。两端长内容只滚动内容区，底部操作始终可见；Windows 用独立底栏，Mac 用 Divider 分隔原生按钮组。此处键盘行为来自代码，Mac 尚未完成真实键盘全流程验收。
 
 Windows 日志使用只读 RichTextBox／FlowDocument，内边距 18；Mac 使用 ScrollView／LazyVStack，内边距 20。两者均保留时间、级别和正文，长文字自然折行，支持选择；信息日志正文用 Ink，成功、注意和错误正文使用各自语义前景。Mac 级别 Label 额外带 SF Symbols，Windows 级别是文字。
 
-`.impeccable/design.json` 的 HTML/CSS 仅供设计面板隔离预览：提取 WPF 的主要／次要按钮、输入、导航、卡片、检查行和日志材料。预览不作为产品实现或原生交互验收，不能用浏览器预览替代 WPF／SwiftUI 截图或原生操作测试。
+`.impeccable/design.json` 的 HTML/CSS 仅供设计面板隔离预览：提取 WPF 的主要／次要按钮、输入、导航、卡片、检查行、日志、原始矢量标志与启动确认材料。预览不作为产品实现或原生交互验收，不能用浏览器预览替代 WPF／SwiftUI 截图或原生操作测试。
 
 ## Do's and Don'ts
 
@@ -277,10 +310,13 @@ Windows 日志使用只读 RichTextBox／FlowDocument，内边距 18；Mac 使�
 - **Do** 在断开或恢复后清除旧检测结果与旧结果颜色，重新显示灰色待检测。
 - **Do** 保持日志正文大小与从上到下的时间顺序，允许复制文字和纵向滚动。
 - **Do** 保留原生焦点反馈、可访问名称、禁用状态及系统授权流程。
+- **Do** 从 design/brand.svg 派生标志资源，保持暖色身份资产与操作蓝的边界。
+- **Do** 在启动确认中分开呈现 API 传输结果、待核对项目和用户决定，并让返回检查与继续启动在长内容下仍可见。
 
 ### Don't:
 
 - **Don't** 把 API 401、网页 403 或代理启动合并成账户已获授权的结论。
+- **Don't** 从网页自动探测 403 推断浏览器访问失败、账号停用或封禁风险。
 - **Don't** 用颜色单独表达检查结果，或用绿色填充尚未验证的结果。
 - **Don't** 以网页样式替换 macOS 原生控件，也不要把 WPF 控件高度套用到 Mac。
 - **Don't** 为操作界面新增装饰字体、大面积渐变、卡片阴影或与结果无关的状态颜色。
