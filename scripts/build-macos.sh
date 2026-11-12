@@ -35,6 +35,9 @@ mkdir -p "$APP/Contents/"{MacOS,Resources,Helpers}
 "$DOTNET" publish src/Launcher.Bridge -c Release -r "osx-$ARCH" --self-contained true -o "$APP/Contents/Resources/bridge" --nologo -v minimal
 cp "$TOOLS/sing-box" "$APP/Contents/Resources/sing-box"
 cp design/tokens.json "$APP/Contents/Resources/tokens.json"
+cp design/regions.json "$APP/Contents/Resources/regions.json"
+mkdir -p "$APP/Contents/Resources/Flags"
+cp design/flags/*.png "$APP/Contents/Resources/Flags/"
 cp design/browser-privacy.js "$APP/Contents/Resources/browser-privacy.js"
 mkdir -p "$APP/Contents/Resources/Licenses"
 cp LICENSE vendor/*LICENSE*.txt vendor/dotnet-ThirdPartyNotices.txt docs/THIRD-PARTY-NOTICES.md "$APP/Contents/Resources/Licenses/"
@@ -52,7 +55,7 @@ SWIFT=(xcrun swiftc -swift-version 5 -O -target "$TARGET_ARCH-apple-macos15.0" -
 /usr/bin/codesign --force --sign - "$APP/Contents/Helpers/ClaudeLinkHost"
 HOST_HASH="$(shasum -a 256 "$APP/Contents/Helpers/ClaudeLinkHost" | awk '{print $1}')"
 printf 'enum BuildInfo { static let version = "%s"; static let arch = "%s"; static let coreHash = "%s"; static let hostHash = "%s" }\n' "$VERSION" "$ARCH" "$CORE_HASH" "$HOST_HASH" > "$OUT/BuildInfo.swift"
-FILES=(src/Launcher.Mac/{Models,Utilities,Networking,Session,BrowserPrivacy,Launcher,Updater,SingleInstance,AppState,Views,LaunchConfirmationView,App}.swift)
+FILES=(src/Launcher.Mac/{Models,NodePresentation,Utilities,Networking,Session,BrowserPrivacy,Launcher,Updater,SingleInstance,AppState,Views,NodeCatalog,LaunchConfirmationView,App}.swift)
 "${SWIFT[@]}" "${FILES[@]}" "$OUT/BuildInfo.swift" -o "$APP/Contents/MacOS/ClaudeLink" -framework SwiftUI -framework AppKit -framework Security -framework CryptoKit
 python3 - "$APP" "$VERSION" <<'PY'
 import sys,plistlib,pathlib
@@ -65,7 +68,7 @@ for size in 16 32 128 256 512; do sips -z "$size" "$size" src/Launcher.App/Asset
 iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
 /usr/bin/codesign --force --sign - "$APP"
 /usr/bin/codesign --verify --deep --strict "$APP"
-"${SWIFT[@]}" src/Launcher.Mac/{Models,Utilities,Networking,Session,BrowserPrivacy,Launcher,Updater,SingleInstance,AppState,Tests}.swift "$OUT/BuildInfo.swift" -o "$APP/Contents/MacOS/ClaudeLinkTests" -framework SwiftUI -framework AppKit -framework Security -framework CryptoKit
+"${SWIFT[@]}" src/Launcher.Mac/{Models,NodePresentation,Utilities,Networking,Session,BrowserPrivacy,Launcher,Updater,SingleInstance,AppState,Tests}.swift "$OUT/BuildInfo.swift" -o "$APP/Contents/MacOS/ClaudeLinkTests" -framework SwiftUI -framework AppKit -framework Security -framework CryptoKit
 /usr/bin/codesign --force --sign - "$APP/Contents/MacOS/ClaudeLinkTests"
 "$APP/Contents/MacOS/ClaudeLinkTests" "$OUT/native-results.json"
 # The auxiliary test executable is kept outside the shipping app after the tests.

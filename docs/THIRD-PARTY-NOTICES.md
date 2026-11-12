@@ -13,3 +13,7 @@
 - 用户提供的 v1.3 PowerShell 压缩包：网络与恢复流程的需求依据，原包保留不变。
 
 原创代码以 GPL-3.0-only 发布至 https://github.com/slobys/ClaudeLink ，对应 Source 包提供工程、许可证及内核源码快照。用户原始附件仅保留于本地 reference，不进入公开仓库和发布包。
+# Node region artwork and name hints
+
+- `design/flags/*.png`: unmodified Twemoji v15.1.0 country/region artwork, © Twitter, Inc. and other contributors, licensed under CC BY 4.0. Source: https://github.com/jdecked/twemoji/tree/v15.1.0/assets/72x72 . License: `vendor/Twemoji-LICENSE.txt`.
+- `design/regions.json`: name-hint mapping adapted from NaiLink `apps/web/src/utils/node-region.ts`, MIT licensed. Source: https://github.com/slobys/NaiLink . License and copyright notice: `vendor/NaiLink-LICENSE.txt`. These are name hints, not geolocation results.

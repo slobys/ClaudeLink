@@ -1,0 +1,254 @@
+[
+  {
+    "Code": "HK",
+    "Name": "香港",
+    "Names": "香港|香港特別行政區|Hong[ -]?Kong",
+    "Short": "HK|HKG"
+  },
+  {
+    "Code": "TW",
+    "Name": "台湾",
+    "Names": "台湾|台灣|台北|Taiwan|Taipei",
+    "Short": "TW|TWN"
+  },
+  {
+    "Code": "MO",
+    "Name": "澳门",
+    "Names": "澳门|澳門|Macau|Macao",
+    "Short": "MO|MAC"
+  },
+  {
+    "Code": "CN",
+    "Name": "中国大陆",
+    "Names": "中国|中國|大陆|大陸|China|Mainland",
+    "Short": "CN|CHN"
+  },
+  {
+    "Code": "JP",
+    "Name": "日本",
+    "Names": "日本|东京|東京|大阪|Japan|Tokyo|Osaka",
+    "Short": "JP|JPN"
+  },
+  {
+    "Code": "SG",
+    "Name": "新加坡",
+    "Names": "新加坡|狮城|獅城|Singapore",
+    "Short": "SG|SGP"
+  },
+  {
+    "Code": "US",
+    "Name": "美国",
+    "Names": "美国|美國|洛杉矶|洛杉磯|纽约|紐約|圣何塞|United States|Los Angeles|New York",
+    "Short": "US|USA"
+  },
+  {
+    "Code": "GB",
+    "Name": "英国",
+    "Names": "英国|英國|伦敦|倫敦|United Kingdom|Britain|London",
+    "Short": "GB|GBR|UK"
+  },
+  {
+    "Code": "DE",
+    "Name": "德国",
+    "Names": "德国|德國|法兰克福|法蘭克福|Germany|Frankfurt",
+    "Short": "DE|DEU"
+  },
+  {
+    "Code": "FR",
+    "Name": "法国",
+    "Names": "法国|法國|巴黎|France|Paris",
+    "Short": "FR|FRA"
+  },
+  {
+    "Code": "KR",
+    "Name": "韩国",
+    "Names": "韩国|韓國|首尔|首爾|South Korea|Korea|Seoul",
+    "Short": "KR|KOR"
+  },
+  {
+    "Code": "CA",
+    "Name": "加拿大",
+    "Names": "加拿大|多伦多|多倫多|温哥华|溫哥華|Canada|Toronto|Vancouver",
+    "Short": "CA|CAN"
+  },
+  {
+    "Code": "AU",
+    "Name": "澳大利亚",
+    "Names": "澳大利亚|澳大利亞|澳洲|悉尼|雪梨|Australia|Sydney",
+    "Short": "AU|AUS"
+  },
+  {
+    "Code": "NZ",
+    "Name": "新西兰",
+    "Names": "新西兰|新西蘭|纽西兰|紐西蘭|New Zealand",
+    "Short": "NZ|NZL"
+  },
+  {
+    "Code": "RU",
+    "Name": "俄罗斯",
+    "Names": "俄罗斯|俄羅斯|莫斯科|Russia|Moscow",
+    "Short": "RU|RUS"
+  },
+  {
+    "Code": "NL",
+    "Name": "荷兰",
+    "Names": "荷兰|荷蘭|阿姆斯特丹|Netherlands|Amsterdam",
+    "Short": "NL|NLD"
+  },
+  {
+    "Code": "CH",
+    "Name": "瑞士",
+    "Names": "瑞士|苏黎世|蘇黎世|Switzerland|Zurich",
+    "Short": "CH|CHE"
+  },
+  {
+    "Code": "SE",
+    "Name": "瑞典",
+    "Names": "瑞典|Sweden",
+    "Short": "SE|SWE"
+  },
+  {
+    "Code": "NO",
+    "Name": "挪威",
+    "Names": "挪威|Norway",
+    "Short": "NO|NOR"
+  },
+  {
+    "Code": "FI",
+    "Name": "芬兰",
+    "Names": "芬兰|芬蘭|Finland",
+    "Short": "FI|FIN"
+  },
+  {
+    "Code": "DK",
+    "Name": "丹麦",
+    "Names": "丹麦|丹麥|Denmark",
+    "Short": "DK|DNK"
+  },
+  {
+    "Code": "ES",
+    "Name": "西班牙",
+    "Names": "西班牙|Spain",
+    "Short": "ES|ESP"
+  },
+  {
+    "Code": "IT",
+    "Name": "意大利",
+    "Names": "意大利|義大利|Italy",
+    "Short": "IT|ITA"
+  },
+  {
+    "Code": "IE",
+    "Name": "爱尔兰",
+    "Names": "爱尔兰|愛爾蘭|Ireland",
+    "Short": "IE|IRL"
+  },
+  {
+    "Code": "PL",
+    "Name": "波兰",
+    "Names": "波兰|波蘭|Poland",
+    "Short": "PL|POL"
+  },
+  {
+    "Code": "TR",
+    "Name": "土耳其",
+    "Names": "土耳其|Turkey|Türkiye",
+    "Short": "TR|TUR"
+  },
+  {
+    "Code": "AE",
+    "Name": "阿联酋",
+    "Names": "阿联酋|阿聯酋|迪拜|阿拉伯联合酋长国|United Arab Emirates|Dubai",
+    "Short": "AE|ARE|UAE"
+  },
+  {
+    "Code": "MY",
+    "Name": "马来西亚",
+    "Names": "马来西亚|馬來西亞|马来|馬來|大马|Malaysia",
+    "Short": "MY|MYS"
+  },
+  {
+    "Code": "TH",
+    "Name": "泰国",
+    "Names": "泰国|泰國|曼谷|Thailand|Bangkok",
+    "Short": "TH|THA"
+  },
+  {
+    "Code": "VN",
+    "Name": "越南",
+    "Names": "越南|Vietnam",
+    "Short": "VN|VNM"
+  },
+  {
+    "Code": "PH",
+    "Name": "菲律宾",
+    "Names": "菲律宾|菲律賓|Philippines",
+    "Short": "PH|PHL"
+  },
+  {
+    "Code": "ID",
+    "Name": "印度尼西亚",
+    "Names": "印度尼西亚|印度尼西亞|印尼|Indonesia",
+    "Short": "ID|IDN"
+  },
+  {
+    "Code": "IN",
+    "Name": "印度",
+    "Names": "印度(?!尼)|India",
+    "Short": "IN|IND"
+  },
+  {
+    "Code": "ZA",
+    "Name": "南非",
+    "Names": "南非|South Africa",
+    "Short": "ZA|ZAF"
+  },
+  {
+    "Code": "BR",
+    "Name": "巴西",
+    "Names": "巴西|Brazil",
+    "Short": "BR|BRA"
+  },
+  {
+    "Code": "MX",
+    "Name": "墨西哥",
+    "Names": "墨西哥|Mexico",
+    "Short": "MX|MEX"
+  },
+  {
+    "Code": "AR",
+    "Name": "阿根廷",
+    "Names": "阿根廷|Argentina",
+    "Short": "AR|ARG"
+  },
+  {
+    "Code": "UA",
+    "Name": "乌克兰",
+    "Names": "乌克兰|烏克蘭|Ukraine",
+    "Short": "UA|UKR"
+  },
+  {
+    "Code": "IL",
+    "Name": "以色列",
+    "Names": "以色列|Israel",
+    "Short": "IL|ISR"
+  },
+  {
+    "Code": "IS",
+    "Name": "冰岛",
+    "Names": "冰岛|冰島|Iceland",
+    "Short": "IS|ISL"
+  },
+  {
+    "Code": "KZ",
+    "Name": "哈萨克斯坦",
+    "Names": "哈萨克斯坦|哈薩克斯坦|Kazakhstan",
+    "Short": "KZ|KAZ"
+  },
+  {
+    "Code": "SA",
+    "Name": "沙特阿拉伯",
+    "Names": "沙特|Saudi Arabia",
+    "Short": "SA|SAU"
+  }
+]

@@ -65,8 +65,8 @@ enum Bridge {
         let request:[String:Any] = ["operation":"merge","settings":try JSONSerialization.jsonObject(with:JSONEncoder().encode(settings)),"subscription":try JSONSerialization.jsonObject(with:JSONEncoder().encode(subscription)),"nodes":try JSONSerialization.jsonObject(with:JSONEncoder().encode(nodes))]
         return try JSONDecoder().decode(Merged.self,from:await call(request))
     }
-    static func config(_ node: ProxyNode, port: Int, tun: Bool, route: Bool = true) async throws -> Data {
-        let encoded = try JSONSerialization.jsonObject(with:JSONEncoder().encode(node)); let response = try await call(["operation":"config","node":encoded,"port":port,"tun":tun,"routeEnabled":route,"platform":"macos"])
+    static func config(_ node: ProxyNode, port: Int, tun: Bool, route: Bool = true, nodes:[ProxyNode]=[]) async throws -> Data {
+        let encoded = try JSONSerialization.jsonObject(with:JSONEncoder().encode(node)), available=try JSONSerialization.jsonObject(with:JSONEncoder().encode(nodes)); let response = try await call(["operation":"config","node":encoded,"nodes":available,"port":port,"tun":tun,"routeEnabled":route,"platform":"macos"])
         let value = (try JSONSerialization.jsonObject(with:response) as! [String:Any])["Config"]!; return try JSONSerialization.data(withJSONObject:value,options:[.prettyPrinted,.sortedKeys])
     }
 }

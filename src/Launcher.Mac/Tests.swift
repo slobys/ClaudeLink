@@ -17,6 +17,24 @@ import Darwin
             let parsed=try await Bridge.parse("socks5://user:secret@127.0.0.1:1080#Local")
             try check(parsed.Nodes.count == 1,"Shared bridge imports SOCKS credentials")
             let node=parsed.Nodes[0]
+            let legacyNode=try JSONDecoder().decode(ProxyNode.self,from:Data("{\"Id\":\"legacy\",\"Name\":\"旧节点\",\"GroupId\":\"manual\",\"OutboundJson\":\"{}\"}".utf8))
+            try check(!legacyNode.isChain && legacyNode.ChainNodeIds.isEmpty,"Legacy nodes decode without optional chain fields")
+            try check(NodeRegion.fromName("香港624 中继")?.Code == "HK" && NodeRegion.fromName("20260929-us1")?.Code == "US" && NodeRegion.fromName("business") == nil,"Region hints match names and codes without guessing unknown countries")
+            var entry=node; entry.Id="chain-entry-test"; entry.Name="香港入口"
+            var exitNode=node; exitNode.Id="chain-exit-test"; exitNode.Name="美国出口"
+            let chain=try ProxyChain.create("住宅出口链路",entry.Id,exitNode.Id,[entry,exitNode],id:"chain-test")
+            try check(chain.isChain && NodeRegion.resolve(chain,[entry,exitNode])?.Code == "US","Chain card region follows its final exit")
+            var invalid=false; do { _=try ProxyChain.create("重复",entry.Id,entry.Id,[entry,exitNode]) } catch { invalid=true }
+            try check(invalid,"Chain editor model rejects identical entry and exit")
+            try check(ProxyChain.invalid(chain,[entry]),"Missing exit remains invalid rather than selecting another node")
+            let chainConfig=try await Bridge.config(chain,port:17992,tun:false,route:false,nodes:[entry,exitNode])
+            let chainObject=try JSONSerialization.jsonObject(with:chainConfig) as! [String:Any], outbounds=chainObject["outbounds"] as! [[String:Any]]
+            try check(outbounds.count == 3 && outbounds[0]["tag"] as? String == "chain-entry" && outbounds[1]["detour"] as? String == "chain-entry","Shared bridge builds entry-to-exit detour for native Mac")
+            let chainPath=AppPaths.root.appendingPathComponent("chain.json");try AppPaths.write(chainConfig,to:chainPath)
+            let chainCheck=try await Commands.run(Bundle.main.resourceURL!.appendingPathComponent("sing-box").path,["check","-c",chainPath.path]);try check(chainCheck.code == 0,"Official Darwin core accepts two-hop proxy chain")
+            let chainRoundtrip=try JSONDecoder().decode(ProxyNode.self,from:JSONEncoder().encode(chain))
+            try check(chainRoundtrip.ChainNodeIds == [entry.Id,exitNode.Id],"Native chain IDs survive settings encoding")
+            try check(NSImage(contentsOf:Bundle.main.resourceURL!.appendingPathComponent("Flags/us.png")) != nil,"Bundled country flag artwork is readable by native AppKit")
             let subscription=Subscription(Id:UUID().uuidString,Name:"Test",Url:"https://example.invalid/sub")
             var original=Settings(); var subscribed=node; subscribed.GroupId=subscription.Id; original.Nodes=[subscribed]; original.SelectedNodeId=subscribed.Id
             let merged=try await Bridge.merge(original,subscription,parsed.Nodes)

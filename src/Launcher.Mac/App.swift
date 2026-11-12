@@ -29,6 +29,12 @@ import SwiftUI
                 guard let bitmap=view.bitmapImageRepForCachingDisplay(in:view.bounds) else { throw ClientError.message("Missing bitmap") }; view.cacheDisplay(in:view.bounds,to:bitmap)
                 try bitmap.representation(using:.png,properties:[:])!.write(to:url.appendingPathComponent(page+".png"))
             }
+            model.page="节点管理"; model.nodeSearch="没有匹配的示例";try await Task.sleep(for:.milliseconds(500));try saveView(view,to:url.appendingPathComponent("nodes-empty.png"));model.nodeSearch=""
+            window.setContentSize(NSSize(width:1040,height:740));try await Task.sleep(for:.milliseconds(500));try saveView(view,to:url.appendingPathComponent("nodes-small.png"));window.setContentSize(NSSize(width:1280,height:850))
+            model.editingChain=model.settings.Nodes.first(where:{$0.isChain});model.showingChain=true;try await Task.sleep(for:.milliseconds(700))
+            if let sheet=window.sheets.first?.contentView {try saveView(sheet,to:url.appendingPathComponent("chain-editor.png"))};model.showingChain=false;try await Task.sleep(for:.milliseconds(500))
+            if var broken=model.editingChain {broken.ChainNodeIds[1]="missing";model.editingChain=broken};model.showingChain=true;try await Task.sleep(for:.milliseconds(700))
+            if let sheet=window.sheets.first?.contentView {try saveView(sheet,to:url.appendingPathComponent("chain-editor-error.png"))};model.showingChain=false;try await Task.sleep(for:.milliseconds(500))
             model.page="工作台"; try await Task.sleep(for:.milliseconds(500)); model.previewScrollCheck="top"; try await Task.sleep(for:.milliseconds(500)); view.layoutSubtreeIfNeeded()
             if let bitmap=view.bitmapImageRepForCachingDisplay(in:view.bounds) { view.cacheDisplay(in:view.bounds,to:bitmap); try bitmap.representation(using:.png,properties:[:])!.write(to:url.appendingPathComponent("checks.png")) }
             model.previewScrollCheck="bottom"; try await Task.sleep(for:.milliseconds(500)); view.layoutSubtreeIfNeeded()
@@ -39,7 +45,7 @@ import SwiftUI
             try saveView(view,to:url.appendingPathComponent("settings-cli.png")); model.settings.LaunchTarget="desktop"
             model.page="节点管理"; model.editor="socks5://127.0.0.1:1080#界面示例"; model.showingNode=true; try await Task.sleep(for:.milliseconds(700))
             guard let nodeSheet=window.sheets.first?.contentView else { throw ClientError.message("Missing node sheet") }; try saveView(nodeSheet,to:url.appendingPathComponent("node-editor.png"))
-            model.editingNode=model.settings.Nodes.first; model.editorName=""; try await Task.sleep(for:.milliseconds(500)); if let emptySheet=window.sheets.first?.contentView { try saveView(emptySheet,to:url.appendingPathComponent("node-editor-empty.png")) }
+            model.editingNode=model.settings.Nodes.first(where:{!$0.isChain}); model.editorName=""; try await Task.sleep(for:.milliseconds(500)); if let emptySheet=window.sheets.first?.contentView { try saveView(emptySheet,to:url.appendingPathComponent("node-editor-empty.png")) }
             model.showingNode=false; try await Task.sleep(for:.milliseconds(500)); model.page="订阅管理"; model.editorName="界面示例订阅"; model.editorURL="https://example.invalid/sub"; model.showingSubscription=true; try await Task.sleep(for:.milliseconds(700))
             guard let subSheet=window.sheets.first?.contentView else { throw ClientError.message("Missing subscription sheet") }; try saveView(subSheet,to:url.appendingPathComponent("subscription-editor.png"))
             model.editorName=""; model.editorURL=""; try await Task.sleep(for:.milliseconds(500)); if let emptySheet=window.sheets.first?.contentView { try saveView(emptySheet,to:url.appendingPathComponent("subscription-editor-empty.png")) }; model.showingSubscription=false
@@ -49,7 +55,7 @@ import SwiftUI
             guard let confirmSheet=window.sheets.first?.contentView else { throw ClientError.message("Missing launch confirmation sheet") }; try saveView(confirmSheet,to:url.appendingPathComponent("launch-confirmation.png"))
             var many=model.launchConfirmation!; many.reasons=(1...18).map { "检查示例 \($0)：此项目尚未验证，请返回结果页面核对网络、地区与环境设置。" }; model.launchConfirmation=many; try await Task.sleep(for:.milliseconds(700))
             if let longSheet=window.sheets.first?.contentView { try saveView(longSheet,to:url.appendingPathComponent("launch-confirmation-long.png")) }; model.resolveLaunch(false)
-            try Data("{\"CapturedViews\":16,\"NativeViews\":true,\"ScreenCapture\":false}".utf8).write(to:url.appendingPathComponent("ui-results.json")); exit(0)
+            try Data("{\"CapturedViews\":20,\"NativeViews\":true,\"ScreenCapture\":false}".utf8).write(to:url.appendingPathComponent("ui-results.json")); exit(0)
         } catch { fputs("Native rendering failed\n",stderr); exit(1) }
     }
     @MainActor func saveView(_ view:NSView,to url:URL) throws {

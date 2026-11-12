@@ -12,9 +12,11 @@ public sealed class ProxyNode
     public string Name { get; set; } = "新节点";
     public string GroupId { get; set; } = "manual";
     public string OutboundJson { get; set; } = "{}";
-    [JsonIgnore] public string Protocol => JsonNode.Parse(OutboundJson)?["type"]?.GetValue<string>() ?? "unknown";
+    public List<string> ChainNodeIds { get; set; } = [];
+    [JsonIgnore] public bool IsChain => ChainNodeIds.Count > 0;
+    [JsonIgnore] public string Protocol => IsChain ? "chain" : JsonNode.Parse(OutboundJson)?["type"]?.GetValue<string>() ?? "unknown";
     [JsonIgnore] public string Server => JsonNode.Parse(OutboundJson)?["server"]?.GetValue<string>() ?? "";
-    [JsonIgnore] public string Display => $"{Name} · {Protocol.ToUpperInvariant()}";
+    [JsonIgnore] public string Display => $"{Name} · {(IsChain ? "链式代理" : Protocol.ToUpperInvariant())}";
     [JsonIgnore]
     public string Fingerprint
     {

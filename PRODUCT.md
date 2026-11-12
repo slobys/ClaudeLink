@@ -18,6 +18,8 @@ Windows and native macOS clients are published with signed updates. Lead product
 ## Capabilities and Constraints
 Reuse the existing C# node importer and sing-box configuration builder. Preserve Windows encrypted settings, nodes, subscriptions and recovery behavior. Native macOS uses Keychain-backed encryption and an OS-specific session supervisor. Target macOS 15+ to match .NET 10 supported platforms; Windows x64 remains supported. Never claim account authorization based on unauthenticated API reachability. No new large UI framework dependency. Apple Developer ID/notarization credentials have not been supplied.
 
+Node management follows the user's NaiLink reference: responsive country/region cards, searchable names and group filters, one-click selection. Regions are inferred from node names and are never presented as measured exit geolocation. Two-hop chains explicitly follow local → entry → final exit → destination; reject missing, repeated or nested hops. A missing hop never silently selects another exit. HTTP exits serve TCP traffic; no inferred residential-IP claims.
+
 ## Brand Commitments
 Keep the name Claude Link and Chinese interface. Independent project, not an Anthropic or SagerNet product. No invented capability or verification claims.
 

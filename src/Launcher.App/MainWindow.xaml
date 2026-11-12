@@ -18,7 +18,7 @@
       <StackPanel><TextBlock Text="独立代理内核" Foreground="{StaticResource Ink}" FontSize="12"/>
        <TextBlock Text="sing-box 1.14.4 · x64" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,5,0,0"/></StackPanel>
      </Border>
-     <TextBlock Text="v1.2.2   /   本地加密存储" Foreground="{StaticResource Muted}" FontSize="11"/>
+     <TextBlock Text="v1.3.0   /   本地加密存储" Foreground="{StaticResource Muted}" FontSize="11"/>
     </StackPanel>
     <StackPanel>
      <Button x:Name="NavDashboard" Style="{StaticResource NavButton}" Content="工作台" Tag="Dashboard" Click="Navigate_Click"/>
@@ -70,6 +70,7 @@
          <ComboBox x:Name="NodeCombo" DisplayMemberPath="Display" SelectionChanged="NodeCombo_SelectionChanged" AutomationProperties.Name="使用节点"/>
          <Button Grid.Column="1" Content="添加节点" Margin="10,0,0,0" Click="Import_Click"/>
         </Grid>
+        <TextBlock x:Name="ActiveChainText" TextWrapping="Wrap" Foreground="{StaticResource Accent}" Margin="0,10,0,0" Visibility="Collapsed"/>
         <TextBlock Text="项目文件夹" FontWeight="SemiBold" Margin="0,17,0,7"/>
         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
          <ComboBox x:Name="ProjectBox" IsEditable="True" AutomationProperties.Name="项目文件夹"/>
@@ -120,26 +121,54 @@
      </StackPanel>
     </ScrollViewer>
     <Grid x:Name="NodesPage" Visibility="Collapsed">
-     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-     <WrapPanel Margin="0,0,0,16">
+     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <WrapPanel Margin="0,0,0,12">
       <Button Content="添加 / 导入节点" Style="{StaticResource PrimaryButton}" Click="Import_Click" Margin="0,0,9,8"/>
-      <Button Content="从剪贴板导入" Click="Paste_Click" Margin="0,0,9,8"/>
+      <Button Content="创建链式代理" Click="AddChain_Click" Margin="0,0,9,8"/>
+      <Button Content="剪贴板导入" Click="Paste_Click" Margin="0,0,9,8"/>
       <Button Content="导入文件" Click="ImportFile_Click" Margin="0,0,9,8"/>
       <Button Content="编辑" Click="EditNode_Click" Margin="0,0,9,8"/>
       <Button Content="删除" Click="DeleteNode_Click" Margin="0,0,9,8"/>
-      <Button Content="设为当前" Click="SelectNode_Click" Margin="0,0,0,8"/>
+      <Button Content="前往工作台" Click="SelectNode_Click" Margin="0,0,0,8"/>
      </WrapPanel>
-     <Border Grid.Row="1" Style="{StaticResource Card}" Padding="0">
-      <Grid><DataGrid x:Name="NodesGrid" MouseDoubleClick="SelectNode_Click">
-       <DataGrid.Columns>
-        <DataGridTextColumn Header="节点名称" Binding="{Binding Name}" Width="2*"/>
-        <DataGridTextColumn Header="协议" Binding="{Binding Protocol}" Width="100"/>
-        <DataGridTextColumn Header="服务器" Binding="{Binding Server}" Width="1.4*"/>
-        <DataGridTextColumn Header="分组" Binding="{Binding Group}" Width="*"/>
-       </DataGrid.Columns>
-      </DataGrid><TextBlock x:Name="NodesEmpty" Text="还没有节点&#10;添加分享链接，或前往订阅管理导入订阅。" TextAlignment="Center" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center" LineHeight="26" IsHitTestVisible="False"/></Grid>
-     </Border>
-     <DockPanel Grid.Row="2" Margin="0,12,0,0"><TextBlock x:Name="NodeCountText" Style="{StaticResource MutedText}"/><TextBlock Text="双击节点即可选中；连接后请先断开再切换。" Style="{StaticResource MutedText}" HorizontalAlignment="Right"/></DockPanel>
+     <WrapPanel Grid.Row="1" Margin="0,0,0,14">
+      <TextBlock Text="搜索" VerticalAlignment="Center" Margin="0,0,10,8"/>
+      <TextBox x:Name="NodeSearchBox" Width="230" Margin="0,0,12,8" TextChanged="NodeFilterChanged" ToolTip="搜索名称、地区、协议或分组" AutomationProperties.Name="搜索节点"/>
+      <ComboBox x:Name="NodeRegionFilter" Width="140" Margin="0,0,12,8" DisplayMemberPath="Label" SelectedValuePath="Code" SelectionChanged="NodeFilterChanged" AutomationProperties.Name="筛选地区"/>
+      <ComboBox x:Name="NodeGroupFilter" Width="170" Margin="0,0,0,8" DisplayMemberPath="Label" SelectedValuePath="Code" SelectionChanged="NodeFilterChanged" AutomationProperties.Name="筛选分组"/>
+     </WrapPanel>
+     <Grid Grid.Row="2">
+      <ListBox x:Name="NodesGrid" SelectionChanged="NodeCardSelected" MouseDoubleClick="SelectNode_Click" SizeChanged="NodeGridSizeChanged" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="False" Padding="0,0,0,8" AutomationProperties.Name="节点卡片">
+       <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ListBox.ItemsPanel>
+       <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem">
+        <Setter Property="Width" Value="248"/><Setter Property="Margin" Value="0,0,12,12"/><Setter Property="Padding" Value="0"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem">
+         <Border x:Name="Tile" Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="12" Padding="16"><ContentPresenter/></Border>
+         <ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Tile" Property="Background" Value="{StaticResource SurfaceAlt}"/><Setter TargetName="Tile" Property="BorderBrush" Value="{StaticResource Accent}"/></Trigger><Trigger Property="IsSelected" Value="True"><Setter TargetName="Tile" Property="Background" Value="{StaticResource AccentSubtle}"/><Setter TargetName="Tile" Property="BorderBrush" Value="{StaticResource Accent}"/></Trigger><Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Tile" Property="BorderThickness" Value="2"/></Trigger></ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value></Setter>
+       </Style></ListBox.ItemContainerStyle>
+       <ListBox.ItemTemplate><DataTemplate>
+        <Grid Height="112"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/><ColumnDefinition Width="20"/></Grid.ColumnDefinitions>
+          <Image x:Name="CountryFlag" Source="{Binding Flag}" Width="26" Height="24" HorizontalAlignment="Left" ToolTip="{Binding RegionHint}"/>
+          <TextBlock x:Name="UnknownFlag" Text="◎" FontSize="23" Foreground="{StaticResource Muted}" Visibility="Collapsed"/>
+          <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip="{Binding Node.Name}"/>
+          <TextBlock x:Name="ChosenGlyph" Grid.Column="2" Text="○" Foreground="{StaticResource Muted}" FontSize="17" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+         </Grid>
+         <TextBlock Grid.Row="1" Text="{Binding RegionLabel}" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,9,0,0"/>
+         <TextBlock Grid.Row="2" Text="{Binding Description}" TextTrimming="CharacterEllipsis" FontSize="12" Foreground="{StaticResource Muted}" Margin="0,7,0,6" ToolTip="{Binding Description}" VerticalAlignment="Center"/>
+         <DockPanel Grid.Row="3"><Border x:Name="NodeState" DockPanel.Dock="Right" Background="{StaticResource PendingBg}" CornerRadius="7" Padding="8,4"><TextBlock x:Name="NodeStateText" Text="{Binding State}" Foreground="{StaticResource Pending}" FontSize="11" FontWeight="SemiBold"/></Border><TextBlock Text="{Binding Protocol}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/></DockPanel>
+        </Grid>
+        <DataTemplate.Triggers>
+         <DataTrigger Binding="{Binding RegionLabel}" Value="未识别地区"><Setter TargetName="UnknownFlag" Property="Visibility" Value="Visible"/><Setter TargetName="CountryFlag" Property="Visibility" Value="Collapsed"/></DataTrigger>
+         <DataTrigger Binding="{Binding Current}" Value="True"><Setter TargetName="ChosenGlyph" Property="Text" Value="✓"/><Setter TargetName="ChosenGlyph" Property="Foreground" Value="{StaticResource Accent}"/><Setter TargetName="NodeStateText" Property="Foreground" Value="{StaticResource Accent}"/><Setter TargetName="NodeState" Property="Background" Value="{StaticResource AccentSubtle}"/></DataTrigger>
+         <DataTrigger Binding="{Binding Invalid}" Value="True"><Setter TargetName="NodeStateText" Property="Foreground" Value="{StaticResource Error}"/><Setter TargetName="NodeState" Property="Background" Value="{StaticResource ErrorBg}"/></DataTrigger>
+        </DataTemplate.Triggers>
+       </DataTemplate></ListBox.ItemTemplate>
+      </ListBox>
+      <TextBlock x:Name="NodesEmpty" Text="还没有节点&#10;添加分享链接，或前往订阅管理导入订阅。" TextAlignment="Center" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center" LineHeight="26" IsHitTestVisible="False"/>
+     </Grid>
+     <DockPanel Grid.Row="3" Margin="0,10,0,0"><TextBlock x:Name="NodeCountText" Style="{StaticResource MutedText}"/><TextBlock Text="单击选择，双击进入工作台。切换前请先断开。" Style="{StaticResource MutedText}" HorizontalAlignment="Right"/></DockPanel>
     </Grid>
     <Grid x:Name="SubscriptionsPage" Visibility="Collapsed">
      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>

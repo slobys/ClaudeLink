@@ -75,12 +75,13 @@ public partial class MainWindow : Window
         var labels = new Dictionary<string, (string, string)>
         {
             ["Dashboard"] = ("工作台", "从节点到 Claude Code，一处准备就绪。"),
-            ["Nodes"] = ("节点管理", "集中管理分享链接、手动节点与订阅节点。"),
+            ["Nodes"] = ("节点管理", "按地区选择节点，或通过链式代理使用指定出口。"),
             ["Subscriptions"] = ("订阅管理", "添加一次，随时更新。节点内容在本机解析。"),
             ["Settings"] = ("环境设置", "按需选择本次会话的代理与临时环境。"),
             ["Logs"] = ("运行记录", "查看最近的操作结果与恢复状态。")
         };
         (PageTitle.Text, PageSubtitle.Text) = labels[page];
+        if (page == "Nodes") RefreshNodeCards();
         foreach (var button in new[] { NavDashboard, NavNodes, NavSubscriptions, NavSettings, NavLogs })
         {
             var selected = (string)button.Tag == page;
@@ -97,16 +98,15 @@ public partial class MainWindow : Window
         var selected = settings.Nodes.FirstOrDefault(x => x.Id == settings.SelectedNodeId) ?? settings.Nodes.FirstOrDefault();
         settings.SelectedNodeId = selected?.Id;
         NodeCombo.ItemsSource = null; NodeCombo.ItemsSource = settings.Nodes; NodeCombo.SelectedItem = selected;
-        NodesGrid.ItemsSource = settings.Nodes.Select(x => new NodeRow(x, settings.Subscriptions.FirstOrDefault(s => s.Id == x.GroupId)?.Name ?? "手动添加")).ToList();
+        RefreshNodeFilters(); RefreshNodeCards();
+        RefreshChainPreview();
         SubscriptionsGrid.ItemsSource = settings.Subscriptions.Select(x => new SubscriptionRow(x, settings.Nodes.Count(n => n.GroupId == x.Id))).ToList();
-        NodesEmpty.Visibility = settings.Nodes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         SubscriptionsEmpty.Visibility = settings.Subscriptions.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        NodeCountText.Text = $"{settings.Nodes.Count} 个节点 · {settings.Subscriptions.Count} 个订阅";
         refreshing = false;
     }
     private void NodeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (!refreshing && NodeCombo.SelectedItem is ProxyNode node) { settings.SelectedNodeId = node.Id; report = null; }
+        if (!refreshing && NodeCombo.SelectedItem is ProxyNode node) { settings.SelectedNodeId = node.Id; report = null; RefreshNodeCards(); RefreshChainPreview(); }
     }
     private void SaveUISettings()
     {
@@ -389,7 +389,8 @@ public partial class MainWindow : Window
     private void EditNode_Click(object sender, RoutedEventArgs e)
     {
         if (NodesGrid.SelectedItem is not NodeRow row) { StatusText.Text = "请先选中一个节点"; return; }
-        if (session.Connected && row.Node.Id == session.NodeId) { AppDialog.Notify(this, "请先断开当前节点，再编辑。"); return; }
+        if (session.Connected || ClaudeRunning) { AppDialog.Notify(this, "请先断开当前会话，再编辑节点。"); return; }
+        if (row.Node.IsChain) { EditChain(row.Node); return; }
         var dialog = new NodeDialog(existing: row.Node) { Owner = this };
         if (dialog.ShowDialog() != true || dialog.Result?.Nodes.Count != 1) return;
         var replacement = dialog.Result.Nodes[0]; replacement.Id = row.Node.Id; replacement.GroupId = row.Node.GroupId;
@@ -399,7 +400,8 @@ public partial class MainWindow : Window
     private void DeleteNode_Click(object sender, RoutedEventArgs e)
     {
         if (NodesGrid.SelectedItem is not NodeRow row) return;
-        if (session.Connected && row.Node.Id == session.NodeId) { AppDialog.Notify(this, "请先断开当前节点。"); return; }
+        if (session.Connected || ClaudeRunning) { AppDialog.Notify(this, "请先断开当前会话。"); return; }
+        if (ReferencingChain([row.Node.Id]) is { } chain) { AppDialog.Notify(this, $"节点被链式代理「{chain.Name}」使用，请先编辑或删除该链路。"); return; }
         if (!AppDialog.Confirm(this, "删除节点", "删除选中的节点？订阅节点可能在下次更新时重新出现。", "删除节点")) return;
         settings.Nodes.Remove(row.Node); store.Save(settings); RefreshLists(); Log("节点已删除。");
     }
@@ -419,7 +421,7 @@ public partial class MainWindow : Window
     }
     private async Task UpdateSubscriptionAsync(Subscription subscription)
     {
-        if (session.Connected && settings.Nodes.Any(x => x.Id == session.NodeId && x.GroupId == subscription.Id))
+        if (session.Connected)
             throw new IOException("此订阅的节点正在使用，请先断开，再更新该订阅。");
         var (parsed, usage) = await NetworkServices.DownloadSubscriptionAsync(subscription.Url, session.Connected ? session.Port : null);
         SubscriptionMerge.Replace(settings, subscription, parsed); subscription.Usage = usage;
@@ -454,7 +456,9 @@ public partial class MainWindow : Window
     private void DeleteSubscription_Click(object sender, RoutedEventArgs e)
     {
         if (SubscriptionsGrid.SelectedItem is not SubscriptionRow row) return;
-        if (session.Connected && settings.Nodes.Any(x => x.GroupId == row.Subscription.Id && x.Id == session.NodeId))
+        if (ReferencingChain(settings.Nodes.Where(x => x.GroupId == row.Subscription.Id).Select(x => x.Id)) is { } chain)
+        { AppDialog.Notify(this, $"此订阅的节点被链式代理「{chain.Name}」使用，请先编辑或删除该链路。"); return; }
+        if (session.Connected)
         { AppDialog.Notify(this, "此订阅的节点正在使用，请先断开。"); return; }
         if (!AppDialog.Confirm(this, "删除订阅", "删除此订阅及其节点？", "删除订阅")) return;
         settings.Nodes.RemoveAll(x => x.GroupId == row.Subscription.Id); settings.Subscriptions.Remove(row.Subscription);
@@ -509,10 +513,6 @@ public partial class MainWindow : Window
         Log("界面示例：代理出口与 API HTTPS 检测完成。", LogKind.Success);
         Log("界面示例：网页返回 HTTP 403，请核对检查项。", LogKind.Warning);
         Log("界面示例：节点连接失败，请检查服务器配置。", LogKind.Error);
-    }
-    public sealed record NodeRow(ProxyNode Node, string Group)
-    {
-        public string Name => Node.Name; public string Protocol => Node.Protocol.ToUpperInvariant(); public string Server => Node.Server;
     }
     public sealed record BrowserChoice(string Id, string Label);
     public sealed record SubscriptionRow(Subscription Subscription, int Count)

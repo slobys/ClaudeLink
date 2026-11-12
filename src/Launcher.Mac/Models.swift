@@ -4,10 +4,21 @@ import Darwin
 
 struct ProxyNode: Codable, Identifiable, Hashable {
     var Id: String; var Name: String; var GroupId: String; var OutboundJson: String
+    var ChainNodeIds:[String] = []
+    var isChain:Bool { !ChainNodeIds.isEmpty }
     var id: String { Id }
     var outbound: [String: Any] { (try? JSONSerialization.jsonObject(with: Data(OutboundJson.utf8))) as? [String: Any] ?? [:] }
-    var kind: String { (outbound["type"] as? String ?? "unknown").uppercased() }
-    var display: String { "\(Name) · \(kind)" }
+    var kind: String { isChain ? "CHAIN" : (outbound["type"] as? String ?? "unknown").uppercased() }
+    var display: String { "\(Name) · \(isChain ? "链式代理" : kind)" }
+    enum CodingKeys:String,CodingKey { case Id,Name,GroupId,OutboundJson,ChainNodeIds }
+}
+extension ProxyNode {
+    init(from decoder:Decoder) throws {
+        let values=try decoder.container(keyedBy:CodingKeys.self)
+        Id=try values.decode(String.self,forKey:.Id); Name=try values.decode(String.self,forKey:.Name)
+        GroupId=try values.decode(String.self,forKey:.GroupId); OutboundJson=try values.decode(String.self,forKey:.OutboundJson)
+        ChainNodeIds=try values.decodeIfPresent([String].self,forKey:.ChainNodeIds) ?? []
+    }
 }
 struct Subscription: Codable, Identifiable, Hashable {
     var Id = UUID().uuidString; var Name = ""; var Url = ""; var UpdatedAt: String?; var Usage: String?

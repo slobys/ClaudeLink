@@ -6,6 +6,8 @@ import SwiftUI
     @Published var busy=false; @Published var connected=false; @Published var progress=""; @Published var error=""; @Published var offer:UpdateOffer?; @Published var downloaded:URL?; @Published var updateBusy=false; @Published var previewScrollCheck=""
     @Published var editor=""; @Published var editorName=""; @Published var editorURL=""; @Published var editingNode:ProxyNode?; @Published var editingSubscription:Subscription?; @Published var showingNode=false; @Published var showingSubscription=false
     @Published var launchConfirmation:LaunchConfirmation?; private var launchDecision:CheckedContinuation<Bool,Never>?
+    @Published var nodeSearch=""; @Published var nodeRegion="all"; @Published var nodeGroup="all"
+    @Published var showingChain=false; var editingChain:ProxyNode?
     let session=Session(); var operation:Task<Void,Never>?; var monitor:Task<Void,Never>?; var updateTask:Task<Void,Never>?; var storageReadFailed=false; var previewMode=false
     var selectedNode:ProxyNode? { settings.Nodes.first { $0.Id == settings.SelectedNodeId } ?? settings.Nodes.first }
     init(preview:Bool = false) {
@@ -58,7 +60,20 @@ import SwiftUI
         else { settings.Nodes.append(contentsOf:parsed.Nodes); if settings.SelectedNodeId == nil { settings.SelectedNodeId=parsed.Nodes.first?.Id } }
         saveQuietly(); showingNode=false; log("节点已保存，共 \(parsed.Nodes.count) 个。",.success); for warning in parsed.Warnings { log(warning,.warning) }
     } catch { fail("节点未保存，请检查分享链接或配置格式。") } } }
-    func deleteNode(_ node:ProxyNode) { settings.Nodes.removeAll { $0.Id == node.Id }; if settings.SelectedNodeId == node.Id { settings.SelectedNodeId=settings.Nodes.first?.Id }; saveQuietly(); log("节点已删除。") }
+    func selectNode(_ node:ProxyNode) { guard !connected && !busy else { return }; settings.SelectedNodeId=node.Id; report=nil; saveQuietly() }
+    func editChain(_ node:ProxyNode?=nil) { guard !connected && !busy else { return }; editingChain=node; showingChain=true }
+    func saveChain(_ name:String,_ entry:String,_ exit:String) throws {
+        guard !connected && !busy else { throw ClientError.message("请先断开当前会话。") }
+        let node=try ProxyChain.create(name,entry,exit,settings.Nodes,id:editingChain?.Id)
+        if let index=settings.Nodes.firstIndex(where:{$0.Id == node.Id}) { settings.Nodes[index]=node } else { settings.Nodes.append(node) }
+        settings.SelectedNodeId=node.Id; nodeSearch=""; nodeRegion="all"; nodeGroup="all"; saveQuietly(); showingChain=false
+        log("链式代理已保存：本机 → 入口 → 最终出口。",.success)
+    }
+    func deleteNode(_ node:ProxyNode) {
+        guard !connected && !busy else { fail("请先断开当前会话。"); return }
+        if let chain=settings.Nodes.first(where:{$0.isChain && $0.ChainNodeIds.contains(node.Id)}) { fail("节点被链式代理「"+chain.Name+"」使用，请先编辑或删除该链路。"); return }
+        settings.Nodes.removeAll { $0.Id == node.Id }; if settings.SelectedNodeId == node.Id { settings.SelectedNodeId=settings.Nodes.first?.Id }; saveQuietly(); log("节点已删除。")
+    }
     func updateSubscription(_ existing:Subscription? = nil) {
         busy=true; Task { defer { busy=false }; do {
             var item=existing ?? editingSubscription ?? Subscription(); if existing == nil { item.Name=editorName; item.Url=editorURL }; guard !item.Name.isEmpty else { throw ClientError.message("请输入订阅名称。") }
@@ -69,13 +84,19 @@ import SwiftUI
             saveQuietly(); showingSubscription=false; log("订阅已更新，共 \(nodes.count) 个节点。",.success)
         } catch { fail("订阅更新失败，原节点已保留。请检查地址与网络。") } }
     }
-    func deleteSubscription(_ item:Subscription) { settings.Nodes.removeAll { $0.GroupId==item.Id }; settings.Subscriptions.removeAll { $0.Id==item.Id }; saveQuietly(); log("订阅及所属节点已删除。") }
+    func deleteSubscription(_ item:Subscription) {
+        let removed=Set(settings.Nodes.filter{$0.GroupId == item.Id}.map{$0.Id})
+        if let chain=settings.Nodes.first(where:{$0.isChain && !$0.ChainNodeIds.allSatisfy{!removed.contains($0)}}) { fail("订阅节点被链式代理「"+chain.Name+"」使用，请先修改该链路。"); return }
+        settings.Nodes.removeAll { $0.GroupId==item.Id }; settings.Subscriptions.removeAll { $0.Id==item.Id }; saveQuietly(); log("订阅及所属节点已删除。")
+    }
     func checkUpdate(manual:Bool) async { guard !updateBusy else { return }; updateBusy=true; defer { updateBusy=false }; do { offer=try await Updater.check(); if manual { log(offer == nil ? "当前已是最新版本。" : "发现新版本，可下载更新。",.success) } } catch { if manual { fail(error.localizedDescription) } else { log("自动更新检查暂未完成，可稍后在设置中重试。",.warning) } } }
     func downloadUpdate() { guard let offer else { return }; updateBusy=true; updateTask=Task { defer { updateBusy=false; updateTask=nil }; do { downloaded=try await Updater.download(offer); log("更新包已通过发布签名与 SHA-256 校验。",.success) } catch is CancellationError { log("更新下载已取消。",.warning) } catch { if Task.isCancelled { log("更新下载已取消。",.warning) } else { fail(error.localizedDescription) } } } }
     func installUpdate() { guard let downloaded else { return }; Task { do { try await Updater.install(downloaded,session:session) } catch { fail(error.localizedDescription); NSWorkspace.shared.activateFileViewerSelecting([downloaded]) } } }
     func fillPreview() {
         previewMode=true
-        settings.Nodes=[ProxyNode(Id:"example",Name:"界面示例节点",GroupId:"",OutboundJson:"{\"type\":\"socks\",\"server\":\"127.0.0.1\",\"server_port\":1080}")]; settings.SelectedNodeId="example"
+        let names=["香港 01 · 示例","香港 02 · 示例","日本 03 · 示例","新加坡 04 · 示例","台湾 05 · 示例","英国 06 · 示例","德国 07 · 示例","美国住宅出口 · 示例","自定义节点 · 示例"]
+        settings.Nodes=names.enumerated().map { ProxyNode(Id:"example-\($0.offset)",Name:$0.element,GroupId:"manual",OutboundJson:"{\"type\":\"socks\",\"server\":\"127.0.0.1\",\"server_port\":1080}") }
+        if let chain=try? ProxyChain.create("美国出口链路 · 示例",settings.Nodes[0].Id,settings.Nodes[7].Id,settings.Nodes,id:"example-chain") { settings.Nodes.insert(chain,at:0); settings.SelectedNodeId=chain.Id }
         var sample=NetworkReport(); sample.generalIP="198.51.100.24"; sample.cloudflareIP=sample.generalIP; sample.claudeIP=sample.generalIP; sample.apiCode=401; sample.webCode=403; sample.country="US"; sample.city="界面示例"; sample.zone="America/Los_Angeles"; Web.rows(&sample); sample.rows.append(CheckRow(label:"DNS 示例",value:"请求失败",detail:"仅用于核对错误样式，不代表真实网络",level:.error)); report=sample
         log("界面示例：启动器已就绪。"); log("界面示例：本地代理已启动。",.success); log("界面示例：网页检查未通过。",.warning); log("界面示例：请求失败，请检查节点。",.error)
     }

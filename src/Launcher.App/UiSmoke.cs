@@ -12,9 +12,15 @@ public static class UiSmoke
 {
     public static LauncherSettings DemoSettings()
     {
-        var result = NodeImporter.Parse("vless://11111111-1111-4111-8111-111111111111@node.example.com:443?security=tls&sni=node.example.com#示例节点（未连接）");
-        var settings = new LauncherSettings { Nodes = result.Nodes, ProjectDirectory = @"C:\Projects\my-project" };
-        settings.Subscriptions.Add(new Subscription { Name = "示例订阅", Url = "https://example.com/subscription" });
+        var settings = new LauncherSettings { ProjectDirectory = @"C:\Projects\my-project" };
+        var subscription=new Subscription { Name = "示例订阅", Url = "https://example.com/subscription" };settings.Subscriptions.Add(subscription);
+        foreach(var name in new[]{"香港 01 · 示例","香港 02 · 示例","日本 03 · 示例","新加坡 04 · 示例","台湾 05 · 示例","英国 06 · 示例","德国 07 · 示例","美国住宅出口 · 示例","自定义节点 · 示例"})
+        {
+            var node=NodeImporter.Parse("socks5://demo:example@node.example.com:1080#"+Uri.EscapeDataString(name)).Nodes.Single();
+            node.GroupId=subscription.Id;settings.Nodes.Add(node);
+        }
+        var chain=ProxyChain.Create("美国出口链路 · 示例",settings.Nodes[0].Id,settings.Nodes[7].Id,settings.Nodes);
+        settings.Nodes.Insert(0,chain);settings.SelectedNodeId=chain.Id;
         return settings;
     }
     public static async Task CaptureAsync(MainWindow window, string directory)
@@ -25,6 +31,40 @@ public static class UiSmoke
             || ((ComboBox)window.FindName("LanguageCombo")).SelectedItem?.ToString() != "en-US" || ((ComboBox)window.FindName("BrowserCombo")).SelectedValue?.ToString() != "auto")
             throw new InvalidOperationException("Fresh setup preset did not bind to the visible controls.");
         assertions.Add("Fresh install preset is selected in all network, language and browser controls");
+        window.Navigate("Nodes");
+        var cards=(ListBox)window.FindName("NodesGrid");
+        var search=(TextBox)window.FindName("NodeSearchBox");
+        var region=(ComboBox)window.FindName("NodeRegionFilter");
+        var initialRows=cards.Items.OfType<MainWindow.NodeRow>().ToList();
+        if(initialRows.Count < 10 || initialRows.First(x=>x.Current).RegionLabel != "美国" || initialRows.Where(x=>x.Flag != null).Any(x=>x.Flag!.PixelWidth != 72)) throw new InvalidOperationException("Region card data or bundled flags did not render.");
+        search.Text="日本";
+        if(cards.Items.Count != 1) throw new InvalidOperationException("Node search did not filter by region.");
+        var japanese=(MainWindow.NodeRow)cards.Items[0];cards.SelectedItem=japanese;
+        if(((ComboBox)window.FindName("NodeCombo")).SelectedItem is not ProxyNode selected || selected.Id != japanese.Node.Id) throw new InvalidOperationException("Single card selection did not reach the workbench.");
+        search.Text="";region.SelectedValue="US";
+        if(cards.Items.OfType<MainWindow.NodeRow>().Any(x=>x.RegionLabel != "美国") || cards.Items.Count < 2) throw new InvalidOperationException("Exit region filter did not include its chain.");
+        search.Text="不存在的示例";
+        Capture(window,Path.Combine(directory,"nodes-empty.png"));
+        if(cards.Items.Count != 0 || ((TextBlock)window.FindName("NodesEmpty")).Visibility != Visibility.Visible) throw new InvalidOperationException("No-result state missing.");
+        search.Text="";region.SelectedValue="all";
+        cards.SelectedItem=cards.Items.OfType<MainWindow.NodeRow>().Single(x=>x.Node.IsChain);
+        if(((TextBlock)window.FindName("ActiveChainText")).Text.Count(x=>x=='→') != 3) throw new InvalidOperationException("Workbench chain direction missing.");
+        assertions.Add("Node cards show region flags, filter regions and chains, select in one click and preserve empty-state feedback");
+        var sources=cards.Items.OfType<MainWindow.NodeRow>().Select(x=>x.Node).ToList();
+        var chainDialog=new ChainDialog(sources) {Owner=window};
+        SubmitAppDialog(chainDialog,()=>{
+            var entry=(ComboBox)chainDialog.FindName("EntryCombo");var exit=(ComboBox)chainDialog.FindName("ExitCombo");entry.SelectedIndex=0;
+            var exitId=sources.First(x=>!x.IsChain && NodeRegion.FromName(x.Name)?.Code == "US").Id;
+            exit.SelectedValue=exitId;Capture(chainDialog,Path.Combine(directory,"chain-editor.png"));
+            exit.SelectedValue=((ProxyNode)entry.SelectedItem).Id;
+            ((Button)chainDialog.FindName("SaveButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            if(string.IsNullOrEmpty(((TextBlock)chainDialog.FindName("ErrorText")).Text))throw new InvalidOperationException("Duplicate hops were accepted.");
+            Capture(chainDialog,Path.Combine(directory,"chain-editor-error.png"));
+            exit.SelectedValue=exitId;
+            ((Button)chainDialog.FindName("SaveButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        });
+        if(chainDialog.Result?.ChainNodeIds.Count != 2)throw new InvalidOperationException("Valid chain form did not save.");
+        assertions.Add("Chain editor rejects identical hops inline and saves explicit entry-to-exit direction");
         var launchReport = new NetworkReport { GeneralIP = "198.51.100.24", CloudflareIP = "198.51.100.24", ClaudeIP = "198.51.100.24", ApiCode = 401, ApiReachable = true, WebCode = 403, WebReachable = false, SameIPv4 = true, Country = "US", Tun = true, IPv6Disabled = true, TimeZoneMatches = true };
         foreach (var proceed in new[] { false, true })
         {
@@ -144,6 +184,8 @@ public static class UiSmoke
         window.Width = 1000; window.Height = 740; window.Navigate("Dashboard");
         await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
         Capture(window, Path.Combine(directory, "dashboard-small.png"));
+        window.Navigate("Nodes"); await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+        Capture(window, Path.Combine(directory, "nodes-small.png"));
         AppPaths.WriteJson(Path.Combine(directory, "ui-results.json"), new { Passed = assertions.Count, Checks = assertions });
         window.CloseForSmoke();
         // This exact GUID directory was created solely for this smoke test.
@@ -162,7 +204,7 @@ public static class UiSmoke
         dialog.ShowDialog();
         if (failure is not null) throw failure;
     }
-    private static void SubmitAppDialog(AppDialog dialog, Action submit)
+    private static void SubmitAppDialog(Window dialog, Action submit)
     {
         Exception? failure = null;
         dialog.Loaded += (_, _) => dialog.Dispatcher.BeginInvoke(new Action(() =>
@@ -184,6 +226,7 @@ public static class UiSmoke
     private static void Capture(Window window, string path)
     {
         window.UpdateLayout();
+        window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
         var content = (FrameworkElement)window.Content;
         var dpi = VisualTreeHelper.GetDpi(content);
         var width = content.ActualWidth + content.Margin.Left + content.Margin.Right;

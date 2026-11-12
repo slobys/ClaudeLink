@@ -33,6 +33,7 @@ struct RootView:View {
         .tint(Palette.color("Accent"))
         .sheet(isPresented:$model.showingNode) { nodeEditor }
         .sheet(isPresented:$model.showingSubscription) { subscriptionEditor }
+        .sheet(isPresented:$model.showingChain) { ChainEditor(model:model) }
         .sheet(item:$model.launchConfirmation,onDismiss:{model.resolveLaunch(false)}) { state in LaunchConfirmationView(data:state,decide:model.resolveLaunch) }
         .alert("操作未完成",isPresented:Binding(get:{!model.error.isEmpty},set:{if !$0 { model.error="" }})) {
             Button("确定") { model.error="" }
@@ -126,6 +127,7 @@ struct RootView:View {
             Card {
                 Text("准备一次工作会话").font(.system(size:21,weight:.semibold)); Text("官方桌面客户端使用 TUN；CLI 可使用独立进程代理。").foregroundStyle(Palette.color("Muted"))
                 VStack(alignment:.leading,spacing:9) { Text("使用节点").fontWeight(.semibold); HStack { Picker("使用节点",selection:Binding(get:{model.selectedNode?.Id ?? ""},set:{model.settings.SelectedNodeId=$0})) { if model.settings.Nodes.isEmpty { Text("请先添加节点").tag("") }; ForEach(model.settings.Nodes) { Text($0.display).tag($0.Id) } }.labelsHidden().frame(maxWidth:.infinity).disabled(model.connected || model.busy); Button("添加节点") { model.editingNode=nil; model.editor=""; model.editorName=""; model.showingNode=true }.disabled(model.connected || model.busy) } }
+                if let node=model.selectedNode, node.isChain { Text("本机 → "+ProxyChain.path(node,model.settings.Nodes)+" → 目标网站").foregroundStyle(Palette.color("Accent")).font(.system(size:13)) }
                 VStack(alignment:.leading,spacing:9) { Text("项目文件夹").fontWeight(.semibold); HStack { InputField("项目文件夹",text:$model.settings.ProjectDirectory,prompt:"项目文件夹").textFieldStyle(.roundedBorder); Button("浏览…") { model.chooseDirectory() } } }
                 Toggle("TUN 虚拟网卡",isOn:$model.settings.TunEnabled).disabled(model.settings.LaunchTarget == "desktop" || model.connected || model.busy); if model.settings.LaunchTarget == "desktop" { Text("桌面客户端需要 TUN，连接时按系统提示授权。").font(.system(size:12)).foregroundStyle(Palette.color("Muted")) }
                 HStack { Button(model.settings.LaunchTarget == "desktop" ? "准备并打开 Claude 桌面客户端" : "准备并启动 Claude Code CLI") { model.run(true) }.buttonStyle(.borderedProminent); Button(model.connected ? "重新检测" : "连接并检测") { model.run(false) }; Button("断开") { model.disconnect() }.disabled(!model.connected) }.disabled(model.busy)
@@ -139,11 +141,7 @@ struct RootView:View {
         }
     }
     func metric(_ label:String,_ value:String,_ level:Level) -> some View { VStack(alignment:.leading,spacing:9) { Text(label).font(.system(size:12)).foregroundStyle(Palette.color("Muted")); Text(value).font(.system(size:16,weight:.semibold)).foregroundStyle(level.color) }.frame(maxWidth:.infinity,alignment:.leading).padding(18).background(Palette.color("Surface"),in:RoundedRectangle(cornerRadius:12)).overlay(RoundedRectangle(cornerRadius:12).stroke(Palette.color("Line"))) }
-    var nodes:some View { Card {
-        HStack { Text("节点列表 · \(model.settings.Nodes.count)").font(.system(size:19,weight:.semibold)); Spacer(); Button("添加节点") { model.editingNode=nil; model.editor=""; model.editorName=""; model.showingNode=true }.buttonStyle(.borderedProminent) }
-        if model.settings.Nodes.isEmpty { empty("还没有节点","粘贴分享链接，或在订阅管理中添加订阅。","point.3.connected.trianglepath.dotted") }
-        ForEach(model.settings.Nodes) { node in HStack { VStack(alignment:.leading,spacing:5) { Text(node.Name).fontWeight(.semibold); Text(node.kind+((node.GroupId.isEmpty || node.GroupId == "manual") ? " · 手动添加" : " · 来自订阅")).font(.system(size:12)).foregroundStyle(Palette.color("Muted")) }; Spacer(); if model.selectedNode?.Id == node.Id { StatusBadge(text:"当前选择",level:.info) } else { Button("选择") { model.settings.SelectedNodeId=node.Id; model.saveQuietly() } }; Button("编辑") { model.editingNode=node; model.editor=node.OutboundJson; model.editorName=node.Name; model.showingNode=true }; Button("删除",role:.destructive) { model.deleteNode(node) } }.padding(.vertical,12); Divider() }
-    }.disabled(model.busy || model.connected) }
+    var nodes:some View { NodeCatalog(model:model) }
     var subscriptions:some View { Card {
         HStack { Text("订阅列表").font(.system(size:19,weight:.semibold)); Spacer(); Button("添加订阅") { model.editingSubscription=nil; model.editorName=""; model.editorURL=""; model.showingSubscription=true }.buttonStyle(.borderedProminent) }
         if model.settings.Subscriptions.isEmpty { empty("还没有订阅","添加服务商提供的 HTTP 或 HTTPS 订阅地址。","arrow.triangle.2.circlepath") }

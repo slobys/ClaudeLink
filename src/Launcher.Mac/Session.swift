@@ -37,7 +37,7 @@ struct PendingSession: Codable { var stage: String; var mailbox: String; var non
         tun = settings.TunEnabled || settings.LaunchTarget == "desktop"
         let id = UUID().uuidString, mailbox = AppPaths.sessions.appendingPathComponent(id)
         try FileManager.default.createDirectory(at:mailbox,withIntermediateDirectories:true,attributes:[.posixPermissions:0o700])
-        let config = try await Bridge.config(node,port:port,tun:tun)
+        let config = try await Bridge.config(node,port:port,tun:tun,nodes:settings.Nodes)
         let configPath = mailbox.appendingPathComponent("config.json"); try AppPaths.write(config,to:configPath)
         defer { try? FileManager.default.removeItem(at:configPath) }
         let core = Bundle.main.resourceURL!.appendingPathComponent("sing-box")

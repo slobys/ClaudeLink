@@ -7,5 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="YamlDotNet" Version="18.1.0" />
+    <EmbeddedResource Include="..\..\design\regions.json" LogicalName="Node.regions.json" />
   </ItemGroup>
 </Project>

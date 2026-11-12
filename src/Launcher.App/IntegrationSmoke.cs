@@ -5,7 +5,7 @@ using Launcher.App.Services;
 namespace Launcher.App;
 
 // Uses disposable test data and loopback fixtures. Never loads user nodes or enables TUN.
-public static class IntegrationSmoke
+public static partial class IntegrationSmoke
 {
     public static async Task<int> RunAsync(string outputPath)
     {
@@ -34,6 +34,7 @@ public static class IntegrationSmoke
             await CheckNetworkReportingAsync(Assert);
             await FeatureSmoke.RunAsync(Assert, outputPath);
             await CheckBrowserLanguagesAsync(outputPath, Assert);
+            await CheckProxyChainAsync(Assert);
 
             await using var proxy = new HttpFixture("launcher-loopback-ok");
             var node = NodeImporter.Parse($"http://127.0.0.1:{proxy.Port}#test-proxy").Nodes.Single();
@@ -93,6 +94,7 @@ public static class IntegrationSmoke
         }
         catch (Exception ex)
         {
+            File.WriteAllText(outputPath + ".failure.log", ex.ToString());
             try { if (controller is not null) await controller.StopAsync(); } catch { }
             AppPaths.WriteJson(outputPath, new { Passed = checks.Count, Checks = checks, Failed = ex.Message, ErrorType = ex.GetType().Name, TestData = AppPaths.Root });
             return 1;
@@ -464,6 +466,7 @@ setTimeout(()=>{ip.textContent='198.51.100.24';applyAllIpMasks();window.dynamicI
         public int StatusCode { get; set; } = 200;
         public string ContentType { get; set; } = "text/plain; charset=utf-8";
         public string LastRequest { get; private set; } = "";
+        public string LastTunnelRequest { get; private set; } = "";
         public int Requests => requests;
         public int Port => ((IPEndPoint)listener.LocalEndpoint).Port;
         public HttpFixture(string body) { Body = body; listener.Start(); loop = ListenAsync(); }
@@ -491,6 +494,7 @@ setTimeout(()=>{ip.textContent='198.51.100.24';applyAllIpMasks();window.dynamicI
                     if (request.Length == 0) return;
                     if (request.StartsWith("CONNECT ", StringComparison.Ordinal))
                     {
+                        LastTunnelRequest = request;
                         await stream.WriteAsync("HTTP/1.1 200 Connection Established\r\n\r\n"u8.ToArray(), cancellation.Token);
                         request = await ReadHeaderAsync(stream);
                         if (request.Length == 0) return;

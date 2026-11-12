@@ -1,0 +1,18 @@
+<Window x:Class="Launcher.App.ChainDialog" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="链式代理" Style="{StaticResource {x:Type Window}}" Width="650" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+ <Grid Background="{StaticResource Surface}" Margin="0">
+  <StackPanel Margin="28">
+   <TextBlock x:Name="Heading" Text="创建链式代理" FontSize="24" FontWeight="SemiBold"/>
+   <TextBlock Text="先连接入口节点，再通过住宅 IP 或其他节点访问目标网站。" Style="{StaticResource MutedText}" Margin="0,8,0,22"/>
+   <TextBlock Text="链路名称" FontWeight="SemiBold"/><TextBox x:Name="NameBox" Margin="0,8,0,18" MaxLength="120" AutomationProperties.Name="链式代理名称"/>
+   <TextBlock Text="入口节点" FontWeight="SemiBold"/><ComboBox x:Name="EntryCombo" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,8,0,6" SelectionChanged="RouteChanged" AutomationProperties.Name="入口节点"/>
+   <TextBlock Text="负责先连通出口，可选择机场或其他可用节点。" Style="{StaticResource MutedText}" Margin="0,0,0,18"/>
+   <TextBlock Text="最终出口" FontWeight="SemiBold"/><ComboBox x:Name="ExitCombo" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,8,0,6" SelectionChanged="RouteChanged" AutomationProperties.Name="最终出口节点"/>
+   <TextBlock Text="目标网站看到的是出口 IP；住宅代理通常使用 HTTP / SOCKS。" Style="{StaticResource MutedText}" Margin="0,0,0,18"/>
+   <Border Background="{StaticResource AccentSubtle}" CornerRadius="10" Padding="14"><TextBlock x:Name="RoutePreview" TextWrapping="Wrap" Foreground="{StaticResource Ink}" LineHeight="24" MaxHeight="96" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/></Border>
+   <TextBlock Text="HTTP 出口用于网页和 API 等 TCP 流量；UDP 需要节点额外支持。" Style="{StaticResource MutedText}" Margin="0,10,0,0"/>
+   <TextBlock x:Name="ErrorText" Foreground="{StaticResource Error}" TextWrapping="Wrap" Margin="0,12,0,0" AutomationProperties.LiveSetting="Polite"/>
+   <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0"><Button Content="取消" IsCancel="True" IsDefault="True" Margin="0,0,10,0"/><Button x:Name="SaveButton" Content="保存链式代理" Style="{StaticResource PrimaryButton}" Click="Save_Click"/></StackPanel>
+  </StackPanel>
+ </Grid>
+</Window>

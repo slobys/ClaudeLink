@@ -75,11 +75,7 @@ public static class EngineHost
             var parsed = JsonNode.Parse(request.Config)!.AsObject();
             diagnostics.RedactNode(parsed);
             // Only the application's generated inbounds/config are accepted, never a downloaded full config.
-            if (parsed["outbounds"] is not JsonArray outbounds || outbounds.Count != 2) throw new InvalidDataException("无效内核配置。");
-            var outbound = outbounds[0]!.DeepClone().AsObject(); outbound.Remove("tag"); NodeImporter.Validate(outbound);
-            var tun = parsed["inbounds"]!.AsArray().Any(x => x?["type"]?.ToString() == "tun");
-            var node = new ProxyNode { OutboundJson = outbound.ToJsonString() };
-            var trustedConfig = CoreConfigBuilder.Build(node, request.Port, tun);
+            var trustedConfig = CoreConfigBuilder.RebuildTrusted(parsed, request.Port);
             File.WriteAllText(configPath, trustedConfig.ToJsonString(JsonDefaults.Pretty), new UTF8Encoding(false));
             SetStage("extract-core");
             var binary = CoreAssets.Ensure();
@@ -193,6 +189,7 @@ public sealed class SessionController
         if (Connected) return;
         if (Id is not null) await StopAsync();
         if (PendingRecovery().Count > 0) throw new IOException("发现未完成的系统恢复记录，请先点击恢复临时设置。");
+        var config=CoreConfigBuilder.Build(node,settings.ProxyPort,settings.TunEnabled,nodes:settings.Nodes).ToJsonString();
         if (!await PortIsAvailableAsync(settings.ProxyPort)) throw new IOException("本地代理端口已占用，请在设置中修改端口。");
         Id = Guid.NewGuid().ToString("N"); Port = settings.ProxyPort; NodeId = node.Id;
         Directory.CreateDirectory(DirectoryPath!);
@@ -201,7 +198,7 @@ public sealed class SessionController
         var request = new SessionRequest
         {
             OwnerPid = owner.Id, OwnerStarted = owner.StartTime.ToUniversalTime().Ticks, Port = Port,
-            Config = CoreConfigBuilder.Build(node, Port, settings.TunEnabled).ToJsonString(),
+            Config = config,
             DisableIPv6 = settings.DisableIPv6, Elevated = elevated
         };
         SecretStore.Save(Path.Combine(DirectoryPath!, "request.dat"), request);

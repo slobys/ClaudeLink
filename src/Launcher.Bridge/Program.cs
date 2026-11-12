@@ -36,7 +36,7 @@ static object Config(JsonNode request)
     var node = request["node"]?.Deserialize<ProxyNode>() ?? throw new FormatException("请选择节点。");
     var port = request["port"]?.GetValue<int>() ?? 17890;
     var tun = request["tun"]?.GetValue<bool>() ?? false;
-    var config = CoreConfigBuilder.Build(node, port, tun, request["routeEnabled"]?.GetValue<bool>() ?? true);
+    var config = CoreConfigBuilder.Build(node, port, tun, request["routeEnabled"]?.GetValue<bool>() ?? true, request["nodes"]?.Deserialize<List<ProxyNode>>());
     if (request["platform"]?.ToString() == "macos" && tun)
     {
         var inbound = config["inbounds"]!.AsArray().First(x => x?["type"]?.ToString() == "tun")!.AsObject();
