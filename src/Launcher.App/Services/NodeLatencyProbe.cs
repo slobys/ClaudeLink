@@ -11,7 +11,7 @@ namespace Launcher.App.Services;
 public static class NodeLatencyProbe
 {
     public static async Task RunAsync(IReadOnlyList<ProxyNode> nodes, IReadOnlyList<ProxyNode> available,
-        Action<string,NodeLatencyResult> changed, CancellationToken token, string target = NodeLatency.Target, int timeoutMs = NodeLatency.TimeoutMs, string? fixtureCertificate = null, Action<int,int>? started = null)
+        Action<string,NodeLatencyResult> changed, CancellationToken token, string target = NodeLatency.Target, int timeoutMs = NodeLatency.TimeoutMs, Action<int,int>? started = null)
     {
         using var listener = new TcpListener(IPAddress.Loopback,0); listener.Start(); var port=((IPEndPoint)listener.LocalEndpoint).Port; listener.Stop();
         var secret=Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(32));
@@ -22,7 +22,7 @@ public static class NodeLatencyProbe
         Process? core=null; CoreJob? job=null;
         try
         {
-            if(fixtureCertificate != null) plan.Config["certificate"]=new System.Text.Json.Nodes.JsonObject { ["store"]="none", ["certificate"]=fixtureCertificate };
+
             var path=Path.Combine(folder,"config.json"); await File.WriteAllTextAsync(path,plan.Config.ToJsonString(),token);
             token.ThrowIfCancellationRequested();
             core=Process.Start(ProcessTools.Hidden(CoreAssets.Ensure(),"run","-c",path)) ?? throw new IOException("无法启动测速内核。");

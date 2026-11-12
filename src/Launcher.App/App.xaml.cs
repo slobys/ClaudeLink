@@ -24,6 +24,7 @@ public partial class App : Application
             {
                 Shutdown(await EngineHost.RunAsync(e.Args[1], e.Args[0] == "--recover")); return;
             }
+            if (e.Args.Length == 2 && e.Args[0] == "--latency-test") { Shutdown(await IntegrationSmoke.RunLatencyAsync(e.Args[1])); return; }
             if (e.Args.Length == 2 && e.Args[0] == "--integration-test")
             {
                 Shutdown(await IntegrationSmoke.RunAsync(e.Args[1])); return;

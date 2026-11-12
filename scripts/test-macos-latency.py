@@ -110,7 +110,7 @@ def launch(nodes, all_nodes, owner):
     bridge = app / "Contents/Resources/bridge/ClaudeLink.Bridge"
     plan = json.loads(subprocess.check_output([str(bridge)], input=json.dumps(request).encode()))
     config = plan["Config"]
-    config["certificate"] = {"store": "none", "certificate": (temp / "cert.pem").read_text()}
+    
     root = Path(tempfile.gettempdir()).resolve() / ("ClaudeLink-Latency-" + str(uuid.uuid4()))
     root.mkdir(mode=0o700)
     roots.append(root)
@@ -135,7 +135,6 @@ try:
     origin = Server(("127.0.0.1", 0), TLSHandler)
     tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     tls.load_cert_chain(str(temp / "cert.pem"), str(temp / "key.pem"))
-    origin.socket = tls.wrap_socket(origin.socket, server_side=True)
     target_port = start(origin)
     fast, fast_class = relay(target_port, .04)
     slow, _ = relay(target_port, .28)
@@ -148,15 +147,26 @@ try:
     nodes.append(dict(Id="chain", Name="Fixture chain", OutboundJson="{}", ChainNodeIds=["entry", "fast"]))
     child, root, port, plan = launch(nodes, nodes + [entry_node], os.getpid())
     check(plan["Config"]["inbounds"] == [] and api(port, "version", False)[0] == 401, "Latency controller is authenticated, loopback only, and has no traffic or TUN inbound")
-    target = f"https://127.0.0.1:{target_port}/latency"
+    # The core rewrites lowercase http:// to a public target. This uppercase URL is restricted to the local fixture; production uses HTTPS.
+    target = f"HTTP://127.0.0.1:{target_port}/latency"
     def measure(identity):
         query = urllib.parse.urlencode(dict(timeout=900, url=target))
         return identity, api(port, f"proxies/{plan['Tags'][identity]}/delay?{query}")
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
         results = dict(pool.map(measure, [n["Id"] for n in nodes]))
-    check(results["fast"][0] == results["slow"][0] == 200 and results["fast"][1]["delay"] < results["slow"][1]["delay"], "Real proxied TLS HEAD delays preserve fast/slow order")
+    check(results["fast"][0] == results["slow"][0] == 200 and results["fast"][1]["delay"] < results["slow"][1]["delay"], "Real proxied HTTP HEAD delays preserve fast/slow order")
     check(results["timeout"][0] == 504 and results["bad"][0] == 503, "Core distinguishes timeout and rejected proxy authentication")
     check(results["chain"][0] == 200 and entry_class.requests > 0 and fast_class.requests >= 2 and TLSHandler.requests == 3, "Chain measurements traverse both hops and failed nodes cannot bypass to the target")
+    untrusted = Server(("127.0.0.1", 0), TLSHandler)
+    untrusted.socket = tls.wrap_socket(untrusted.socket, server_side=True)
+    tls_port = start(untrusted)
+    tls_proxy, _ = relay(tls_port, .01)
+    tls_node = node("tls", tls_proxy)
+    tls_child, tls_root, tls_controller, tls_plan = launch([tls_node], [tls_node], os.getpid())
+    query = urllib.parse.urlencode(dict(timeout=900, url=f"https://127.0.0.1:{tls_port}/latency"))
+    check(api(tls_controller, f"proxies/{tls_plan['Tags']['tls']}/delay?{query}")[0] == 503, "HTTPS latency rejects untrusted certificates without disabling verification")
+    (tls_root / "cancel").touch()
+    tls_child.wait(timeout=8)
     (root / "cancel").touch()
     child.wait(timeout=8)
     check(not open_port(port) and not (root / "config.json").exists(), "Cancel stops the owned core and removes credential-bearing configuration")
