@@ -84,4 +84,10 @@ test -f "$OUT/shutdown-results.json"
 /usr/bin/codesign --verify --deep --strict "$APP"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$ROOT/artifacts/ClaudeLink-$VERSION-macos-$ARCH.zip"
 DMG="$OUT/dmg"; mkdir -p "$DMG"; ditto "$APP" "$DMG/Claude Link.app"; ln -s /Applications "$DMG/Applications"
-hdiutil create -volname "Claude Link $VERSION" -srcfolder "$DMG" -ov -format UDZO "$ROOT/artifacts/ClaudeLink-$VERSION-macos-$ARCH.dmg"
+DMG_OK=0
+for attempt in 1 2 3; do
+  if hdiutil create -volname "Claude Link $VERSION" -srcfolder "$DMG" -ov -format UDZO "$ROOT/artifacts/ClaudeLink-$VERSION-macos-$ARCH.dmg"; then DMG_OK=1; break; fi
+  sleep "$((attempt*2))"
+done
+[[ "$DMG_OK" == 1 ]] || { echo 'DMG creation failed after bounded retries'; exit 1; }
+hdiutil verify "$ROOT/artifacts/ClaudeLink-$VERSION-macos-$ARCH.dmg"
