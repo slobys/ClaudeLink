@@ -35,6 +35,7 @@ public partial class MainWindow
         public string RegionLabel => Region?.Name ?? "未识别地区";
         public string RegionHint => $"按节点名称识别：{RegionLabel}；实际出口以连接检测为准";
         public string Description => Node.IsChain ? ProxyChain.Path(Node, Available) : Group;
+        public string Subtitle => $"{RegionLabel} · {Description}";
         public bool Invalid => Node.IsChain && ProxyChain.IsMissing(Node, Available);
         public string State => Invalid ? "节点失效" : Current ? "当前选择" : "待连接";
         public BitmapImage? Flag

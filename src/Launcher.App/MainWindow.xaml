@@ -18,7 +18,7 @@
       <StackPanel><TextBlock Text="独立代理内核" Foreground="{StaticResource Ink}" FontSize="12"/>
        <TextBlock Text="sing-box 1.14.4 · x64" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,5,0,0"/></StackPanel>
      </Border>
-     <TextBlock Text="v1.3.2   /   本地加密存储" Foreground="{StaticResource Muted}" FontSize="11"/>
+     <TextBlock Text="v1.3.3   /   本地加密存储" Foreground="{StaticResource Muted}" FontSize="11"/>
     </StackPanel>
     <StackPanel>
      <Button x:Name="NavDashboard" Style="{StaticResource NavButton}" Content="工作台" Tag="Dashboard" Click="Navigate_Click"/>
@@ -146,12 +146,12 @@
        <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem">
         <Setter Property="Width" Value="182"/><Setter Property="Margin" Value="0,0,8,8"/><Setter Property="Padding" Value="0"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem">
-         <Border x:Name="Tile" Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="12" Padding="12"><ContentPresenter/></Border>
+         <Border x:Name="Tile" Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="12" Padding="10"><ContentPresenter/></Border>
          <ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Tile" Property="Background" Value="{StaticResource SurfaceAlt}"/><Setter TargetName="Tile" Property="BorderBrush" Value="{StaticResource Accent}"/></Trigger><Trigger Property="IsSelected" Value="True"><Setter TargetName="Tile" Property="Background" Value="{StaticResource AccentSubtle}"/><Setter TargetName="Tile" Property="BorderBrush" Value="{StaticResource Accent}"/></Trigger><Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Tile" Property="BorderThickness" Value="2"/></Trigger></ControlTemplate.Triggers>
         </ControlTemplate></Setter.Value></Setter>
        </Style></ListBox.ItemContainerStyle>
        <ListBox.ItemTemplate><DataTemplate>
-        <Grid Height="92"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid Height="70"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
          <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/><ColumnDefinition Width="20"/></Grid.ColumnDefinitions>
           <Image x:Name="CountryFlag" Source="{Binding Flag}" Width="26" Height="24" HorizontalAlignment="Left" ToolTip="{Binding RegionHint}"/>
           <Grid x:Name="UnknownFlag" Width="24" Height="24" HorizontalAlignment="Left" Visibility="Collapsed">
@@ -164,9 +164,8 @@
            <Path x:Name="ChosenCheck" Data="M 2,9 L 7,14 L 16,3" Stroke="{StaticResource Accent}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Visibility="Collapsed"/>
           </Grid>
          </Grid>
-         <TextBlock Grid.Row="1" Text="{Binding RegionLabel}" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,5,0,0"/>
-         <TextBlock Grid.Row="2" Text="{Binding Description}" TextTrimming="CharacterEllipsis" FontSize="12" Foreground="{StaticResource Muted}" Margin="0,4,0,4" ToolTip="{Binding Description}" VerticalAlignment="Center"/>
-         <DockPanel Grid.Row="3"><Border x:Name="NodeState" DockPanel.Dock="Right" Background="{StaticResource PendingBg}" CornerRadius="7" Padding="8,4"><TextBlock x:Name="NodeStateText" Text="{Binding State}" Foreground="{StaticResource Pending}" FontSize="11" FontWeight="SemiBold"/></Border><TextBlock Text="{Binding Protocol}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/></DockPanel>
+         <TextBlock Grid.Row="1" Text="{Binding Subtitle}" TextTrimming="CharacterEllipsis" FontSize="12" Foreground="{StaticResource Muted}" Margin="0,4,0,4" ToolTip="{Binding Subtitle}" VerticalAlignment="Center"/>
+         <DockPanel Grid.Row="2"><Border x:Name="NodeState" DockPanel.Dock="Right" Background="{StaticResource PendingBg}" CornerRadius="7" Padding="8,4"><TextBlock x:Name="NodeStateText" Text="{Binding State}" Foreground="{StaticResource Pending}" FontSize="11" FontWeight="SemiBold"/></Border><TextBlock Text="{Binding Protocol}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/></DockPanel>
         </Grid>
         <DataTemplate.Triggers>
          <DataTrigger Binding="{Binding RegionLabel}" Value="未识别地区"><Setter TargetName="UnknownFlag" Property="Visibility" Value="Visible"/><Setter TargetName="CountryFlag" Property="Visibility" Value="Collapsed"/></DataTrigger>
