@@ -1,0 +1,474 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-12T01:43:18Z",
+  "title": "Design System: Claude Link",
+  "extensions": {
+    "colorMeta": {
+      "Background": {
+        "role": "neutral",
+        "displayName": "冷灰蓝画布",
+        "canonical": "#F4F7FB",
+        "tonalRamp": [
+          "oklch(0.150 0.0016 255.47)",
+          "oklch(0.260 0.0034 255.47)",
+          "oklch(0.380 0.0050 255.47)",
+          "oklch(0.500 0.0062 255.47)",
+          "oklch(0.620 0.0062 255.47)",
+          "oklch(0.740 0.0050 255.47)",
+          "oklch(0.860 0.0031 255.47)",
+          "oklch(0.950 0.0011 255.47)"
+        ]
+      },
+      "Surface": {
+        "role": "neutral",
+        "displayName": "白色工作面",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "oklch(0.150 0.0000 0.00)",
+          "oklch(0.260 0.0000 0.00)",
+          "oklch(0.380 0.0000 0.00)",
+          "oklch(0.500 0.0000 0.00)",
+          "oklch(0.620 0.0000 0.00)",
+          "oklch(0.740 0.0000 0.00)",
+          "oklch(0.860 0.0000 0.00)",
+          "oklch(0.950 0.0000 0.00)"
+        ]
+      },
+      "SurfaceAlt": {
+        "role": "neutral",
+        "displayName": "轻冷灰工作面",
+        "canonical": "#F8FAFC",
+        "tonalRamp": [
+          "oklch(0.150 0.0009 247.86)",
+          "oklch(0.260 0.0019 247.86)",
+          "oklch(0.380 0.0027 247.86)",
+          "oklch(0.500 0.0034 247.86)",
+          "oklch(0.620 0.0034 247.86)",
+          "oklch(0.740 0.0027 247.86)",
+          "oklch(0.860 0.0017 247.86)",
+          "oklch(0.950 0.0006 247.86)"
+        ]
+      },
+      "Sidebar": {
+        "role": "neutral",
+        "displayName": "白色侧栏",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "oklch(0.150 0.0000 0.00)",
+          "oklch(0.260 0.0000 0.00)",
+          "oklch(0.380 0.0000 0.00)",
+          "oklch(0.500 0.0000 0.00)",
+          "oklch(0.620 0.0000 0.00)",
+          "oklch(0.740 0.0000 0.00)",
+          "oklch(0.860 0.0000 0.00)",
+          "oklch(0.950 0.0000 0.00)"
+        ]
+      },
+      "Ink": {
+        "role": "neutral",
+        "displayName": "深石板正文",
+        "canonical": "#18283D",
+        "tonalRamp": [
+          "oklch(0.150 0.0112 255.62)",
+          "oklch(0.260 0.0247 255.62)",
+          "oklch(0.380 0.0359 255.62)",
+          "oklch(0.500 0.0448 255.62)",
+          "oklch(0.620 0.0448 255.62)",
+          "oklch(0.740 0.0359 255.62)",
+          "oklch(0.860 0.0224 255.62)",
+          "oklch(0.950 0.0081 255.62)"
+        ]
+      },
+      "Muted": {
+        "role": "neutral",
+        "displayName": "中石板辅助",
+        "canonical": "#5C6D82",
+        "tonalRamp": [
+          "oklch(0.150 0.0098 253.88)",
+          "oklch(0.260 0.0215 253.88)",
+          "oklch(0.380 0.0312 253.88)",
+          "oklch(0.500 0.0390 253.88)",
+          "oklch(0.620 0.0390 253.88)",
+          "oklch(0.740 0.0312 253.88)",
+          "oklch(0.860 0.0195 253.88)",
+          "oklch(0.950 0.0070 253.88)"
+        ]
+      },
+      "Line": {
+        "role": "neutral",
+        "displayName": "细冷灰边界",
+        "canonical": "#D8E1EC",
+        "tonalRamp": [
+          "oklch(0.150 0.0045 253.35)",
+          "oklch(0.260 0.0098 253.35)",
+          "oklch(0.380 0.0143 253.35)",
+          "oklch(0.500 0.0179 253.35)",
+          "oklch(0.620 0.0179 253.35)",
+          "oklch(0.740 0.0143 253.35)",
+          "oklch(0.860 0.0090 253.35)",
+          "oklch(0.950 0.0032 253.35)"
+        ]
+      },
+      "Accent": {
+        "role": "primary",
+        "displayName": "操作蓝",
+        "canonical": "#2563EB",
+        "tonalRamp": [
+          "oklch(0.150 0.0350 262.88)",
+          "oklch(0.260 0.0770 262.88)",
+          "oklch(0.380 0.1120 262.88)",
+          "oklch(0.500 0.1400 262.88)",
+          "oklch(0.620 0.1400 262.88)",
+          "oklch(0.740 0.1120 262.88)",
+          "oklch(0.860 0.0700 262.88)",
+          "oklch(0.950 0.0252 262.88)"
+        ]
+      },
+      "AccentSubtle": {
+        "role": "primary",
+        "displayName": "浅蓝选择底",
+        "canonical": "#EAF1FF",
+        "tonalRamp": [
+          "oklch(0.150 0.0051 264.47)",
+          "oklch(0.260 0.0111 264.47)",
+          "oklch(0.380 0.0162 264.47)",
+          "oklch(0.500 0.0203 264.47)",
+          "oklch(0.620 0.0203 264.47)",
+          "oklch(0.740 0.0162 264.47)",
+          "oklch(0.860 0.0101 264.47)",
+          "oklch(0.950 0.0036 264.47)"
+        ]
+      },
+      "Success": {
+        "role": "neutral",
+        "displayName": "通过绿",
+        "canonical": "#067647",
+        "tonalRamp": [
+          "oklch(0.150 0.0292 157.07)",
+          "oklch(0.260 0.0642 157.07)",
+          "oklch(0.380 0.0934 157.07)",
+          "oklch(0.500 0.1168 157.07)",
+          "oklch(0.620 0.1168 157.07)",
+          "oklch(0.740 0.0934 157.07)",
+          "oklch(0.860 0.0584 157.07)",
+          "oklch(0.950 0.0210 157.07)"
+        ]
+      },
+      "SuccessBg": {
+        "role": "neutral",
+        "displayName": "通过浅绿",
+        "canonical": "#ECFDF3",
+        "tonalRamp": [
+          "oklch(0.150 0.0055 160.24)",
+          "oklch(0.260 0.0122 160.24)",
+          "oklch(0.380 0.0177 160.24)",
+          "oklch(0.500 0.0221 160.24)",
+          "oklch(0.620 0.0221 160.24)",
+          "oklch(0.740 0.0177 160.24)",
+          "oklch(0.860 0.0111 160.24)",
+          "oklch(0.950 0.0040 160.24)"
+        ]
+      },
+      "Warning": {
+        "role": "neutral",
+        "displayName": "注意琥珀",
+        "canonical": "#92400E",
+        "tonalRamp": [
+          "oklch(0.150 0.0312 46.20)",
+          "oklch(0.260 0.0686 46.20)",
+          "oklch(0.380 0.0998 46.20)",
+          "oklch(0.500 0.1247 46.20)",
+          "oklch(0.620 0.1247 46.20)",
+          "oklch(0.740 0.0998 46.20)",
+          "oklch(0.860 0.0623 46.20)",
+          "oklch(0.950 0.0224 46.20)"
+        ]
+      },
+      "WarningBg": {
+        "role": "neutral",
+        "displayName": "注意浅琥珀",
+        "canonical": "#FFFAEB",
+        "tonalRamp": [
+          "oklch(0.150 0.0051 91.58)",
+          "oklch(0.260 0.0112 91.58)",
+          "oklch(0.380 0.0163 91.58)",
+          "oklch(0.500 0.0204 91.58)",
+          "oklch(0.620 0.0204 91.58)",
+          "oklch(0.740 0.0163 91.58)",
+          "oklch(0.860 0.0102 91.58)",
+          "oklch(0.950 0.0037 91.58)"
+        ]
+      },
+      "Error": {
+        "role": "neutral",
+        "displayName": "失败红",
+        "canonical": "#B42318",
+        "tonalRamp": [
+          "oklch(0.150 0.0350 29.51)",
+          "oklch(0.260 0.0770 29.51)",
+          "oklch(0.380 0.1120 29.51)",
+          "oklch(0.500 0.1400 29.51)",
+          "oklch(0.620 0.1400 29.51)",
+          "oklch(0.740 0.1120 29.51)",
+          "oklch(0.860 0.0700 29.51)",
+          "oklch(0.950 0.0252 29.51)"
+        ]
+      },
+      "ErrorBg": {
+        "role": "neutral",
+        "displayName": "失败浅红",
+        "canonical": "#FEF3F2",
+        "tonalRamp": [
+          "oklch(0.150 0.0030 23.70)",
+          "oklch(0.260 0.0066 23.70)",
+          "oklch(0.380 0.0096 23.70)",
+          "oklch(0.500 0.0119 23.70)",
+          "oklch(0.620 0.0119 23.70)",
+          "oklch(0.740 0.0096 23.70)",
+          "oklch(0.860 0.0060 23.70)",
+          "oklch(0.950 0.0022 23.70)"
+        ]
+      },
+      "Info": {
+        "role": "neutral",
+        "displayName": "信息蓝",
+        "canonical": "#175CD3",
+        "tonalRamp": [
+          "oklch(0.150 0.0350 260.89)",
+          "oklch(0.260 0.0770 260.89)",
+          "oklch(0.380 0.1120 260.89)",
+          "oklch(0.500 0.1400 260.89)",
+          "oklch(0.620 0.1400 260.89)",
+          "oklch(0.740 0.1120 260.89)",
+          "oklch(0.860 0.0700 260.89)",
+          "oklch(0.950 0.0252 260.89)"
+        ]
+      },
+      "InfoBg": {
+        "role": "neutral",
+        "displayName": "信息浅蓝",
+        "canonical": "#EFF8FF",
+        "tonalRamp": [
+          "oklch(0.150 0.0033 240.95)",
+          "oklch(0.260 0.0074 240.95)",
+          "oklch(0.380 0.0107 240.95)",
+          "oklch(0.500 0.0134 240.95)",
+          "oklch(0.620 0.0134 240.95)",
+          "oklch(0.740 0.0107 240.95)",
+          "oklch(0.860 0.0067 240.95)",
+          "oklch(0.950 0.0024 240.95)"
+        ]
+      },
+      "Pending": {
+        "role": "neutral",
+        "displayName": "待检测灰",
+        "canonical": "#475467",
+        "tonalRamp": [
+          "oklch(0.150 0.0089 257.79)",
+          "oklch(0.260 0.0195 257.79)",
+          "oklch(0.380 0.0284 257.79)",
+          "oklch(0.500 0.0355 257.79)",
+          "oklch(0.620 0.0355 257.79)",
+          "oklch(0.740 0.0284 257.79)",
+          "oklch(0.860 0.0177 257.79)",
+          "oklch(0.950 0.0064 257.79)"
+        ]
+      },
+      "PendingBg": {
+        "role": "neutral",
+        "displayName": "待检测浅灰",
+        "canonical": "#F2F4F7",
+        "tonalRamp": [
+          "oklch(0.150 0.0011 258.32)",
+          "oklch(0.260 0.0025 258.32)",
+          "oklch(0.380 0.0036 258.32)",
+          "oklch(0.500 0.0045 258.32)",
+          "oklch(0.620 0.0045 258.32)",
+          "oklch(0.740 0.0036 258.32)",
+          "oklch(0.860 0.0023 258.32)",
+          "oklch(0.950 0.0008 258.32)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline-windows": {
+        "displayName": "headline-windows",
+        "purpose": "已构建原生界面的 headline-windows 角色；Windows DIP / macOS point，不是截图像素。"
+      },
+      "headline-macos": {
+        "displayName": "headline-macos",
+        "purpose": "已构建原生界面的 headline-macos 角色；Windows DIP / macOS point，不是截图像素。"
+      },
+      "session-title": {
+        "displayName": "session-title",
+        "purpose": "已构建原生界面的 session-title 角色；Windows DIP / macOS point，不是截图像素。"
+      },
+      "section-title-windows": {
+        "displayName": "section-title-windows",
+        "purpose": "已构建原生界面的 section-title-windows 角色；Windows DIP / macOS point，不是截图像素。"
+      },
+      "section-title-macos": {
+        "displayName": "section-title-macos",
+        "purpose": "已构建原生界面的 section-title-macos 角色；Windows DIP / macOS point，不是截图像素。"
+      },
+      "body-windows": {
+        "displayName": "body-windows",
+        "purpose": "已构建原生界面的 body-windows 角色；Windows DIP / macOS point，不是截图像素。"
+      },
+      "body-macos": {
+        "displayName": "body-macos",
+        "purpose": "已构建原生界面的 body-macos 角色；Windows DIP / macOS point，不是截图像素。"
+      },
+      "log-windows": {
+        "displayName": "log-windows",
+        "purpose": "原生字体提取；system 对应 SwiftUI .system，px 表达原生逻辑单位。日志正文按时间从上到下排列。"
+      },
+      "log-macos": {
+        "displayName": "log-macos",
+        "purpose": "原生字体提取；system 对应 SwiftUI .system，px 表达原生逻辑单位。日志正文按时间从上到下排列。"
+      },
+      "navigation": {
+        "displayName": "navigation",
+        "purpose": "已构建原生界面的 navigation 角色；Windows DIP / macOS point，不是截图像素。"
+      },
+      "support-windows": {
+        "displayName": "support-windows",
+        "purpose": "已构建原生界面的 support-windows 角色；Windows DIP / macOS point，不是截图像素。"
+      },
+      "support-macos": {
+        "displayName": "support-macos",
+        "purpose": "已构建原生界面的 support-macos 角色；Windows DIP / macOS point，不是截图像素。"
+      },
+      "status-label": {
+        "displayName": "status-label",
+        "purpose": "已构建原生界面的 status-label 角色；Windows DIP / macOS point，不是截图像素。"
+      }
+    },
+    "shadows": [],
+    "motion": [],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "主要按钮",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "WPF 按钮材料的文档预览；SwiftUI 使用原生按钮，尺寸与焦点反馈不由此 CSS 定义。",
+      "html": "<button class=\"ds-btn-primary\">连接并检测</button>",
+      "css": ".ds-btn-primary {font-family:\"Segoe UI\",\"Microsoft YaHei UI\",system-ui;font-size:14px;min-height:40px;padding:10px 16px;border:1px solid #2563EB;border-radius:8px;background:#2563EB;color:#FFFFFF;font-weight:600;} .ds-btn-primary:hover {opacity:.82;} .ds-btn-primary:active {opacity:.68;} .ds-btn-primary:focus-visible {outline:2px solid #2563EB;outline-offset:2px;} .ds-btn-primary:disabled {opacity:.42;}"
+    },
+    {
+      "name": "次要按钮",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "WPF 按钮材料的文档预览；SwiftUI 使用原生按钮，尺寸与焦点反馈不由此 CSS 定义。",
+      "html": "<button class=\"ds-btn-secondary\">连接并检测</button>",
+      "css": ".ds-btn-secondary {font-family:\"Segoe UI\",\"Microsoft YaHei UI\",system-ui;font-size:14px;min-height:40px;padding:10px 16px;border:1px solid #D8E1EC;border-radius:8px;background:#F8FAFC;color:#18283D;font-weight:400;} .ds-btn-secondary:hover {opacity:.82;} .ds-btn-secondary:active {opacity:.68;} .ds-btn-secondary:focus-visible {outline:2px solid #2563EB;outline-offset:2px;} .ds-btn-secondary:disabled {opacity:.42;}"
+    },
+    {
+      "name": "输入框",
+      "kind": "input",
+      "refersTo": "input-windows",
+      "description": "WPF 输入框的材料预览。Mac InputField 保留 native TextField 与不接收点击的 Muted 提示层；无 CSS 运行层。",
+      "html": "<input class=\"ds-input\" aria-label=\"项目文件夹\" placeholder=\"项目文件夹\" />",
+      "css": ".ds-input {font-family:\"Segoe UI\",\"Microsoft YaHei UI\",system-ui;font-size:14px;min-height:40px;padding:9px 12px;background:#FFFFFF;color:#18283D;border:1px solid #D8E1EC;border-radius:8px;} .ds-input::placeholder {color:#5C6D82;opacity:1;} .ds-input:hover {border-color:#D8E1EC;} .ds-input:focus-visible {outline:0;border-color:#2563EB;} .ds-input:disabled {opacity:.5;}"
+    },
+    {
+      "name": "持续导航",
+      "kind": "nav",
+      "refersTo": "navigation-selected",
+      "description": "共享选中语义的文档预览；WPF 使用按钮，Mac 为带 SF Symbols 的原生 Button。",
+      "html": "<nav class=\"ds-nav\" aria-label=\"页面\"><button aria-current=\"page\">工作台</button><button>节点管理</button><button>运行记录</button></nav>",
+      "css": ".ds-nav {font-family:\"Segoe UI\",\"Microsoft YaHei UI\",system-ui;width:188px;background:#FFFFFF;display:grid;gap:6px;} .ds-nav button {font:inherit;font-size:15px;padding:12px 14px;border:0;border-radius:8px;color:#5C6D82;background:transparent;} .ds-nav button[aria-current] {font-weight:600;color:#2563EB;background:#EAF1FF;} .ds-nav button:hover {opacity:.82;} .ds-nav button:active {opacity:.68;} .ds-nav button:focus-visible {outline:2px solid #2563EB;outline-offset:1px;}"
+    },
+    {
+      "name": "任务卡片",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "WPF Border 与 SwiftUI Card 都已实现的平面材料；面板预览只表达边界、留白和层级。",
+      "html": "<section class=\"ds-card\"><strong>准备一次工作会话</strong><p>选择节点和项目，准备本次连接。</p></section>",
+      "css": ".ds-card {font-family:\"Segoe UI\",\"Microsoft YaHei UI\",system-ui;color:#18283D;background:#FFFFFF;padding:22px;border:1px solid #D8E1EC;border-radius:12px;} .ds-card strong {font-size:21px;font-weight:600;} .ds-card p {font-size:13px;color:#5C6D82;margin:8px 0 0;}"
+    },
+    {
+      "name": "检查行 · 通过",
+      "kind": "custom",
+      "refersTo": "result-success",
+      "description": "原生检查行材料的文档映射：同语义图形、结果、状态和浅底色。示例值不代表实际网络。",
+      "html": "<div class=\"ds-check-success\"><svg viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M2 8l4 4L14 2\" /></svg><span>独立检查项</span><div><strong>HTTP 401 · HTTPS 可达</strong><small>界面示例，仅核对样式</small></div><b>通过</b></div>",
+      "css": ".ds-check-success {font-family:\"Segoe UI\",\"Microsoft YaHei UI\",system-ui;display:grid;grid-template-columns:24px 142px minmax(150px,1fr) 60px;gap:0;align-items:center;padding:11px 12px;border-radius:8px;background:#ECFDF3;color:#18283D;font-size:14px;} .ds-check-success svg {width:13px;height:13px;fill:none;stroke:#067647;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;} .ds-check-success strong,.ds-check-success b {color:#067647;font-weight:600;} .ds-check-success b {font-size:12px;text-align:right;} .ds-check-success small {display:block;margin-top:4px;font-size:12px;color:#5C6D82;}"
+    },
+    {
+      "name": "检查行 · 注意",
+      "kind": "custom",
+      "refersTo": "result-warning",
+      "description": "原生检查行材料的文档映射：同语义图形、结果、状态和浅底色。示例值不代表实际网络。",
+      "html": "<div class=\"ds-check-warning\"><svg viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M8 1L15 14H1Z M8 5v4 M8 11v1\" /></svg><span>独立检查项</span><div><strong>HTTP 403</strong><small>界面示例，仅核对样式</small></div><b>注意</b></div>",
+      "css": ".ds-check-warning {font-family:\"Segoe UI\",\"Microsoft YaHei UI\",system-ui;display:grid;grid-template-columns:24px 142px minmax(150px,1fr) 60px;gap:0;align-items:center;padding:11px 12px;border-radius:8px;background:#FFFAEB;color:#18283D;font-size:14px;} .ds-check-warning svg {width:13px;height:13px;fill:none;stroke:#92400E;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;} .ds-check-warning strong,.ds-check-warning b {color:#92400E;font-weight:600;} .ds-check-warning b {font-size:12px;text-align:right;} .ds-check-warning small {display:block;margin-top:4px;font-size:12px;color:#5C6D82;}"
+    },
+    {
+      "name": "检查行 · 失败",
+      "kind": "custom",
+      "refersTo": "result-error",
+      "description": "原生检查行材料的文档映射：同语义图形、结果、状态和浅底色。示例值不代表实际网络。",
+      "html": "<div class=\"ds-check-error\"><svg viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M2 2l12 12 M14 2L2 14\" /></svg><span>独立检查项</span><div><strong>DNS 解析失败</strong><small>界面示例，仅核对样式</small></div><b>失败</b></div>",
+      "css": ".ds-check-error {font-family:\"Segoe UI\",\"Microsoft YaHei UI\",system-ui;display:grid;grid-template-columns:24px 142px minmax(150px,1fr) 60px;gap:0;align-items:center;padding:11px 12px;border-radius:8px;background:#FEF3F2;color:#18283D;font-size:14px;} .ds-check-error svg {width:13px;height:13px;fill:none;stroke:#B42318;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;} .ds-check-error strong,.ds-check-error b {color:#B42318;font-weight:600;} .ds-check-error b {font-size:12px;text-align:right;} .ds-check-error small {display:block;margin-top:4px;font-size:12px;color:#5C6D82;}"
+    },
+    {
+      "name": "检查行 · 待检测",
+      "kind": "custom",
+      "refersTo": "result-pending",
+      "description": "原生检查行材料的文档映射：同语义图形、结果、状态和浅底色。示例值不代表实际网络。",
+      "html": "<div class=\"ds-check-pending\"><svg viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M2 8h12\" /></svg><span>独立检查项</span><div><strong>尚未检测</strong><small>界面示例，仅核对样式</small></div><b>待检测</b></div>",
+      "css": ".ds-check-pending {font-family:\"Segoe UI\",\"Microsoft YaHei UI\",system-ui;display:grid;grid-template-columns:24px 142px minmax(150px,1fr) 60px;gap:0;align-items:center;padding:11px 12px;border-radius:8px;background:#F2F4F7;color:#18283D;font-size:14px;} .ds-check-pending svg {width:13px;height:13px;fill:none;stroke:#475467;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;} .ds-check-pending strong,.ds-check-pending b {color:#475467;font-weight:600;} .ds-check-pending b {font-size:12px;text-align:right;} .ds-check-pending small {display:block;margin-top:4px;font-size:12px;color:#5C6D82;}"
+    },
+    {
+      "name": "运行记录",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "16 单位日志正文的文档预览。产品使用 RichTextBox 或 LazyVStack，按时间追加；不由此代码实现。",
+      "html": "<div class=\"ds-logs\"><p><time>08:49:10</time><b>信息</b><span>启动器已就绪。</span></p><p class=\"ds-log-success\"><time>08:49:11</time><b>完成</b><span>已停止代理并恢复临时环境。</span></p></div>",
+      "css": ".ds-logs {font-family:\"Segoe UI\",\"Microsoft YaHei UI\",system-ui;padding:18px;border:1px solid #D8E1EC;border-radius:12px;background:#FFFFFF;color:#18283D;font-size:16px;line-height:26px;} .ds-logs p {display:flex;gap:14px;margin:0 0 9px;align-items:flex-start;} .ds-logs time {font-family:Consolas,monospace;color:#5C6D82;} .ds-logs b {color:#175CD3;font-weight:600;} .ds-logs .ds-log-success b,.ds-logs .ds-log-success span {color:#067647;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "可读的原生网络工作台",
+    "overview": "界面以白色侧栏和白色工作面承载操作，浅冷灰蓝色背景区分区域，石板色文字建立阅读层级，蓝色标出当前导航与主要行动。密度服务于节点配置、连接检查和恢复操作，沿用桌面系统控件的交互习惯。\n\n两端共享颜色含义、卡片材料与中文状态语言，分别采用 WPF 与 SwiftUI 实现。系统字体、窗口外壳、选择器、菜单、焦点反馈和授权窗口遵循所在操作系统；统一的是视觉语义，而非强行复制控件像素。",
+    "keyCharacteristics": [
+      "白色工作面、轻边界与蓝色操作重心。",
+      "结果通过颜色、文字和图形共同表达，未知状态保留灰色。",
+      "运行记录正文保持 16 个逻辑单位，按时间从上到下排列。",
+      "共享令牌与平台原生控件共同组成系统。"
+    ],
+    "rules": [
+      {
+        "name": "独立证据",
+        "body": "代理已启动、API HTTPS 可达、网页检查与账户授权分别显示。一个检查通过不替代其他检查，未知结果使用 Pending。",
+        "section": "colors"
+      },
+      {
+        "name": "日志可读",
+        "body": "运行记录正文保持 16 个逻辑单位，较早记录在上，新记录追加在下；信息正文使用 Ink，级别标签承担信息蓝色。",
+        "section": "typography"
+      },
+      {
+        "name": "平面分层",
+        "body": "工作面依靠背景色、细边界与间距形成层级；不为卡片添加装饰性阴影。系统窗口与弹层的原生阴影由操作系统管理。",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do 使用共享颜色键，先修改 design/tokens.json，再同步两端资源。",
+      "Do 在检查行同时保留状态文字、矢量图形和对应的前景／浅底色。",
+      "Do 在断开或恢复后清除旧检测结果与旧结果颜色，重新显示灰色待检测。",
+      "Do 保持日志正文大小与从上到下的时间顺序，允许复制文字和纵向滚动。",
+      "Do 保留原生焦点反馈、可访问名称、禁用状态及系统授权流程。"
+    ],
+    "donts": [
+      "Don't 把 API 401、网页 403 或代理启动合并成账户已获授权的结论。",
+      "Don't 用颜色单独表达检查结果，或用绿色填充尚未验证的结果。",
+      "Don't 以网页样式替换 macOS 原生控件，也不要把 WPF 控件高度套用到 Mac。",
+      "Don't 为操作界面新增装饰字体、大面积渐变、卡片阴影或与结果无关的状态颜色。",
+      "Don't 把界面示例截图当作用户网络、登录、键盘操作或管理员授权已经验证的证据。"
+    ]
+  }
+}

@@ -8,6 +8,7 @@ $archive=[IO.Compression.ZipFile]::Open($destination,[IO.Compression.ZipArchiveM
 try{
     $files=@(Get-Item -LiteralPath (Join-Path $projectRoot 'README.md'),(Join-Path $projectRoot '.gitignore'),(Join-Path $projectRoot '.gitattributes'),(Join-Path $projectRoot 'LICENSE'),(Join-Path $projectRoot 'PRODUCT.md'))
     if(Test-Path -LiteralPath (Join-Path $projectRoot 'DESIGN.md')){$files+=Get-Item -LiteralPath (Join-Path $projectRoot 'DESIGN.md')}
+    if(Test-Path -LiteralPath (Join-Path $projectRoot '.impeccable/design.json')){$files+=Get-Item -LiteralPath (Join-Path $projectRoot '.impeccable/design.json')}
     foreach($name in @('src','tests','scripts','installer','docs','vendor','.github','design')){
         $path=Join-Path $projectRoot $name
         if(Test-Path -LiteralPath $path){
@@ -20,7 +21,7 @@ try{
         $relative=[IO.Path]::GetRelativePath($projectRoot,$file.FullName).Replace('\','/')
         [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive,$file.FullName,$relative,[IO.Compression.CompressionLevel]::Optimal)
     }
-    foreach($name in @('validation-summary.json','integration-results.json','browser-language-results.json','browser-language-window-results.json','desktop-update-results.json','desktop-launch-results.json','installer-results.json','ui-check/ui-results.json','test-configs/results.json','SHA256.json')){
+    foreach($name in @('validation-summary.json','macos-validation-results.json','integration-results.json','browser-language-results.json','browser-language-window-results.json','desktop-update-results.json','desktop-launch-results.json','installer-results.json','ui-check/ui-results.json','test-configs/results.json','SHA256.json')){
         $path=Join-Path $artifacts $name
         if(Test-Path -LiteralPath $path){
             if($name -eq 'integration-results.json'){

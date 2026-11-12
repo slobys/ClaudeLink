@@ -60,7 +60,7 @@
 - 未连接用户 Claude 账户；使用的是本地模拟 CLI。
 - TUN 配置通过官方内核检查，但没有让 TUN 接管本机实际路由，也没有测试管理员 UAC 交互。
 - 没有对本机执行 IPv6 禁用或系统时区修改；因此这些实机恢复效果仍需实际授权环境确认。
-- 未在 Windows 10 或 ARM64 实机运行；本包只发布 x64。
+- 未在 Windows 10 或 Windows ARM64 实机运行；Windows 安装包只发布 x64，Mac 包另提供 arm64 与 x64。
 
 发布文件哈希见 SHA256.json。第三方内核来源、版本和独立可执行文件哈希见 vendor/core-manifest.json。
 
@@ -71,3 +71,9 @@ Windows 新增的 UI 断言验证：16px 日志从顶部排列，不同级别着
 Mac 使用 macos-15 Apple Silicon 和 macos-15-intel 两种实际 GitHub runner 构建。原生检查涵盖共享解析桥接、订阅选择保持、Darwin utun 配置、官方内核校验、钥匙串 AES-GCM、损坏密文拒绝、API 与网页状态区分、固定公钥签名验证、篡改拒绝、参数引用、断开清空旧结果。root 后台只用回环代理测试启动、错误 nonce 拒绝、权限、正常退出、父进程退出、强制杀死后台后的持久恢复与端口释放。另验证原生页面渲染与 GUI 正常退出；截图由应用自身 NSView 绘制，不启用显示器屏幕捕获。
 
 没有用户 Mac 实机，因此没有声称已验证真实 TUN 默认路由、物理网卡 IPv6、系统时区变更、管理员交互授权、Claude 登录、真实订阅或完整更新覆盖。安装包为 ad-hoc 签名，无 Apple Developer ID 公证。Mac 更新签名清单独立于 Windows，Windows schema-1 格式保持兼容。
+
+两种 Mac 架构各通过 **23 项原生回归、14 项后台生命周期/恢复检查、1 项 GUI 正常退出检查**，各捕获 **14 个原生页面与状态**。HTTP 代理、较大网页保留状态码、订阅体积限制和流式下载取消均使用本地回环夹具验证，不依赖真实节点。单实例锁防止重复打开时触碰既有会话；会话结束移除临时凭据和暂存内核副本。
+
+最终应用代码对应 `01406f6551838358e0efde2673c0abedd7adf1d6`：[Windows CI](https://github.com/slobys/ClaudeLink/actions/runs/43134943829)、[macOS 双架构 CI](https://github.com/slobys/ClaudeLink/actions/runs/43134943882)。后续设计说明和验证文档提交不改变该应用代码。Mac 的机器可读证据汇总为 artifacts/macos-validation-results.json。
+
+界面审查：Windows 完整审查唯一发现为指标颜色重置，复核已解决；Mac 完整审查唯一发现为占位提示对比度，最终原生截图确认 Muted #5C6D82 对白底约 5.30:1。最后的 ship verdict 范围为已列修复项，不宣称审查者执行过真实键盘操作。
