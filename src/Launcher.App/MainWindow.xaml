@@ -4,22 +4,22 @@
  Title="Claude Network Launcher" Style="{StaticResource {x:Type Window}}" Width="1160" Height="840" MinWidth="1000" MinHeight="740"
  WindowStartupLocation="CenterScreen" Closing="Window_Closing">
  <Grid Background="{Binding Background, RelativeSource={RelativeSource AncestorType=Window}}">
-  <Grid.ColumnDefinitions><ColumnDefinition Width="206"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-  <Border Background="#202C2D" Padding="18,27,18,18">
+  <Grid.ColumnDefinitions><ColumnDefinition Width="224"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+  <Border Background="{StaticResource Sidebar}" BorderBrush="{StaticResource Line}" BorderThickness="0,0,1,0" Padding="18,27,18,18">
    <DockPanel>
     <StackPanel DockPanel.Dock="Top" Margin="9,0,0,30">
-     <Border Width="42" Height="42" CornerRadius="12" Background="#D98668" HorizontalAlignment="Left" Margin="0,0,0,14">
-      <TextBlock Text="C↗" FontSize="23" FontWeight="SemiBold" Foreground="#202C2D" HorizontalAlignment="Center"/>
+     <Border Width="42" Height="42" CornerRadius="12" Background="{StaticResource Accent}" HorizontalAlignment="Left" Margin="0,0,0,14">
+      <Image Source="Assets/App.png" Width="42" Height="42"/>
      </Border>
-     <TextBlock Text="Claude Link" Foreground="White" FontSize="21" FontWeight="SemiBold"/>
-     <TextBlock Text="NETWORK LAUNCHER" Foreground="#A8B6B3" FontSize="10" Margin="0,6,0,0"/>
+     <TextBlock Text="Claude Link" Foreground="{StaticResource Ink}" FontSize="21" FontWeight="SemiBold"/>
+     <TextBlock Text="NETWORK LAUNCHER" Foreground="{StaticResource Muted}" FontSize="10" Margin="0,6,0,0"/>
     </StackPanel>
     <StackPanel DockPanel.Dock="Bottom" Margin="8,0">
-     <Border Background="#2E3B3B" CornerRadius="8" Padding="12" Margin="0,0,0,18">
-      <StackPanel><TextBlock Text="独立代理内核" Foreground="#DCE6E3" FontSize="12"/>
-       <TextBlock Text="sing-box 1.14.4 · x64" Foreground="#A8B6B3" FontSize="11" Margin="0,5,0,0"/></StackPanel>
+     <Border Background="{StaticResource SurfaceAlt}" CornerRadius="8" Padding="12" Margin="0,0,0,18">
+      <StackPanel><TextBlock Text="独立代理内核" Foreground="{StaticResource Ink}" FontSize="12"/>
+       <TextBlock Text="sing-box 1.14.4 · x64" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,5,0,0"/></StackPanel>
      </Border>
-     <TextBlock Text="v1.1.2   /   本地加密存储" Foreground="#A8B6B3" FontSize="11"/>
+     <TextBlock Text="v1.1.2   /   本地加密存储" Foreground="{StaticResource Muted}" FontSize="11"/>
     </StackPanel>
     <StackPanel>
      <Button x:Name="NavDashboard" Style="{StaticResource NavButton}" Content="工作台" Tag="Dashboard" Click="Navigate_Click"/>
@@ -36,25 +36,25 @@
     <StackPanel><TextBlock x:Name="PageTitle" Text="工作台" FontSize="26" FontWeight="SemiBold"/>
      <TextBlock x:Name="PageSubtitle" Text="从节点到 Claude Code，一处准备就绪。" Style="{StaticResource MutedText}" Margin="0,7,0,0"/>
     </StackPanel>
-    <Border HorizontalAlignment="Right" VerticalAlignment="Center" Background="#E7EAE3" CornerRadius="14" Padding="12,7">
-     <TextBlock x:Name="ConnectionBadge" Text="●  未连接" Foreground="#4F6258" FontSize="12"/>
+    <Border x:Name="ConnectionBadgeBorder" HorizontalAlignment="Right" VerticalAlignment="Center" Background="{StaticResource PendingBg}" CornerRadius="14" Padding="12,7">
+     <TextBlock x:Name="ConnectionBadge" Text="未连接" Foreground="{StaticResource Pending}" FontSize="12"/>
     </Border>
    </Grid>
    <StackPanel Grid.Row="1">
-    <Border x:Name="UpdateBanner" Visibility="Collapsed" Background="#E7EFE8" BorderBrush="#AFC4B4" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,12">
+    <Border x:Name="UpdateBanner" Visibility="Collapsed" Background="{StaticResource InfoBg}" BorderBrush="{StaticResource AccentSubtle}" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,12">
      <DockPanel>
       <Button x:Name="UpdateActionButton" Content="立即更新" Click="UpdateAction_Click" DockPanel.Dock="Right" Margin="14,0,0,0"/>
       <Button x:Name="UpdateCancelButton" Content="取消下载" Click="CancelUpdate_Click" DockPanel.Dock="Right" Visibility="Collapsed" Margin="14,0,0,0"/>
       <StackPanel><TextBlock x:Name="UpdateBannerText" TextWrapping="Wrap"/><ProgressBar x:Name="UpdateProgress" Height="4" Visibility="Collapsed" Minimum="0" Maximum="100" Margin="0,9,0,0"/></StackPanel>
      </DockPanel>
     </Border>
-    <Border x:Name="RecoveryBanner" Visibility="Collapsed" Background="#FFF0DA" BorderBrush="#E1BB7B" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,12">
+    <Border x:Name="RecoveryBanner" Visibility="Collapsed" Background="{StaticResource WarningBg}" BorderBrush="{StaticResource Warning}" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,12">
      <DockPanel><Button Content="立即恢复" Click="Restore_Click" DockPanel.Dock="Right" Margin="15,0,0,0"/>
       <TextBlock Text="发现未完成的环境恢复记录，请先恢复后再连接。" TextWrapping="Wrap"/></DockPanel>
     </Border>
-    <Border x:Name="ProgressPanel" Visibility="Collapsed" Background="#EEE7DB" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+    <Border x:Name="ProgressPanel" Visibility="Collapsed" Background="{StaticResource InfoBg}" CornerRadius="8" Padding="12" Margin="0,0,0,12">
      <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-      <StackPanel><TextBlock x:Name="ProgressText" Text="正在处理…" FontSize="12"/><ProgressBar Height="3" IsIndeterminate="True" Margin="0,8,0,0" Foreground="#AD4D35"/></StackPanel>
+      <StackPanel><TextBlock x:Name="ProgressText" Text="正在处理…" FontSize="12"/><ProgressBar Height="3" IsIndeterminate="True" Margin="0,8,0,0" Foreground="{StaticResource Accent}"/></StackPanel>
       <Button x:Name="CancelButton" Content="取消检测" Grid.Column="1" Margin="16,0,0,0" Click="Cancel_Click" IsEnabled="False"/>
      </Grid>
     </Border>
@@ -101,11 +101,19 @@
         <TextBlock x:Name="CheckSummary" Text="连接后显示检测结果。状态只代表实际测得的内容。" Style="{StaticResource MutedText}" Margin="0,9,0,12"/>
         <ItemsControl x:Name="CheckList">
          <ItemsControl.ItemTemplate><DataTemplate>
-          <Grid Margin="0,5"><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="132"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-           <TextBlock Text="{Binding Symbol}" FontSize="16" Foreground="#59665A"/>
-           <TextBlock Grid.Column="1" Text="{Binding Label}" FontSize="12"/>
-           <StackPanel Grid.Column="2"><TextBlock Text="{Binding Value}" FontSize="12" FontWeight="SemiBold"/><TextBlock Text="{Binding Detail}" Style="{StaticResource MutedText}" FontSize="11" Margin="0,3,0,0"/></StackPanel>
-          </Grid>
+          <Border x:Name="ResultRow" Margin="0,4" Padding="12,11" CornerRadius="8" Background="{StaticResource PendingBg}">
+           <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="142"/><ColumnDefinition Width="*"/><ColumnDefinition Width="60"/></Grid.ColumnDefinitions>
+            <Path x:Name="ResultGlyph" Data="M2,6 L10,6" Stroke="{StaticResource Pending}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center"/>
+            <TextBlock Grid.Column="1" Text="{Binding Label}" FontSize="14"/>
+            <StackPanel Grid.Column="2" Margin="0,0,10,0"><TextBlock x:Name="ResultValue" Text="{Binding Value}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Pending}" TextWrapping="Wrap"/><TextBlock Text="{Binding Detail}" Style="{StaticResource MutedText}" FontSize="12" Margin="0,4,0,0"/></StackPanel>
+            <TextBlock x:Name="ResultState" Grid.Column="3" Text="{Binding StateLabel}" Foreground="{StaticResource Pending}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+           </Grid>
+          </Border>
+          <DataTemplate.Triggers>
+           <DataTrigger Binding="{Binding State}" Value="pass"><Setter TargetName="ResultRow" Property="Background" Value="{StaticResource SuccessBg}"/><Setter TargetName="ResultValue" Property="Foreground" Value="{StaticResource Success}"/><Setter TargetName="ResultState" Property="Foreground" Value="{StaticResource Success}"/><Setter TargetName="ResultGlyph" Property="Stroke" Value="{StaticResource Success}"/><Setter TargetName="ResultGlyph" Property="Data" Value="M1,6 L5,10 L12,1"/></DataTrigger>
+           <DataTrigger Binding="{Binding State}" Value="warn"><Setter TargetName="ResultRow" Property="Background" Value="{StaticResource WarningBg}"/><Setter TargetName="ResultValue" Property="Foreground" Value="{StaticResource Warning}"/><Setter TargetName="ResultState" Property="Foreground" Value="{StaticResource Warning}"/><Setter TargetName="ResultGlyph" Property="Stroke" Value="{StaticResource Warning}"/><Setter TargetName="ResultGlyph" Property="Data" Value="M6,1 L12,12 L0,12 Z M6,5 L6,8 M6,10 L6,10.3"/></DataTrigger>
+           <DataTrigger Binding="{Binding State}" Value="fail"><Setter TargetName="ResultRow" Property="Background" Value="{StaticResource ErrorBg}"/><Setter TargetName="ResultValue" Property="Foreground" Value="{StaticResource Error}"/><Setter TargetName="ResultState" Property="Foreground" Value="{StaticResource Error}"/><Setter TargetName="ResultGlyph" Property="Stroke" Value="{StaticResource Error}"/><Setter TargetName="ResultGlyph" Property="Data" Value="M1,1 L11,11 M11,1 L1,11"/></DataTrigger>
+          </DataTemplate.Triggers>
          </DataTemplate></ItemsControl.ItemTemplate>
         </ItemsControl>
        </StackPanel>
@@ -130,7 +138,7 @@
         <DataGridTextColumn Header="服务器" Binding="{Binding Server}" Width="1.4*"/>
         <DataGridTextColumn Header="分组" Binding="{Binding Group}" Width="*"/>
        </DataGrid.Columns>
-      </DataGrid><TextBlock x:Name="NodesEmpty" Text="还没有节点&#10;添加分享链接，或前往订阅管理导入订阅。" TextAlignment="Center" Foreground="#69736C" HorizontalAlignment="Center" VerticalAlignment="Center" LineHeight="26" IsHitTestVisible="False"/></Grid>
+      </DataGrid><TextBlock x:Name="NodesEmpty" Text="还没有节点&#10;添加分享链接，或前往订阅管理导入订阅。" TextAlignment="Center" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center" LineHeight="26" IsHitTestVisible="False"/></Grid>
      </Border>
      <DockPanel Grid.Row="2" Margin="0,12,0,0"><TextBlock x:Name="NodeCountText" Style="{StaticResource MutedText}"/><TextBlock Text="双击节点即可选中；连接后请先断开再切换。" Style="{StaticResource MutedText}" HorizontalAlignment="Right"/></DockPanel>
     </Grid>
@@ -151,7 +159,7 @@
         <DataGridTextColumn Header="最近更新" Binding="{Binding Updated}" Width="150"/>
         <DataGridTextColumn Header="流量" Binding="{Binding Usage}" Width="*"/>
        </DataGrid.Columns>
-      </DataGrid><TextBlock x:Name="SubscriptionsEmpty" Text="粘贴订阅地址，集中更新你的节点。&#10;失败的更新会保留原有节点。" TextAlignment="Center" Foreground="#69736C" HorizontalAlignment="Center" VerticalAlignment="Center" LineHeight="26" IsHitTestVisible="False"/></Grid>
+      </DataGrid><TextBlock x:Name="SubscriptionsEmpty" Text="粘贴订阅地址，集中更新你的节点。&#10;失败的更新会保留原有节点。" TextAlignment="Center" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center" LineHeight="26" IsHitTestVisible="False"/></Grid>
      </Border>
      <TextBlock Grid.Row="2" Text="订阅地址和节点凭据由当前 Windows 用户加密保存；内容在本机解析。" Style="{StaticResource MutedText}" Margin="0,13,0,0"/>
     </Grid>
@@ -212,9 +220,7 @@
     <Grid x:Name="LogsPage" Visibility="Collapsed">
      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
      <DockPanel Margin="0,0,0,14"><Button Content="清空显示" Click="ClearLogs_Click" DockPanel.Dock="Right"/><TextBlock Text="仅记录操作与结果，不记录订阅地址、密码或完整分享链接。" Style="{StaticResource MutedText}"/></DockPanel>
-     <TextBox Grid.Row="1" x:Name="LogBox" FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI" FontSize="16"
-      VerticalContentAlignment="Top" HorizontalContentAlignment="Left" TextAlignment="Left" TextBlock.LineHeight="26" TextBlock.LineStackingStrategy="BlockLineHeight"
-      IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Background="#FCFCF8" Padding="18" AutomationProperties.Name="运行记录"/>
+     <Border Grid.Row="1" Style="{StaticResource Card}" Padding="0"><RichTextBox x:Name="LogBox" FontSize="16" FontFamily="Segoe UI, Microsoft YaHei UI" IsReadOnly="True" BorderThickness="0" Background="Transparent" Foreground="{StaticResource Ink}" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" Padding="18" AutomationProperties.Name="运行记录"><FlowDocument PagePadding="0"/></RichTextBox></Border>
     </Grid>
    </Grid>
    <DockPanel Grid.Row="3" Margin="0,17,0,0">

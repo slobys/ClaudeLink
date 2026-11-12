@@ -19,6 +19,7 @@
     <NoWarn>$(NoWarn);IL3000;WFO0003</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <Resource Include="Assets\App.png" />
     <ProjectReference Include="..\Launcher.Core\Launcher.Core.csproj" />
     <EmbeddedResource Include="..\..\vendor\sing-box.exe" LogicalName="Core.sing-box.exe" />
     <EmbeddedResource Include="..\..\vendor\core-manifest.json" LogicalName="Core.manifest.json" />

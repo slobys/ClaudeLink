@@ -64,6 +64,11 @@ public static class UiSmoke
             Capture(window, Path.Combine(directory, page.ToLowerInvariant() + ".png"));
         }
         var dialog = new NodeDialog { Owner = window };
+        window.Navigate("Dashboard");
+        ((ScrollViewer)window.FindName("DashboardPage")).ScrollToBottom();
+        await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+        Capture(window, Path.Combine(directory, "checks.png"));
+        ((ScrollViewer)window.FindName("DashboardPage")).ScrollToTop();
         dialog.Show();
         await dialog.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
         Capture(dialog, Path.Combine(directory, "add-node.png"));

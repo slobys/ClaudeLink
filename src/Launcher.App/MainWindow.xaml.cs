@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Documents;
 using Microsoft.Win32;
 using Launcher.App.Services;
 using Forms = System.Windows.Forms;
@@ -12,7 +13,7 @@ public partial class MainWindow : Window
     private readonly LauncherSettings settings;
     private readonly SettingsStore store = new();
     private readonly SessionController session = new();
-    private readonly Queue<string> logLines = new();
+    private readonly Queue<LogRecord> logLines = new();
     private readonly Forms.NotifyIcon tray;
     private readonly bool smoke;
     private bool busy, refreshing, allowClose, activeTun, activeIPv6, activeTimeZone;
@@ -51,7 +52,7 @@ public partial class MainWindow : Window
         tray.DoubleClick += (_, _) => Dispatcher.Invoke(ShowFromTray);
         session.UnexpectedExit += message => Dispatcher.Invoke(() =>
         {
-            report = null; desktopOpened = false; Log(message); StatusText.Text = message; UpdateState();
+            report = null; desktopOpened = false; Log(message, LogKind.Error); StatusText.Text = message; UpdateState();
         });
         Closed += (_, _) => { updateCancellation?.Cancel(); tray.Dispose(); };
         Loaded += async (_, _) =>
@@ -81,7 +82,12 @@ public partial class MainWindow : Window
         };
         (PageTitle.Text, PageSubtitle.Text) = labels[page];
         foreach (var button in new[] { NavDashboard, NavNodes, NavSubscriptions, NavSettings, NavLogs })
-            button.Background = (string)button.Tag == page ? new SolidColorBrush(Color.FromRgb(54, 72, 71)) : Brushes.Transparent;
+        {
+            var selected = (string)button.Tag == page;
+            button.Background = selected ? (Brush)FindResource("AccentSubtle") : Brushes.Transparent;
+            button.Foreground = (Brush)FindResource(selected ? "Accent" : "Muted");
+            button.FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal;
+        }
     }
     private void Navigate_Click(object sender, RoutedEventArgs e) => Navigate((string)((Button)sender).Tag);
 
@@ -117,12 +123,21 @@ public partial class MainWindow : Window
         if (NodeCombo.SelectedItem is ProxyNode node) settings.SelectedNodeId = node.Id;
         store.Save(settings);
     }
-    private void Log(string text)
+    private void Log(string text, LogKind kind = LogKind.Info)
     {
         text = System.Text.RegularExpressions.Regex.Replace(text, @"https?://\S+", "[地址已隐藏]");
         var line = $"{DateTime.Now:HH:mm:ss}  {text}";
-        logLines.Enqueue(line); while (logLines.Count > 250) logLines.Dequeue();
-        LogBox.Text = string.Join(Environment.NewLine, logLines); LogBox.ScrollToEnd();
+        logLines.Enqueue(new(DateTime.Now, text, kind)); while (logLines.Count > 250) logLines.Dequeue();
+        LogBox.Document.Blocks.Clear();
+        foreach (var entry in logLines)
+        {
+            var paragraph = new Paragraph { Margin = new Thickness(0, 0, 0, 9), LineHeight = 26 };
+            paragraph.Inlines.Add(new Run(entry.Time.ToString("HH:mm:ss") + "   ") { Foreground = (Brush)FindResource("Muted"), FontFamily = new FontFamily("Consolas") });
+            paragraph.Inlines.Add(new Run(entry.Label + "  ") { Foreground = (Brush)FindResource(entry.BrushKey), FontWeight = FontWeights.SemiBold });
+            paragraph.Inlines.Add(new Run(entry.Message) { Foreground = entry.Kind == LogKind.Info ? (Brush)FindResource("Ink") : (Brush)FindResource(entry.BrushKey) });
+            LogBox.Document.Blocks.Add(paragraph);
+        }
+        LogBox.ScrollToEnd();
         if (smoke) return;
         try
         {
@@ -146,8 +161,11 @@ public partial class MainWindow : Window
         ConnectButton.Content = session.Connected ? "重新检测" : "连接并检测";
         DisconnectButton.IsEnabled = session.Connected && !ClaudeRunning;
         BrowserButton.IsEnabled = session.Connected;
-        ConnectionBadge.Text = ClaudeRunning ? "●  Claude 运行中" : session.Connected
-            ? report?.ApiReachable == true ? "●  API HTTPS 可达" : "●  本地代理已启动" : "●  未连接";
+        ConnectionBadge.Text = ClaudeRunning ? "Claude 运行中" : session.Connected
+            ? report?.ApiReachable == true ? "API HTTPS 可达" : "本地代理已启动" : "未连接";
+        var badgeKind = session.Connected ? report?.ApiReachable == true ? "Success" : "Info" : "Pending";
+        ConnectionBadge.Foreground = (Brush)FindResource(badgeKind);
+        ConnectionBadgeBorder.Background = (Brush)FindResource(badgeKind + "Bg");
         ProxyMetric.Text = session.Connected ? $"127.0.0.1:{session.Port}" : "未连接";
         TunMetric.Text = session.Connected ? activeTun ? "TUN 已启用" : "进程代理" : TunCheck.IsChecked == true ? "TUN 待启用" : "进程代理";
         ClaudeHint.Text = DesktopMode
@@ -179,13 +197,13 @@ public partial class MainWindow : Window
         try { await action(); }
         catch (OperationCanceledException)
         {
-            Log("操作已取消。");
-            if (!ClaudeRunning) { try { await session.StopAsync(); } catch (Exception ex) { Log(SafeError(ex)); } }
+            Log("操作已取消。", LogKind.Warning);
+            if (!ClaudeRunning) { try { await session.StopAsync(); } catch (Exception ex) { Log(SafeError(ex), LogKind.Error); } }
             StatusText.Text = "操作已取消，已尝试恢复临时环境";
         }
         catch (Exception ex)
         {
-            var text = SafeError(ex); Log(text); StatusText.Text = text;
+            var text = SafeError(ex); Log(text, LogKind.Error); StatusText.Text = text;
             MessageBox.Show(this, text, "操作未完成", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         finally
@@ -215,7 +233,7 @@ public partial class MainWindow : Window
         ProgressText.Text = settings.TunEnabled || settings.DisableIPv6 || settings.MatchTimeZone ? "正在启动内核；请在系统提示中允许管理员授权…" : "正在启动内置代理…";
         await session.StartAsync(settings, node);
         activeTun = settings.TunEnabled; activeIPv6 = settings.DisableIPv6; activeTimeZone = settings.MatchTimeZone;
-        report = null; Log(activeTun ? "内置 TUN 与本地代理已启动。" : "内置进程代理已启动。");
+        report = null; Log(activeTun ? "内置 TUN 与本地代理已启动。" : "内置进程代理已启动。", LogKind.Success);
         CheckUpdatesAfterConnection();
         UpdateState();
     }
@@ -231,12 +249,14 @@ public partial class MainWindow : Window
             await session.ApplyTimeZoneAsync(report.WindowsTimeZone);
             report.TimeZoneMatches = true;
             var item = report.Results.First(x => x.Label == "系统时区"); item.Value = "已临时匹配"; item.State = "pass";
-            Log("系统时区已临时匹配，结束会话后恢复。");
+            Log("系统时区已临时匹配，结束会话后恢复。", LogKind.Success);
         }
         CancelButton.IsEnabled = false;
         CheckList.ItemsSource = null; CheckList.ItemsSource = report.Results;
         ExitMetric.Text = report.Country.Length > 0 ? report.Country : "未验证";
         ApiMetric.Text = report.ApiReachable ? "HTTPS 可达" : "未通过";
+        ApiMetric.Foreground = (Brush)FindResource(report.ApiReachable ? "Success" : "Error");
+        ExitMetric.Foreground = (Brush)FindResource(report.Country.Length > 0 ? "Success" : "Pending");
         var reasons = report.BlockingReasons(settings.StrictChecks);
         CheckSummary.Text = settings.StrictChecks
             ? report.StrictReady ? "严格预检通过。账户登录与授权仍由 Claude Code 处理。"
@@ -245,8 +265,9 @@ public partial class MainWindow : Window
         ProgressText.Text = "检测完成";
         if (session.DirectoryPath is { } path) AppPaths.WriteJson(Path.Combine(path, "network-report.json"), report);
         StatusText.Text = CheckSummary.Text;
-        Log(report.BasicReady ? "基础出口与 API 连通性检测完成：可达。" : "基础出口与 API 连通性未全部通过。");
-        if (reasons.Count > 0) Log(string.Join("；", reasons));
+        CheckSummary.Foreground = (Brush)FindResource(reasons.Count == 0 ? "Success" : report.BasicReady ? "Warning" : "Error");
+        Log(report.BasicReady ? "基础出口与 API 连通性检测完成：可达。" : "基础出口与 API 连通性未全部通过。", report.BasicReady ? LogKind.Success : LogKind.Error);
+        if (reasons.Count > 0) Log(string.Join("；", reasons), LogKind.Warning);
     }
     private async void Connect_Click(object sender, RoutedEventArgs e) => await RunBusyAsync(async () => { await EnsureConnectedAsync(); await CheckNowAsync(); }, "正在准备连接…");
     private async void Launch_Click(object sender, RoutedEventArgs e) => await RunBusyAsync(async () =>
@@ -293,13 +314,13 @@ public partial class MainWindow : Window
             await session.StopAsync(); report = null;
             StatusText.Text = "会话已结束，临时设置已恢复";
         }
-        catch (Exception ex) { Log(SafeError(ex)); StatusText.Text = SafeError(ex); }
+        catch (Exception ex) { Log(SafeError(ex), LogKind.Error); StatusText.Text = SafeError(ex); }
         finally { claudeProcess = null; process.Dispose(); UpdateState(); }
     }
     private async void Disconnect_Click(object sender, RoutedEventArgs e) => await RunBusyAsync(async () =>
     {
         await session.StopAsync(); desktopOpened = false; report = null; CheckList.ItemsSource = null; CheckSummary.Text = "已断开，临时环境已恢复。";
-        StatusText.Text = "已断开，临时环境已恢复"; Log("已停止代理并恢复临时环境。");
+        StatusText.Text = "已断开，临时环境已恢复"; Log("已停止代理并恢复临时环境。", LogKind.Success);
     }, "正在断开并恢复…");
     private void Cancel_Click(object sender, RoutedEventArgs e) { networkCancellation?.Cancel(); CancelButton.IsEnabled = false; }
     private void Browser_Click(object sender, RoutedEventArgs e)
@@ -330,7 +351,7 @@ public partial class MainWindow : Window
     }
     private async void SaveSettings_Click(object sender, RoutedEventArgs e)
     {
-        try { SaveUISettings(); await RefreshDesktopAsync(); Log("设置已保存。"); StatusText.Text = session.Connected ? "设置已保存；连接参数在下次连接时生效" : "设置已保存"; UpdateState(); }
+        try { SaveUISettings(); await RefreshDesktopAsync(); Log("设置已保存。", LogKind.Success); StatusText.Text = session.Connected ? "设置已保存；连接参数在下次连接时生效" : "设置已保存"; UpdateState(); }
         catch (Exception ex) { MessageBox.Show(this, SafeError(ex), "设置未保存"); }
     }
     private void Import_Click(object sender, RoutedEventArgs e) => ShowImport();
@@ -370,7 +391,7 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog() != true || dialog.Result?.Nodes.Count != 1) return;
         var replacement = dialog.Result.Nodes[0]; replacement.Id = row.Node.Id; replacement.GroupId = row.Node.GroupId;
         settings.Nodes[settings.Nodes.IndexOf(row.Node)] = replacement;
-        store.Save(settings); RefreshLists(); Log("节点配置已更新。");
+        store.Save(settings); RefreshLists(); Log("节点配置已更新。", LogKind.Success);
     }
     private void DeleteNode_Click(object sender, RoutedEventArgs e)
     {
@@ -415,7 +436,7 @@ public partial class MainWindow : Window
         foreach (var subscription in settings.Subscriptions.ToList())
         {
             try { await UpdateSubscriptionAsync(subscription); }
-            catch (Exception ex) { failed++; Log(SafeError(ex)); }
+            catch (Exception ex) { failed++; Log(SafeError(ex), LogKind.Error); }
         }
         StatusText.Text = failed == 0 ? "全部订阅更新完成" : $"{failed} 个订阅更新失败，已保留旧节点；请查看运行记录";
     }, "正在逐个更新订阅…");
@@ -425,7 +446,7 @@ public partial class MainWindow : Window
         var dialog = new SubscriptionDialog(row.Subscription) { Owner = this };
         if (dialog.ShowDialog() != true) return;
         row.Subscription.Name = dialog.SubscriptionName; row.Subscription.Url = dialog.Url;
-        store.Save(settings); RefreshLists(); Log("订阅设置已保存。");
+        store.Save(settings); RefreshLists(); Log("订阅设置已保存。", LogKind.Success);
     }
     private void DeleteSubscription_Click(object sender, RoutedEventArgs e)
     {
@@ -446,11 +467,11 @@ public partial class MainWindow : Window
             await process.WaitForExitAsync();
             if (process.ExitCode != 0) throw new IOException("部分设置尚未确认恢复，请检查网卡或时区后重试。");
         }
-        desktopOpened = false; report = null; CheckList.ItemsSource = null; Log("临时设置恢复已完成。"); StatusText.Text = "恢复已完成";
+        desktopOpened = false; report = null; CheckList.ItemsSource = null; Log("临时设置恢复已完成。", LogKind.Success); StatusText.Text = "恢复已完成";
     }, "正在恢复临时设置…");
     private void OpenData_Click(object sender, RoutedEventArgs e) { Directory.CreateDirectory(AppPaths.Root); Process.Start(new ProcessStartInfo("explorer.exe") { Arguments = "\"" + AppPaths.Root + "\"", UseShellExecute = true }); }
     private void InstallHelp_Click(object sender, RoutedEventArgs e) => Process.Start(new ProcessStartInfo(DesktopMode ? "https://claude.com/download" : "https://code.claude.com/docs/en/setup") { UseShellExecute = true });
-    private void ClearLogs_Click(object sender, RoutedEventArgs e) { logLines.Clear(); LogBox.Clear(); }
+    private void ClearLogs_Click(object sender, RoutedEventArgs e) { logLines.Clear(); LogBox.Document.Blocks.Clear(); }
     private void ShowFromTray() { Show(); WindowState = WindowState.Normal; Activate(); tray.Visible = false; }
     private async Task ExitFromTrayAsync()
     {
@@ -474,9 +495,17 @@ public partial class MainWindow : Window
     public void FillSmokeReport()
     {
         CheckList.ItemsSource = new List<CheckResult> {
-            new() { Label = "代理与环境", Value = "等待连接", Detail = "此画面为界面检查，无真实网络检测结果" },
-            new() { Label = "异常恢复", Value = "就绪", Detail = "实际恢复状态以会话运行后的记录为准" }
+            new() { Label = "普通出口", Value = "198.51.100.24", Detail = "界面示例数据，不代表真实网络检测结果", State = "pass" },
+            new() { Label = "Anthropic API", Value = "HTTP 401 · HTTPS 可达", Detail = "未提供认证，账户授权仍未验证", State = "pass" },
+            new() { Label = "Claude 网页", Value = "HTTP 403", Detail = "示例：网页请求被拒绝，与 API 连通性分别显示", State = "warn" },
+            new() { Label = "连接失败示例", Value = "DNS 解析失败", Detail = "示例：请更换节点或检查服务器域名", State = "fail" },
+            new() { Label = "系统时区", Value = "尚未检测", Detail = "无可靠检测结果时保持未验证", State = "pending" }
         };
+        CheckSummary.Text = "状态示例：绿色通过、橙色注意、红色失败、灰色待检测。下方均为界面验证数据。";
+        Log("界面示例：启动器已准备好。", LogKind.Info);
+        Log("界面示例：代理出口与 API HTTPS 检测完成。", LogKind.Success);
+        Log("界面示例：网页返回 HTTP 403，请核对检查项。", LogKind.Warning);
+        Log("界面示例：节点连接失败，请检查服务器配置。", LogKind.Error);
     }
     public sealed record NodeRow(ProxyNode Node, string Group)
     {
