@@ -5,23 +5,23 @@ import SwiftUI
     @Published var settings=Settings(); @Published var page="工作台"; @Published var logs:[LogEntry]=[]; @Published var report:NetworkReport?
     @Published var busy=false; @Published var connected=false; @Published var progress=""; @Published var error=""; @Published var offer:UpdateOffer?; @Published var downloaded:URL?; @Published var updateBusy=false
     @Published var editor=""; @Published var editorName=""; @Published var editorURL=""; @Published var editingNode:ProxyNode?; @Published var editingSubscription:Subscription?; @Published var showingNode=false; @Published var showingSubscription=false
-    let session=Session(); var operation:Task<Void,Never>?; var monitor:Task<Void,Never>?
+    let session=Session(); var operation:Task<Void,Never>?; var monitor:Task<Void,Never>?; var updateTask:Task<Void,Never>?; var storageReadFailed=false
     var selectedNode:ProxyNode? { settings.Nodes.first { $0.Id == settings.SelectedNodeId } ?? settings.Nodes.first }
     init() {
         if CommandLine.arguments.contains("--ui-smoke") { fillPreview(); return }
-        do { settings=try SecureSettings.load(); log("启动器已就绪。节点与订阅使用登录钥匙串密钥加密保存。") } catch { self.error="读取配置失败，原文件已保留。请解锁登录钥匙串后重新打开。" }
+        do { settings=try SecureSettings.load(); log("启动器已就绪。节点与订阅使用登录钥匙串密钥加密保存。") } catch { storageReadFailed=true; self.error="读取配置失败，原文件已保留。请解锁登录钥匙串后重新打开。" }
         Task { do { try await session.recover() } catch { fail("临时环境恢复未完成，请点击“恢复临时设置”。") }; if settings.AutoCheckUpdates { await checkUpdate(manual:false) } }
         monitor=Task { while !Task.isCancelled { try? await Task.sleep(for:.seconds(2)); if connected && !busy && !session.running { connected=false; log("代理会话已退出，请重新连接。",.error); do { try await session.recover() } catch { fail("临时环境尚未恢复，请点击恢复临时设置。") } } } }
     }
     func log(_ text:String,_ level:Level = .info) { let clean=text.replacingOccurrences(of:#"https?://\S+"#,with:"[地址已隐藏]",options:.regularExpression); logs.append(LogEntry(message:clean,level:level)); if logs.count > 500 { logs.removeFirst(logs.count-500) } }
     func fail(_ text:String) { error=text; log(text,.error) }
-    func save() { do { try SecureSettings.save(settings); log("环境设置已保存。",.success) } catch { fail("配置保存失败，请检查登录钥匙串与存储空间。") } }
+    func save() { guard !storageReadFailed else { fail("原配置未成功读取，已阻止覆盖。请解锁钥匙串后重新打开。 "); return }; do { try SecureSettings.save(settings); log("环境设置已保存。",.success) } catch { fail("配置保存失败，请检查登录钥匙串与存储空间。") } }
     func chooseDirectory() { let panel=NSOpenPanel(); panel.canChooseFiles=false; panel.canChooseDirectories=true; if panel.runModal() == .OK, let url=panel.url { settings.ProjectDirectory=url.path } }
     func chooseProgram(desktop:Bool) { let panel=NSOpenPanel(); panel.canChooseDirectories=false; panel.canChooseFiles=true; panel.treatsFilePackagesAsDirectories=false; if panel.runModal() == .OK, let url=panel.url { if desktop { settings.DesktopPath=url.path } else { settings.ClaudePath=url.path } } }
     func run(_ launch:Bool) {
         guard !busy else { return }; busy=true
         operation=Task {
-            defer { busy=false; progress="" }
+            defer { busy=false; progress=""; operation=nil }
             do {
                 guard let node=selectedNode else { throw ClientError.message("请先添加节点或订阅。") }
                 guard FileManager.default.fileExists(atPath:settings.ProjectDirectory) else { throw ClientError.message("项目文件夹不存在，请重新选择。") }
@@ -36,11 +36,12 @@ import SwiftUI
                     if settings.LaunchTarget == "desktop" { try Launcher.desktop(settings); log("已请求官方 Claude 桌面客户端打开 Code 项目。",.success) } else { try Launcher.cli(settings); log("已在独立终端启动 Claude Code CLI；使用后请断开代理。",.success) }
                 }
                 saveQuietly()
+                if settings.AutoCheckUpdates && offer == nil { Task { await checkUpdate(manual:false) } }
             } catch is CancellationError { log("检测已取消。",.warning) }
             catch { fail(error.localizedDescription); if !session.running { do { try await session.stop() } catch { log("恢复未完成，请重试恢复临时设置。",.error) }; connected=false } }
         }
     }
-    func saveQuietly() { do { try SecureSettings.save(settings) } catch { fail("配置保存失败，原配置已保留。") } }
+    func saveQuietly() { guard !storageReadFailed else { fail("原配置未成功读取，已阻止覆盖。请解锁钥匙串后重新打开。 "); return }; do { try SecureSettings.save(settings) } catch { fail("配置保存失败，原配置已保留。") } }
     func disconnect() { operation?.cancel(); busy=true; Task { defer { busy=false; progress="" }; do { try await session.stop(); connected=false; log("会话已结束，临时设置已恢复。",.success) } catch { fail(error.localizedDescription) } } }
     func browser() { do { guard connected else { throw ClientError.message("请先连接节点。") }; try Launcher.browser(settings); log("已打开专用浏览器；所选语言 "+settings.ProcessLanguage+"。",.success) } catch { fail(error.localizedDescription) } }
     func importNode() { busy=true; Task { defer { busy=false }; do {
@@ -62,7 +63,7 @@ import SwiftUI
     }
     func deleteSubscription(_ item:Subscription) { settings.Nodes.removeAll { $0.GroupId==item.Id }; settings.Subscriptions.removeAll { $0.Id==item.Id }; saveQuietly(); log("订阅及所属节点已删除。") }
     func checkUpdate(manual:Bool) async { guard !updateBusy else { return }; updateBusy=true; defer { updateBusy=false }; do { offer=try await Updater.check(); if manual { log(offer == nil ? "当前已是最新版本。" : "发现新版本，可下载更新。",.success) } } catch { if manual { fail(error.localizedDescription) } else { log("自动更新检查暂未完成，可稍后在设置中重试。",.warning) } } }
-    func downloadUpdate() { guard let offer else { return }; updateBusy=true; Task { defer { updateBusy=false }; do { downloaded=try await Updater.download(offer); log("更新包已通过发布签名与 SHA-256 校验。",.success) } catch { fail(error.localizedDescription) } } }
+    func downloadUpdate() { guard let offer else { return }; updateBusy=true; updateTask=Task { defer { updateBusy=false; updateTask=nil }; do { downloaded=try await Updater.download(offer); log("更新包已通过发布签名与 SHA-256 校验。",.success) } catch is CancellationError { log("更新下载已取消。",.warning) } catch { if Task.isCancelled { log("更新下载已取消。",.warning) } else { fail(error.localizedDescription) } } } }
     func installUpdate() { guard let downloaded else { return }; Task { do { try await Updater.install(downloaded,session:session) } catch { fail(error.localizedDescription); NSWorkspace.shared.activateFileViewerSelecting([downloaded]) } } }
     func fillPreview() {
         settings.Nodes=[ProxyNode(Id:"example",Name:"界面示例节点",GroupId:"",OutboundJson:"{\"type\":\"socks\",\"server\":\"127.0.0.1\",\"server_port\":1080}")]; settings.SelectedNodeId="example"

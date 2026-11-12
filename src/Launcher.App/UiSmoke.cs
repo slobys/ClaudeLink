@@ -3,6 +3,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using Launcher.App.Services;
 
 namespace Launcher.App;
@@ -56,6 +57,12 @@ public static class UiSmoke
             throw new InvalidOperationException("Desktop mode must use TUN.");
         assertions.Add("Desktop choice selects required TUN and opens the graphical client mode");
         window.FillSmokeReport();
+        var log = (RichTextBox)window.FindName("LogBox");
+        if (log.FontSize < 16 || log.VerticalContentAlignment != VerticalAlignment.Top || log.Document.Blocks.Count < 4)
+            throw new InvalidOperationException("Structured logs must stay readable and top aligned.");
+        var logColors = log.Document.Blocks.Cast<Paragraph>().SelectMany(p => p.Inlines.OfType<Run>()).Select(r => r.Foreground.ToString()).Distinct().ToArray();
+        if (logColors.Length < 4) throw new InvalidOperationException("Log severity colors were not applied.");
+        assertions.Add("Logs render from the top with 16px text and distinct severity colors");
         foreach (var page in new[] { "Dashboard", "Nodes", "Subscriptions", "Settings", "Logs" })
         {
             window.Navigate(page);
@@ -68,6 +75,10 @@ public static class UiSmoke
         ((ScrollViewer)window.FindName("DashboardPage")).ScrollToBottom();
         await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
         Capture(window, Path.Combine(directory, "checks.png"));
+        var rows = Descendants<Border>((ItemsControl)window.FindName("CheckList")).Where(x => x.Name == "ResultRow").ToArray();
+        if (rows.Length < 4 || rows.Select(x => x.Background.ToString()).Distinct().Count() < 4)
+            throw new InvalidOperationException("Check result colors did not bind to their semantic states.");
+        assertions.Add("Native result templates bind separate success, warning, error and pending backgrounds");
         ((ScrollViewer)window.FindName("DashboardPage")).ScrollToTop();
         dialog.Show();
         await dialog.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
@@ -96,6 +107,15 @@ public static class UiSmoke
         }), DispatcherPriority.ApplicationIdle);
         dialog.ShowDialog();
         if (failure is not null) throw failure;
+    }
+    private static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is T match) yield return match;
+            foreach (var nested in Descendants<T>(child)) yield return nested;
+        }
     }
     private static void Capture(Window window, string path)
     {

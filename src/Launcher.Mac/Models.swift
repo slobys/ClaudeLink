@@ -22,8 +22,9 @@ enum Level: String, Codable, CaseIterable {
     case info, success, warning, error, pending
     var title: String { switch self { case .info: return "信息"; case .success: return "通过"; case .warning: return "注意"; case .error: return "失败"; case .pending: return "待检测" } }
     var symbol: String { switch self { case .info: return "info.circle"; case .success: return "checkmark.circle.fill"; case .warning: return "exclamationmark.triangle.fill"; case .error: return "xmark.circle.fill"; case .pending: return "clock" } }
-    var color: Color { Palette.color(switch self { case .info: "Info"; case .success: "Success"; case .warning: "Warning"; case .error: "Error"; case .pending: "Pending" }) }
-    var background: Color { Palette.color(switch self { case .info: "InfoBg"; case .success: "SuccessBg"; case .warning: "WarningBg"; case .error: "ErrorBg"; case .pending: "PendingBg" }) }
+    var token: String { switch self { case .info: "Info"; case .success: "Success"; case .warning: "Warning"; case .error: "Error"; case .pending: "Pending" } }
+    var color: Color { Palette.color(token) }
+    var background: Color { Palette.color(token+"Bg") }
 }
 struct CheckRow: Identifiable { var id = UUID(); var label: String; var value: String; var detail: String; var level: Level }
 struct LogEntry: Identifiable { var id = UUID(); var date = Date(); var message: String; var level: Level }

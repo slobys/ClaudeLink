@@ -2,7 +2,7 @@
  Title="添加节点" Style="{StaticResource {x:Type Window}}" Width="660" Height="760" MinWidth="600" MinHeight="630" WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
  <Grid Margin="24" Background="{Binding Background, RelativeSource={RelativeSource AncestorType=Window}}"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <StackPanel Margin="0,0,0,17"><TextBlock Text="添加你的连接" FontSize="23" FontWeight="SemiBold"/><TextBlock Text="粘贴分享链接、订阅内容，或手动填写节点。" Style="{StaticResource MutedText}" Margin="0,8,0,0"/></StackPanel>
-  <TabControl x:Name="ModeTabs" Grid.Row="1" Background="Transparent" BorderBrush="#DDE1DA" Padding="15">
+  <TabControl x:Name="ModeTabs" Grid.Row="1" Background="Transparent" BorderBrush="{StaticResource Line}" Padding="15">
    <TabItem Header="粘贴导入">
     <Grid Margin="0,15,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
      <TextBlock Text="分享链接 / Base64 / Clash YAML / sing-box JSON" Style="{StaticResource MutedText}" Margin="0,0,0,10"/>
@@ -35,7 +35,7 @@
     </StackPanel></ScrollViewer>
    </TabItem>
   </TabControl>
-  <TextBlock x:Name="ErrorText" Grid.Row="2" Foreground="#AD3D2D" TextWrapping="Wrap" Margin="0,13,0,0" MaxHeight="90"/>
+  <TextBlock x:Name="ErrorText" Grid.Row="2" Foreground="{StaticResource Error}" TextWrapping="Wrap" Margin="0,13,0,0" MaxHeight="90"/>
   <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
    <Button Content="取消" IsCancel="True" Margin="0,0,10,0"/>
    <Button x:Name="SaveButton" Content="导入节点" Style="{StaticResource PrimaryButton}" Click="Save_Click" IsDefault="True"/>

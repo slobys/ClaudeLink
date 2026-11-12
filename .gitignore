@@ -13,3 +13,5 @@ vendor/*.zip
 !vendor/sing-box-1.14.4-source.zip
 *.user
 .vs/
+.impeccable/review/
+.impeccable/surface-body.md

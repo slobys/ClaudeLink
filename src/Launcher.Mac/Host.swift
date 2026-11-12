@@ -8,7 +8,7 @@ struct HostControl: Codable {
     var parent: Int32; var parentStamp: String; var mailbox: String; var nonce: String; var port: Int; var disableIPv6: Bool
 }
 struct IPv6Original: Codable { var service: String; var mode: String }
-struct HostJournal: Codable { var ipv6: [IPv6Original] = []; var originalZone: String?; var appliedZone: String? }
+struct HostJournal: Codable { var ipv6: [IPv6Original] = []; var originalZone: String?; var appliedZone: String?; var corePID: Int32?; var coreStamp: String? }
 struct HostStatus: Codable { var state = "starting"; var message = ""; var ipv6Disabled = false; var zone = ""; var pid = getpid() }
 enum HostFailure: Error { case invalid(String) }
 func digest(_ bytes: Data) -> String { SHA256.hash(data:bytes).map { String(format:"%02x",$0) }.joined() }
@@ -69,11 +69,18 @@ func hostMain() throws {
     guard path.hasPrefix(base+"/"), UUID(uuidString:String(path.dropFirst(base.count+1))) != nil else { throw HostFailure.invalid("会话路径无效。") }
     for directory in ["/Library/Application Support/ClaudeLink",base,path] { try privateRootDirectory(directory) }
     let stage = URL(fileURLWithPath:path), journalPath = stage.appendingPathComponent("journal.json"), statusPath = stage.appendingPathComponent("status.json")
-    var journal = (try? JSONDecoder().decode(HostJournal.self,from:Data(contentsOf:journalPath))) ?? HostJournal()
-    if action == "--recover" { try restore(stage,&journal); try atomic(HostStatus(state:"stopped",message:"临时环境已恢复。"),statusPath,0o644); return }
-    guard action == "--run" else { throw HostFailure.invalid("操作无效。") }
+    var journal = FileManager.default.fileExists(atPath:journalPath.path) ? try JSONDecoder().decode(HostJournal.self,from:Data(contentsOf:journalPath)) : HostJournal()
     let lock = open("/var/run/com.slobys.claudelink.lock",O_CREAT|O_RDWR|O_NOFOLLOW,0o600)
     guard lock >= 0, flock(lock,LOCK_EX|LOCK_NB) == 0 else { throw HostFailure.invalid("已有 TUN 会话正在运行。") }; defer { close(lock) }
+    if action == "--recover" {
+        if let pid=journal.corePID, let stamp=journal.coreStamp, (try? command("/bin/ps",["-p",String(pid),"-o","lstart="])) == stamp {
+            kill(pid,SIGTERM); for _ in 0..<40 { if kill(pid,0) != 0 { break }; Thread.sleep(forTimeInterval:0.1) }
+            if (try? command("/bin/ps",["-p",String(pid),"-o","lstart="])) == stamp { kill(pid,SIGKILL) }
+        }
+        try restore(stage,&journal); try atomic(HostStatus(state:"stopped",message:"临时环境已恢复。"),statusPath,0o644)
+        for name in ["config.json","control.json","core.log"] { try? FileManager.default.removeItem(at:stage.appendingPathComponent(name)) }; return
+    }
+    guard action == "--run" else { throw HostFailure.invalid("操作无效。") }
     let core = stage.appendingPathComponent("sing-box")
     guard digest(try Data(contentsOf:core)) == BuildInfo.coreHash else { throw HostFailure.invalid("代理内核校验失败。") }
     let control = try JSONDecoder().decode(HostControl.self,from:Data(contentsOf:stage.appendingPathComponent("control.json")))
@@ -91,6 +98,7 @@ func hostMain() throws {
         let log = stage.appendingPathComponent("core.log"); FileManager.default.createFile(atPath:log.path,contents:nil,attributes:[.posixPermissions:0o600]); let handle = try FileHandle(forWritingTo:log)
         process.executableURL=core; process.arguments=["run","-c",stage.appendingPathComponent("config.json").path]; process.standardOutput=handle; process.standardError=handle
         process.environment=["PATH":"/usr/bin:/bin:/usr/sbin:/sbin","HOME":"/var/root","LANG":"en_US.UTF-8"]; try process.run()
+        journal.corePID=process.processIdentifier; journal.coreStamp=try command("/bin/ps",["-p",String(process.processIdentifier),"-o","lstart="]); try atomic(journal,journalPath)
         status.state="running"; try atomic(status,statusPath,0o644)
         while process.isRunning {
             if readMailbox(control.mailbox+"/stop") == control.nonce { break }

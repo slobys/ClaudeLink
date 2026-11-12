@@ -1,13 +1,14 @@
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 $artifacts=Join-Path $projectRoot 'artifacts'
-$destination=Join-Path $artifacts 'ClaudeLink-Source-1.1.2.zip'
+$destination=Join-Path $artifacts 'ClaudeLink-Source-1.2.0.zip'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 if(Test-Path -LiteralPath $destination){Remove-Item -LiteralPath $destination}
 $archive=[IO.Compression.ZipFile]::Open($destination,[IO.Compression.ZipArchiveMode]::Create)
 try{
-    $files=@(Get-Item -LiteralPath (Join-Path $projectRoot 'README.md'),(Join-Path $projectRoot '.gitignore'),(Join-Path $projectRoot 'LICENSE'))
-    foreach($name in @('src','tests','scripts','installer','docs','vendor','.github')){
+    $files=@(Get-Item -LiteralPath (Join-Path $projectRoot 'README.md'),(Join-Path $projectRoot '.gitignore'),(Join-Path $projectRoot 'LICENSE'),(Join-Path $projectRoot 'PRODUCT.md'))
+    if(Test-Path -LiteralPath (Join-Path $projectRoot 'DESIGN.md')){$files+=Get-Item -LiteralPath (Join-Path $projectRoot 'DESIGN.md')}
+    foreach($name in @('src','tests','scripts','installer','docs','vendor','.github','design')){
         $path=Join-Path $projectRoot $name
         if(Test-Path -LiteralPath $path){
             $files+=@(Get-ChildItem -LiteralPath $path -File -Recurse | Where-Object {
