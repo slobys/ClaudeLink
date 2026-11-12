@@ -29,6 +29,9 @@ while(-not $process.WaitForExit(500)){
 }
 $report=Get-Content -LiteralPath $integration -Raw | ConvertFrom-Json
 if($process.ExitCode -ne 0 -or $report.Failed -or $report.InProgress){throw ('Integration test failed: '+$report.Failed)}
+$latencyPerformance=Join-Path $report.TestData 'latency-performance.json'
+if(-not(Test-Path -LiteralPath $latencyPerformance)){throw 'Latency performance evidence missing.'}
+Copy-Item -LiteralPath $latencyPerformance -Destination (Join-Path $artifacts 'latency-performance-results.json') -Force
 if(-not $SkipUi){
     $ui=Join-Path $artifacts 'ui-check'
     $process=Start-Process -FilePath $app -ArgumentList @('--smoke-test',('"'+$ui+'"')) -WindowStyle Hidden -PassThru

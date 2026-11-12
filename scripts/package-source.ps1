@@ -21,7 +21,7 @@ try{
         $relative=[IO.Path]::GetRelativePath($projectRoot,$file.FullName).Replace('\','/')
         [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive,$file.FullName,$relative,[IO.Compression.CompressionLevel]::Optimal)
     }
-    foreach($name in @('validation-summary.json','macos-validation-results.json','browser-privacy-live-results.json','live-release-1.4.1-before-publish.json','latency-performance-windows.json','integration-results.json','browser-language-results.json','desktop-update-results.json','installer-results.json','installer-cwd-regression-results.json','ui-check/ui-results.json','test-configs/results.json','SHA256.json')){
+    foreach($name in @('validation-summary.json','macos-validation-results.json','browser-privacy-live-results.json','live-release-1.4.1-before-publish.json','latency-performance-results.json','integration-results.json','browser-language-results.json','desktop-update-results.json','installer-results.json','installer-cwd-regression-results.json','ui-check/ui-results.json','test-configs/results.json','SHA256.json')){
         $path=Join-Path $artifacts $name
         if(Test-Path -LiteralPath $path){
             if($name -eq 'integration-results.json'){

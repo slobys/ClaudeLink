@@ -205,7 +205,7 @@ try:
     check(code == 200 and TLSHandler.requests-before == 1 and len(set(plan["Tags"].values())) == 1, "Identical route aliases retain separate IDs and share a fresh probe")
     (root / "cancel").touch()
     child.wait(timeout=8)
-    output.with_name("latency-performance.json").write_text(json.dumps(dict(Fixture="24 unique loopback HTTP routes: 12 healthy, 12 stalled", Legacy=legacy, Current=current, Speedup=round(legacy["TotalMs"]/current["TotalMs"], 2), LiveNodesTested=False), indent=2))
+    output.with_name("latency-performance-results.json").write_text(json.dumps(dict(Fixture="24 unique loopback HTTP routes: 12 healthy, 12 stalled", Legacy=legacy, Current=current, Speedup=round(legacy["TotalMs"]/current["TotalMs"], 2), LiveNodesTested=False), indent=2))
     output.write_text(json.dumps(dict(Passed=len(checks), Checks=checks, LoopbackOnly=True, LiveTunTested=False), indent=2))
 finally:
     for child, root in helpers:
