@@ -78,7 +78,7 @@ func hostMain() throws {
             if (try? command("/bin/ps",["-p",String(pid),"-o","lstart="])) == stamp { kill(pid,SIGKILL) }
         }
         try restore(stage,&journal); try atomic(HostStatus(state:"stopped",message:"临时环境已恢复。"),statusPath,0o644)
-        for name in ["config.json","control.json","core.log"] { try? FileManager.default.removeItem(at:stage.appendingPathComponent(name)) }; return
+        for name in ["config.json","control.json","core.log","sing-box"] { try? FileManager.default.removeItem(at:stage.appendingPathComponent(name)) }; return
     }
     guard action == "--run" else { throw HostFailure.invalid("操作无效。") }
     let core = stage.appendingPathComponent("sing-box")
@@ -120,7 +120,7 @@ func hostMain() throws {
     do { try restore(stage,&journal) } catch { cleanupError = error }
     status.state = cleanupError == nil ? "stopped" : "failed"; status.message = cleanupError == nil ? "会话已结束，临时环境已恢复。" : "会话失败；若临时环境未恢复，请重新打开启动器恢复。"
     try atomic(status,statusPath,0o644)
-    if journal.ipv6.isEmpty && journal.originalZone == nil { for name in ["config.json","control.json","core.log"] { try? FileManager.default.removeItem(at:stage.appendingPathComponent(name)) } }
+    if journal.ipv6.isEmpty && journal.originalZone == nil { for name in ["config.json","control.json","core.log","sing-box"] { try? FileManager.default.removeItem(at:stage.appendingPathComponent(name)) } }
 }
 @main struct HostMain {
     static func main() { do { try hostMain() } catch { fputs("Claude Link 后台操作失败，请检查授权、节点及恢复记录。\n",stderr); exit(1) } }

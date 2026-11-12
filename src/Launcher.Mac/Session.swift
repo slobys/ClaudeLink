@@ -39,6 +39,7 @@ struct PendingSession: Codable { var stage: String; var mailbox: String; var non
         try FileManager.default.createDirectory(at:mailbox,withIntermediateDirectories:true,attributes:[.posixPermissions:0o700])
         let config = try await Bridge.config(node,port:port,tun:tun)
         let configPath = mailbox.appendingPathComponent("config.json"); try AppPaths.write(config,to:configPath)
+        defer { try? FileManager.default.removeItem(at:configPath) }
         let core = Bundle.main.resourceURL!.appendingPathComponent("sing-box")
         let check = try await Commands.run(core.path,["check","-c",configPath.path]); guard check.code == 0 else { throw ClientError.message("节点配置未通过内核校验，请检查节点格式。") }
         if !tun {
@@ -50,6 +51,7 @@ struct PendingSession: Codable { var stage: String; var mailbox: String; var non
             let stamp = try await Commands.run("/bin/ps",["-p",String(getpid()),"-o","lstart="])
             let control: [String:Any] = ["parent":getpid(),"parentStamp":String(decoding:stamp.output,as:UTF8.self).trimmingCharacters(in:.whitespacesAndNewlines),"mailbox":mailbox.path,"nonce":nonce,"port":port,"disableIPv6":settings.DisableIPv6]
             let controlPath = mailbox.appendingPathComponent("control.json"), controlData=try JSONSerialization.data(withJSONObject:control); try AppPaths.write(controlData,to:controlPath)
+            defer { try? FileManager.default.removeItem(at:controlPath) }
             let host = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/ClaudeLinkHost")
             let record = PendingSession(stage:stage,mailbox:mailbox.path,nonce:nonce); pending=record; try AppPaths.write(JSONEncoder().encode(record),to:pendingFile)
             // Test every ancestor before copying anything as root; no symlink staging paths.

@@ -46,7 +46,7 @@ try:
     host.wait(timeout=15)
     status=json.loads((stage/'status.json').read_text())
     check(status.get('state')=='stopped','Nonce stop closes session and restores journal')
-    check(not (stage/'config.json').exists() and not (stage/'core.log').exists(),'Completed session removes credential-bearing root files')
+    check(not (stage/'config.json').exists() and not (stage/'core.log').exists() and not (stage/'sing-box').exists(),'Completed session removes credentials and staged core binary')
     with socket.socket() as sock: check(sock.connect_ex(('127.0.0.1',port))!=0,'Supervisor releases local listening port')
     subprocess.run(['sudo',str(stage/'ClaudeLinkHost'),'--recover',str(stage)],check=True)
     check(json.loads((stage/'status.json').read_text())['state']=='stopped','Recovery is idempotent')
