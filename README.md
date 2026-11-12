@@ -18,8 +18,8 @@ Windows x64 / macOS 15+ 中文网络启动器：节点与订阅管理、内置�
 
 ## 功能
 
-- 节点添加/编辑/删除；分享链接、剪贴板、文件与手动表单导入。
-- 订阅添加/编辑/删除，更新单个或全部订阅；失败时保留原节点。
+- 节点添加/编辑/删除；分享链接与配置粘贴导入。Windows 另提供文件选择与手动表单。
+- 订阅添加/编辑/删除、更新订阅；失败时保留原节点。Windows 另提供批量更新。
 - 常见 VLESS / Reality、VMess、Trojan、Shadowsocks、Hysteria2、TUIC、SOCKS5、HTTP/HTTPS、AnyTLS 配置。
 - 进程代理和 TUN 模式，后者按需 UAC 授权。
 - 桌面模式自动发现普通安装版 / MSIX 商店版，使用官方 claude://code/new 链接；CLI 路径单独保存，避免混淆。
