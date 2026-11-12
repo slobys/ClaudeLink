@@ -37,3 +37,7 @@ FIRST VIEWPORT: Actions, search and region/group filters lead into a responsive 
 FORM: Repeated information cards are explicitly pinned by the user's NaiLink reference. The chain editor protects route selection with two named pickers, a neutral initial name, visible direction, inline errors and explicit save/cancel. Two hops only; HTTP exits carry TCP traffic. No independent QUALITY BAR card or approved comp was created for this precisely specified local extension.
 
 FINISH: Review wide/small node views, no-match state, valid and invalid chain editor and workbench on both native platforms. Render native view content without screen capture. Record test boundaries separately from real user TUN, residential-IP and account validation; finish with independent review and scoped documentation.
+
+## 1.3.2 density refinement
+
+The user rejected the oversized three-column node cards in their Windows screenshot and explicitly requested four columns and smaller cards. Preserve the existing identity and interactions. At the user's window width and wider, cap the grid at four columns; use fewer columns only when a smaller viewport needs room for readable labels. Cards use 92 units of inner height, 12 units of padding, 8-unit gaps and a 14-unit semibold name. Keep country flags, region/source, protocol, state text and native selection graphics. Long names and paths truncate with full content available in help/tooltips. Verify wide, user-width, narrow and no-match states with synthetic data and native self-rendering, without screen capture.

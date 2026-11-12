@@ -3,6 +3,10 @@ import SwiftUI
 
 struct NodeCatalog:View {
     @ObservedObject var model:AppState
+    @State private var gridWidth:CGFloat=800
+    private var columns:[GridItem] {
+        Array(repeating:GridItem(.flexible(),spacing:8),count:min(4,max(1,Int(gridWidth/190))))
+    }
     private var filtered:[ProxyNode] {
         model.settings.Nodes.filter { node in
             let region=NodeRegion.resolve(node,model.settings.Nodes), group=model.settings.Subscriptions.first(where:{$0.Id == node.GroupId})?.Name ?? "手动添加"
@@ -42,11 +46,14 @@ struct NodeCatalog:View {
                 VStack(spacing:10) { Image(systemName:"magnifyingglass").font(.system(size:28)); Text(model.settings.Nodes.isEmpty ? "还没有节点，先添加节点或订阅。" : "没有匹配节点，请更换筛选条件。"); if !model.nodeSearch.isEmpty || model.nodeRegion != "all" || model.nodeGroup != "all" { Button("清空筛选") { model.nodeSearch=""; model.nodeRegion="all"; model.nodeGroup="all" } } }.frame(maxWidth:.infinity,minHeight:220).foregroundStyle(Palette.color("Muted"))
     }
     private var tiles:some View {
-        LazyVGrid(columns:[GridItem(.adaptive(minimum:230,maximum:370),spacing:12)],alignment:.leading,spacing:12) {
+        LazyVGrid(columns:columns,alignment:.leading,spacing:8) {
                 ForEach(filtered) { node in
                     NodeChoice(node:node,model:model)
                 }
-        }
+        }.background(GeometryReader { geometry in
+            Color.clear.onAppear { gridWidth=geometry.size.width }
+                .onChange(of:geometry.size.width) { _, width in gridWidth=width }
+        })
     }
     private var footer:some View {
         HStack { Text("显示 \(filtered.count) / \(model.settings.Nodes.count) · \(model.settings.Nodes.filter{$0.isChain}.count) 条链路"); Spacer(); Text("点击卡片选择，切换前请先断开。") }.font(.system(size:12)).foregroundStyle(Palette.color("Muted"))
@@ -72,17 +79,17 @@ private struct NodeTile:View {
     var invalid:Bool { ProxyChain.invalid(node,model.settings.Nodes) }
     var region:NodeRegion? { NodeRegion.resolve(node,model.settings.Nodes) }
     var body:some View {
-        VStack(alignment:.leading,spacing:9) {
+        VStack(alignment:.leading,spacing:5) {
             HStack(spacing:9) {
                 if let code=region?.Code.lowercased(), let image=NSImage(contentsOf:Bundle.main.resourceURL!.appendingPathComponent("Flags/"+code+".png")) { Image(nsImage:image).resizable().scaledToFit().frame(width:26,height:24).accessibilityHidden(true) } else { Image(systemName:"globe").font(.system(size:22)).foregroundStyle(Palette.color("Muted")) }
-                Text(node.Name.replacingOccurrences(of:region?.emoji ?? "",with:"")).font(.system(size:15,weight:.semibold)).lineLimit(1).truncationMode(.tail).help(node.Name)
+                Text(node.Name.replacingOccurrences(of:region?.emoji ?? "",with:"")).font(.system(size:14,weight:.semibold)).lineLimit(1).truncationMode(.tail).help(node.Name)
                 Spacer(minLength:2); Image(systemName:current ? "checkmark.circle.fill" : "circle").foregroundStyle(Palette.color(current ? "Accent" : "Muted"))
             }
             Text(region?.Name ?? "未识别地区").font(.system(size:12)).foregroundStyle(Palette.color("Muted")).help("按节点名称识别；实际出口以连接检测为准。")
             Text(node.isChain ? ProxyChain.path(node,model.settings.Nodes) : model.settings.Subscriptions.first(where:{$0.Id == node.GroupId})?.Name ?? "手动添加").font(.system(size:12)).lineLimit(1).foregroundStyle(Palette.color("Muted"))
             Spacer(minLength:0)
             HStack { Text(node.isChain ? "链式 · 2 跳" : node.kind).font(.system(size:12,weight:.semibold)); Spacer(); Text(invalid ? "节点失效" : current ? "当前选择" : "待连接").font(.system(size:11,weight:.semibold)).foregroundStyle(Palette.color(invalid ? "Error" : current ? "Accent" : "Pending")).padding(.horizontal,8).padding(.vertical,5).background(Palette.color(invalid ? "ErrorBg" : current ? "AccentSubtle" : "PendingBg"),in:RoundedRectangle(cornerRadius:7)) }
-        }.frame(maxWidth:.infinity,minHeight:112,maxHeight:112,alignment:.leading).padding(16).foregroundStyle(Palette.color("Ink")).background(Palette.color(current ? "AccentSubtle" : "Surface"),in:RoundedRectangle(cornerRadius:12)).overlay(RoundedRectangle(cornerRadius:12).stroke(Palette.color(current ? "Accent" : "Line"),lineWidth:1))
+        }.frame(maxWidth:.infinity,minHeight:92,maxHeight:92,alignment:.leading).padding(12).foregroundStyle(Palette.color("Ink")).background(Palette.color(current ? "AccentSubtle" : "Surface"),in:RoundedRectangle(cornerRadius:12)).overlay(RoundedRectangle(cornerRadius:12).stroke(Palette.color(current ? "Accent" : "Line"),lineWidth:1))
     }
 }
 struct ChainEditor:View {

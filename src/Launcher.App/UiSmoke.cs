@@ -14,7 +14,7 @@ public static class UiSmoke
     {
         var settings = new LauncherSettings { ProjectDirectory = @"C:\Projects\my-project" };
         var subscription=new Subscription { Name = "示例订阅", Url = "https://example.com/subscription" };settings.Subscriptions.Add(subscription);
-        foreach(var name in new[]{"香港 01 · 示例","香港 02 · 示例","日本 03 · 示例","新加坡 04 · 示例","台湾 05 · 示例","英国 06 · 示例","德国 07 · 示例","美国住宅出口 · 示例","自定义节点 · 示例"})
+        foreach(var name in new[]{"香港 01 · 示例","香港 02 超长名称用于核对省略显示 · 示例","日本 03 · 示例","新加坡 04 · 示例","台湾 05 · 示例","英国 06 · 示例","德国 07 · 示例","美国住宅出口 · 示例","自定义节点 · 示例"})
         {
             var node=NodeImporter.Parse("socks5://demo:example@node.example.com:1080#"+Uri.EscapeDataString(name)).Nodes.Single();
             node.GroupId=subscription.Id;settings.Nodes.Add(node);
@@ -159,6 +159,11 @@ public static class UiSmoke
             await Task.Delay(150);
             Capture(window, Path.Combine(directory, page.ToLowerInvariant() + ".png"));
         }
+        var fullWidth=window.Width;
+        window.Width=1140; window.Navigate("Nodes");
+        await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
+        Capture(window,Path.Combine(directory,"nodes-user-width.png"));
+        window.Width=fullWidth;
         var dialog = new NodeDialog { Owner = window };
         window.Navigate("Dashboard");
         ((ScrollViewer)window.FindName("DashboardPage")).ScrollToBottom();

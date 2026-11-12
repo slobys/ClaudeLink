@@ -13,7 +13,7 @@ public partial class MainWindow
     {
         var width=NodesGrid.ActualWidth-SystemParameters.VerticalScrollBarWidth-4;
         if(width <= 0)return;
-        var columns=Math.Max(1,(int)(width/250));var itemWidth=Math.Floor(width/columns)-12;
+        var columns=Math.Clamp((int)(width/190),1,4);var itemWidth=Math.Floor(width/columns)-8;
         if(Math.Abs(itemWidth-nodeCardWidth)<1)return;
         nodeCardWidth=itemWidth;nodeCardBaseStyle ??= NodesGrid.ItemContainerStyle;
         var style=new Style(typeof(ListBoxItem),nodeCardBaseStyle);style.Setters.Add(new Setter(WidthProperty,itemWidth));NodesGrid.ItemContainerStyle=style;

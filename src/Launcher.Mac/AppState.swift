@@ -94,7 +94,7 @@ import SwiftUI
     func installUpdate() { guard let downloaded else { return }; Task { do { try await Updater.install(downloaded,session:session) } catch { fail(error.localizedDescription); NSWorkspace.shared.activateFileViewerSelecting([downloaded]) } } }
     func fillPreview() {
         previewMode=true
-        let names=["香港 01 · 示例","香港 02 · 示例","日本 03 · 示例","新加坡 04 · 示例","台湾 05 · 示例","英国 06 · 示例","德国 07 · 示例","美国住宅出口 · 示例","自定义节点 · 示例"]
+        let names=["香港 01 · 示例","香港 02 超长名称用于核对省略显示 · 示例","日本 03 · 示例","新加坡 04 · 示例","台湾 05 · 示例","英国 06 · 示例","德国 07 · 示例","美国住宅出口 · 示例","自定义节点 · 示例"]
         settings.Nodes=names.enumerated().map { ProxyNode(Id:"example-\($0.offset)",Name:$0.element,GroupId:"manual",OutboundJson:"{\"type\":\"socks\",\"server\":\"127.0.0.1\",\"server_port\":1080}") }
         if let chain=try? ProxyChain.create("美国出口链路 · 示例",settings.Nodes[0].Id,settings.Nodes[7].Id,settings.Nodes,id:"example-chain") { settings.Nodes.insert(chain,at:0); settings.SelectedNodeId=chain.Id }
         var sample=NetworkReport(); sample.generalIP="198.51.100.24"; sample.cloudflareIP=sample.generalIP; sample.claudeIP=sample.generalIP; sample.apiCode=401; sample.webCode=403; sample.country="US"; sample.city="界面示例"; sample.zone="America/Los_Angeles"; Web.rows(&sample); sample.rows.append(CheckRow(label:"DNS 示例",value:"请求失败",detail:"仅用于核对错误样式，不代表真实网络",level:.error)); report=sample
