@@ -34,7 +34,7 @@ import SwiftUI
             if let bitmap=view.bitmapImageRepForCachingDisplay(in:view.bounds) { view.cacheDisplay(in:view.bounds,to:bitmap); try bitmap.representation(using:.png,properties:[:])!.write(to:url.appendingPathComponent("checks-bottom.png")) }
             model.page="运行记录"; window.setContentSize(NSSize(width:1040,height:700)); try await Task.sleep(for:.milliseconds(500)); view.layoutSubtreeIfNeeded()
             if let bitmap=view.bitmapImageRepForCachingDisplay(in:view.bounds) { view.cacheDisplay(in:view.bounds,to:bitmap); try bitmap.representation(using:.png,properties:[:])!.write(to:url.appendingPathComponent("minimum.png")) }
-            try Data("{\"Passed\":7,\"NativeViews\":true,\"ScreenCapture\":false}".utf8).write(to:url.appendingPathComponent("ui-results.json")); exit(0)
+            try Data("{\"CapturedViews\":8,\"NativeViews\":true,\"ScreenCapture\":false}".utf8).write(to:url.appendingPathComponent("ui-results.json")); exit(0)
         } catch { fputs("Native rendering failed\n",stderr); exit(1) }
     }
 }

@@ -6,7 +6,7 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 if(Test-Path -LiteralPath $destination){Remove-Item -LiteralPath $destination}
 $archive=[IO.Compression.ZipFile]::Open($destination,[IO.Compression.ZipArchiveMode]::Create)
 try{
-    $files=@(Get-Item -LiteralPath (Join-Path $projectRoot 'README.md'),(Join-Path $projectRoot '.gitignore'),(Join-Path $projectRoot 'LICENSE'),(Join-Path $projectRoot 'PRODUCT.md'))
+    $files=@(Get-Item -LiteralPath (Join-Path $projectRoot 'README.md'),(Join-Path $projectRoot '.gitignore'),(Join-Path $projectRoot '.gitattributes'),(Join-Path $projectRoot 'LICENSE'),(Join-Path $projectRoot 'PRODUCT.md'))
     if(Test-Path -LiteralPath (Join-Path $projectRoot 'DESIGN.md')){$files+=Get-Item -LiteralPath (Join-Path $projectRoot 'DESIGN.md')}
     foreach($name in @('src','tests','scripts','installer','docs','vendor','.github','design')){
         $path=Join-Path $projectRoot $name

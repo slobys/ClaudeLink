@@ -5,7 +5,7 @@ import SwiftUI
     @Published var settings=Settings(); @Published var page="工作台"; @Published var logs:[LogEntry]=[]; @Published var report:NetworkReport?
     @Published var busy=false; @Published var connected=false; @Published var progress=""; @Published var error=""; @Published var offer:UpdateOffer?; @Published var downloaded:URL?; @Published var updateBusy=false; @Published var previewScrollCheck=""
     @Published var editor=""; @Published var editorName=""; @Published var editorURL=""; @Published var editingNode:ProxyNode?; @Published var editingSubscription:Subscription?; @Published var showingNode=false; @Published var showingSubscription=false
-    let session=Session(); var operation:Task<Void,Never>?; var monitor:Task<Void,Never>?; var updateTask:Task<Void,Never>?; var storageReadFailed=false
+    let session=Session(); var operation:Task<Void,Never>?; var monitor:Task<Void,Never>?; var updateTask:Task<Void,Never>?; var storageReadFailed=false; var previewMode=false
     var selectedNode:ProxyNode? { settings.Nodes.first { $0.Id == settings.SelectedNodeId } ?? settings.Nodes.first }
     init(preview:Bool = false) {
         if preview { fillPreview(); return }
@@ -67,6 +67,7 @@ import SwiftUI
     func downloadUpdate() { guard let offer else { return }; updateBusy=true; updateTask=Task { defer { updateBusy=false; updateTask=nil }; do { downloaded=try await Updater.download(offer); log("更新包已通过发布签名与 SHA-256 校验。",.success) } catch is CancellationError { log("更新下载已取消。",.warning) } catch { if Task.isCancelled { log("更新下载已取消。",.warning) } else { fail(error.localizedDescription) } } } }
     func installUpdate() { guard let downloaded else { return }; Task { do { try await Updater.install(downloaded,session:session) } catch { fail(error.localizedDescription); NSWorkspace.shared.activateFileViewerSelecting([downloaded]) } } }
     func fillPreview() {
+        previewMode=true
         settings.Nodes=[ProxyNode(Id:"example",Name:"界面示例节点",GroupId:"",OutboundJson:"{\"type\":\"socks\",\"server\":\"127.0.0.1\",\"server_port\":1080}")]; settings.SelectedNodeId="example"
         var sample=NetworkReport(); sample.generalIP="198.51.100.24"; sample.cloudflareIP=sample.generalIP; sample.claudeIP=sample.generalIP; sample.apiCode=401; sample.webCode=403; sample.country="US"; sample.city="界面示例"; sample.zone="America/Los_Angeles"; Web.rows(&sample); sample.rows.append(CheckRow(label:"DNS 示例",value:"请求失败",detail:"仅用于核对错误样式，不代表真实网络",level:.error)); report=sample
         log("界面示例：启动器已就绪。"); log("界面示例：本地代理已启动。",.success); log("界面示例：网页检查未通过。",.warning); log("界面示例：请求失败，请检查节点。",.error)
