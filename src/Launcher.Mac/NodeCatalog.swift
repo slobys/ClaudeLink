@@ -13,29 +13,42 @@ struct NodeCatalog:View {
     private var regions:[NodeRegion] { Array(Set(model.settings.Nodes.compactMap{NodeRegion.resolve($0,model.settings.Nodes)})).sorted{$0.Name < $1.Name} }
     var body:some View {
         VStack(alignment:.leading,spacing:16) {
-            HStack {
+            actions
+            filters
+            if filtered.isEmpty { emptyState }
+            tiles
+            footer
+        }
+    }
+    private var actions:some View {
+        HStack {
                 Button("添加节点") { model.editingNode=nil; model.editor=""; model.editorName=""; model.showingNode=true }.buttonStyle(.borderedProminent)
                 Button("创建链式代理") { model.editChain() }
                 Spacer()
                 Button("编辑") { if let node=model.selectedNode { if node.isChain { model.editChain(node) } else { model.editingNode=node; model.editor=node.OutboundJson; model.editorName=node.Name; model.showingNode=true } } }
                 Button("删除",role:.destructive) { if let node=model.selectedNode { model.deleteNode(node) } }
-            }.disabled(model.busy || model.connected)
-            HStack(spacing:12) {
+        }.disabled(model.busy || model.connected)
+    }
+    private var filters:some View {
+        HStack(spacing:12) {
                 InputField("搜索节点",text:$model.nodeSearch,prompt:"搜索名称、地区、协议或分组")
                 Picker("地区",selection:$model.nodeRegion) { Text("全部地区").tag("all"); ForEach(regions,id:\.Code) { Text($0.Name).tag($0.Code) }; Text("未识别地区").tag("unknown") }.labelsHidden().frame(width:145)
                 Picker("分组",selection:$model.nodeGroup) { Text("全部分组").tag("all"); Text("手动添加").tag("manual"); ForEach(model.settings.Subscriptions) { Text($0.Name).tag($0.Id) } }.labelsHidden().frame(width:155)
-            }
-            if filtered.isEmpty {
+        }
+    }
+    private var emptyState:some View {
                 VStack(spacing:10) { Image(systemName:"magnifyingglass").font(.system(size:28)); Text(model.settings.Nodes.isEmpty ? "还没有节点，先添加节点或订阅。" : "没有匹配节点，请更换筛选条件。"); if !model.nodeSearch.isEmpty || model.nodeRegion != "all" || model.nodeGroup != "all" { Button("清空筛选") { model.nodeSearch=""; model.nodeRegion="all"; model.nodeGroup="all" } } }.frame(maxWidth:.infinity,minHeight:220).foregroundStyle(Palette.color("Muted"))
-            }
-            LazyVGrid(columns:[GridItem(.adaptive(minimum:230,maximum:370),spacing:12)],alignment:.leading,spacing:12) {
+    }
+    private var tiles:some View {
+        LazyVGrid(columns:[GridItem(.adaptive(minimum:230,maximum:370),spacing:12)],alignment:.leading,spacing:12) {
                 ForEach(filtered) { node in
                     Button { model.selectNode(node) } label: { NodeTile(node:node,model:model) }.buttonStyle(.plain).disabled(model.busy || model.connected)
                         .accessibilityLabel(node.Name+"，"+(NodeRegion.resolve(node,model.settings.Nodes)?.Name ?? "未识别地区")+"，"+node.kind)
                 }
-            }
-            HStack { Text("显示 \(filtered.count) / \(model.settings.Nodes.count) · \(model.settings.Nodes.filter{$0.isChain}.count) 条链路"); Spacer(); Text("点击卡片选择，切换前请先断开。") }.font(.system(size:12)).foregroundStyle(Palette.color("Muted"))
         }
+    }
+    private var footer:some View {
+        HStack { Text("显示 \(filtered.count) / \(model.settings.Nodes.count) · \(model.settings.Nodes.filter{$0.isChain}.count) 条链路"); Spacer(); Text("点击卡片选择，切换前请先断开。") }.font(.system(size:12)).foregroundStyle(Palette.color("Muted"))
     }
 }
 private struct NodeTile:View {

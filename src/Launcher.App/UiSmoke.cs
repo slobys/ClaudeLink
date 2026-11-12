@@ -237,10 +237,10 @@ public static class UiSmoke
         var drawing = new DrawingVisual();
         using (var context = drawing.RenderOpen())
         {
-            context.DrawRectangle(window.Background, null, new Rect(0, 0, width, height));
-            context.DrawRectangle(new VisualBrush(content) { Stretch = Stretch.Fill }, null, new Rect(content.Margin.Left, content.Margin.Top, content.ActualWidth, content.ActualHeight));
+            context.DrawRectangle(window.Background, null, new Rect(0, 0, width + 1, height + 1));
+            context.DrawRectangle(new VisualBrush(content) { Stretch = Stretch.Fill, ViewboxUnits=BrushMappingMode.Absolute, Viewbox=new Rect(0,0,content.ActualWidth,content.ActualHeight) }, null, new Rect(content.Margin.Left, content.Margin.Top, content.ActualWidth, content.ActualHeight));
         }
-        if (content.Margin == new Thickness(0)) bitmap.Render(content);
+        if(window is MainWindow) bitmap.Render(content);
         else bitmap.Render(drawing);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using var file = File.Create(path); encoder.Save(file);
