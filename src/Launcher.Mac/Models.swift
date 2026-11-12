@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Darwin
 
 struct ProxyNode: Codable, Identifiable, Hashable {
     var Id: String; var Name: String; var GroupId: String; var OutboundJson: String
@@ -27,18 +28,23 @@ enum Level: String, Codable, CaseIterable {
     var background: Color { Palette.color(token+"Bg") }
 }
 struct CheckRow: Identifiable { var id = UUID(); var label: String; var value: String; var detail: String; var level: Level }
-struct LogEntry: Identifiable { var id = UUID(); var date = Date(); var message: String; var level: Level }
+struct LogEntry: Identifiable {
+    var id = UUID(); var date = Date(); var message: String; var level: Level
+    private static let clock:DateFormatter = { let value=DateFormatter(); value.locale=Locale(identifier:"en_US_POSIX"); value.dateFormat="HH:mm:ss"; return value }()
+    var timeText:String { Self.clock.string(from:date) }
+}
 struct NetworkReport {
     var generalIP = ""; var cloudflareIP = ""; var claudeIP = ""; var country = ""; var city = ""; var zone = ""
     var apiCode = 0; var webCode = 0; var apiFailure = ""; var tun = false; var ipv6Disabled = false; var zoneMatches = false
     var rows: [CheckRow] = []
     var apiReachable: Bool { [200,400,401,404,405].contains(apiCode) }
-    var basicReady: Bool { apiReachable && !generalIP.isEmpty }
+    var validIP: Bool { var ipv4=in_addr(); var ipv6=in6_addr(); return generalIP.withCString { inet_pton(AF_INET,$0,&ipv4) == 1 || inet_pton(AF_INET6,$0,&ipv6) == 1 } }
+    var basicReady: Bool { apiReachable && validIP }
     var sameIPv4: Bool { !generalIP.isEmpty && generalIP == cloudflareIP && generalIP == claudeIP && !generalIP.contains(":") }
     var strictReady: Bool { basicReady && (200..<400).contains(webCode) && sameIPv4 && country == "US" && tun && ipv6Disabled && zoneMatches }
     func reasons(strict: Bool) -> [String] {
         var result: [String] = []
-        if generalIP.isEmpty { result.append("代理出口 IP 未验证") }
+        if !validIP { result.append("代理出口 IP 未验证") }
         if !apiReachable { result.append(apiCode > 0 ? "Anthropic API 返回 HTTP \(apiCode)" : "API 请求失败：\(apiFailure)") }
         if strict {
             if !(200..<400).contains(webCode) { result.append("Claude 网页未通过：HTTP \(webCode)") }

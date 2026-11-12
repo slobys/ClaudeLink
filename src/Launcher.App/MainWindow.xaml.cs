@@ -175,7 +175,11 @@ public partial class MainWindow : Window
             : ClaudeRunning ? "Claude CLI 终端运行中；正常退出后自动断开并恢复。关闭本窗口会进入托盘。"
                 : ClaudeTerminal.FindClaude(settings.ClaudePath) is not null ? "已找到 Claude Code CLI，将在独立终端中打开。" : "尚未找到 Claude Code CLI，请在环境设置指定命令行路径。";
         RecoveryBanner.Visibility = SessionController.PendingRecovery().Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-        if (!session.Connected && report is null) { ExitMetric.Text = "待检测"; ApiMetric.Text = "待检测"; }
+        if (!session.Connected && report is null)
+        {
+            ExitMetric.Text = "待检测"; ApiMetric.Text = "待检测";
+            ExitMetric.Foreground = ApiMetric.Foreground = (Brush)FindResource("Pending");
+        }
     }
     private void LaunchTarget_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {

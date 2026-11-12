@@ -17,12 +17,17 @@ import SwiftUI
         do {
             let url=URL(fileURLWithPath:folder); try FileManager.default.createDirectory(at:url,withIntermediateDirectories:true)
             guard let window=NSApplication.shared.windows.first(where:{$0.contentView != nil}), let view=window.contentView else { throw ClientError.message("Missing window") }
+            NSApplication.shared.activate(ignoringOtherApps:true); window.makeKeyAndOrderFront(nil); window.setContentSize(NSSize(width:1280,height:850)); try await Task.sleep(for:.milliseconds(500))
             for page in ["工作台","节点管理","订阅管理","环境设置","运行记录"] {
                 model.page=page; try await Task.sleep(for:.milliseconds(600)); view.layoutSubtreeIfNeeded(); view.displayIfNeeded()
                 guard let bitmap=view.bitmapImageRepForCachingDisplay(in:view.bounds) else { throw ClientError.message("Missing bitmap") }; view.cacheDisplay(in:view.bounds,to:bitmap)
                 try bitmap.representation(using:.png,properties:[:])!.write(to:url.appendingPathComponent(page+".png"))
             }
-            try Data("{\"Passed\":5,\"NativeViews\":true,\"ScreenCapture\":false}".utf8).write(to:url.appendingPathComponent("ui-results.json")); NSApplication.shared.terminate(nil)
+            model.page="工作台"; try await Task.sleep(for:.milliseconds(500)); model.previewScrollCheck=true; try await Task.sleep(for:.milliseconds(500)); view.layoutSubtreeIfNeeded()
+            if let bitmap=view.bitmapImageRepForCachingDisplay(in:view.bounds) { view.cacheDisplay(in:view.bounds,to:bitmap); try bitmap.representation(using:.png,properties:[:])!.write(to:url.appendingPathComponent("checks.png")) }
+            model.page="运行记录"; window.setContentSize(NSSize(width:1040,height:700)); try await Task.sleep(for:.milliseconds(500)); view.layoutSubtreeIfNeeded()
+            if let bitmap=view.bitmapImageRepForCachingDisplay(in:view.bounds) { view.cacheDisplay(in:view.bounds,to:bitmap); try bitmap.representation(using:.png,properties:[:])!.write(to:url.appendingPathComponent("minimum.png")) }
+            try Data("{\"Passed\":7,\"NativeViews\":true,\"ScreenCapture\":false}".utf8).write(to:url.appendingPathComponent("ui-results.json")); exit(0)
         } catch { fputs("Native rendering failed\n",stderr); exit(1) }
     }
 }

@@ -56,6 +56,21 @@ public static class UiSmoke
         if (((CheckBox)window.FindName("TunCheck")).IsEnabled || ((CheckBox)window.FindName("TunCheck")).IsChecked != true)
             throw new InvalidOperationException("Desktop mode must use TUN.");
         assertions.Add("Desktop choice selects required TUN and opens the graphical client mode");
+        foreach (var previous in new[] { "Success", "Error" })
+        {
+            var api = (TextBlock)window.FindName("ApiMetric");
+            var exit = (TextBlock)window.FindName("ExitMetric");
+            api.Foreground = exit.Foreground = (Brush)window.FindResource(previous);
+            var reset = previous == "Success" ? (Button)window.FindName("DisconnectButton")
+                : Descendants<Button>(window).First(x => x.Content?.ToString() == "恢复临时设置");
+            reset.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            await Task.Delay(150);
+            var pending = ((Brush)window.FindResource("Pending")).ToString();
+            if (api.Text != "待检测" || api.Foreground.ToString() != pending || exit.Foreground.ToString() != pending)
+                throw new InvalidOperationException("Disconnect/recovery left stale metric colors.");
+        }
+        assertions.Add("Disconnect after success and recovery after failure both reset pending metric colors");
         window.FillSmokeReport();
         var log = (RichTextBox)window.FindName("LogBox");
         if (log.FontSize < 16 || log.VerticalContentAlignment != VerticalAlignment.Top || log.Document.Blocks.Count < 4)

@@ -25,7 +25,7 @@ enum Web {
         async let website = probe("https://claude.ai",port:port)
         let (g,c,a,p,w) = await (general,cf,claude,api,website)
         var report = NetworkReport(); report.generalIP = object(g)["ip"] as? String ?? ""; report.cloudflareIP=traceIP(c); report.claudeIP=traceIP(a); report.apiCode=p.code; report.webCode=w.code; report.tun=tun; report.ipv6Disabled=ipv6
-        if report.generalIP.range(of:#"^[0-9a-fA-F:.]+$"#,options:.regularExpression) != nil {
+        if report.validIP {
             let geo = await probe("https://ipwho.is/"+report.generalIP,port:port), value = object(geo)
             report.country=value["country_code"] as? String ?? ""; report.city=value["city"] as? String ?? ""; report.zone=(value["timezone"] as? [String:Any])?["id"] as? String ?? ""
         }

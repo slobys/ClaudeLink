@@ -54,12 +54,17 @@ enum SecureSettings {
 }
 enum Bridge {
     struct Parsed: Decodable { var Nodes: [ProxyNode]; var Warnings: [String] }
+    struct Merged: Decodable { var Nodes: [ProxyNode]; var SelectedNodeId: String? }
     static var executable: String { Bundle.main.resourceURL!.appendingPathComponent("bridge/ClaudeLink.Bridge").path }
     static func call(_ object: [String:Any]) async throws -> Data {
         let result = try await Commands.run(executable,[],input:JSONSerialization.data(withJSONObject:object),timeout:25)
         if result.code != 0 { let message = ((try? JSONSerialization.jsonObject(with:result.output)) as? [String:Any])?["Error"] as? String ?? "节点解析失败，请检查格式。"; throw ClientError.message(message) }; return result.output
     }
     static func parse(_ text: String) async throws -> Parsed { try JSONDecoder().decode(Parsed.self,from:await call(["operation":"parse","text":text])) }
+    static func merge(_ settings: Settings,_ subscription: Subscription,_ nodes: [ProxyNode]) async throws -> Merged {
+        let request:[String:Any] = ["operation":"merge","settings":try JSONSerialization.jsonObject(with:JSONEncoder().encode(settings)),"subscription":try JSONSerialization.jsonObject(with:JSONEncoder().encode(subscription)),"nodes":try JSONSerialization.jsonObject(with:JSONEncoder().encode(nodes))]
+        return try JSONDecoder().decode(Merged.self,from:await call(request))
+    }
     static func config(_ node: ProxyNode, port: Int, tun: Bool, route: Bool = true) async throws -> Data {
         let encoded = try JSONSerialization.jsonObject(with:JSONEncoder().encode(node)); let response = try await call(["operation":"config","node":encoded,"port":port,"tun":tun,"routeEnabled":route,"platform":"macos"])
         let value = (try JSONSerialization.jsonObject(with:response) as! [String:Any])["Config"]!; return try JSONSerialization.data(withJSONObject:value,options:[.prettyPrinted,.sortedKeys])

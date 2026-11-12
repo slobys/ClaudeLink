@@ -14,6 +14,7 @@ try
     {
         "parse" => Parse(request),
         "config" => Config(request),
+        "merge" => Merge(request),
         _ => throw new FormatException("不支持的操作。")
     };
     Console.Write(JsonSerializer.Serialize(result, JsonDefaults.Pretty));
@@ -42,4 +43,13 @@ static object Config(JsonNode request)
         inbound.Remove("interface_name"); // Darwin allocates a free utun interface.
     }
     return new { Config = config };
+}
+static object Merge(JsonNode request)
+{
+    var settings = request["settings"]?.Deserialize<LauncherSettings>() ?? throw new FormatException("配置为空。");
+    var subscription = request["subscription"]?.Deserialize<Subscription>() ?? throw new FormatException("订阅为空。");
+    var parsed = new ImportResult();
+    parsed.Nodes.AddRange(request["nodes"]?.Deserialize<List<ProxyNode>>() ?? []);
+    SubscriptionMerge.Replace(settings, subscription, parsed);
+    return new { Nodes = settings.Nodes, SelectedNodeId = settings.SelectedNodeId };
 }

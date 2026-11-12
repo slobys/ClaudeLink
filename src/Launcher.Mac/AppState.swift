@@ -3,12 +3,12 @@ import SwiftUI
 
 @MainActor final class AppState: ObservableObject {
     @Published var settings=Settings(); @Published var page="工作台"; @Published var logs:[LogEntry]=[]; @Published var report:NetworkReport?
-    @Published var busy=false; @Published var connected=false; @Published var progress=""; @Published var error=""; @Published var offer:UpdateOffer?; @Published var downloaded:URL?; @Published var updateBusy=false
+    @Published var busy=false; @Published var connected=false; @Published var progress=""; @Published var error=""; @Published var offer:UpdateOffer?; @Published var downloaded:URL?; @Published var updateBusy=false; @Published var previewScrollCheck=false
     @Published var editor=""; @Published var editorName=""; @Published var editorURL=""; @Published var editingNode:ProxyNode?; @Published var editingSubscription:Subscription?; @Published var showingNode=false; @Published var showingSubscription=false
     let session=Session(); var operation:Task<Void,Never>?; var monitor:Task<Void,Never>?; var updateTask:Task<Void,Never>?; var storageReadFailed=false
     var selectedNode:ProxyNode? { settings.Nodes.first { $0.Id == settings.SelectedNodeId } ?? settings.Nodes.first }
     init() {
-        if CommandLine.arguments.contains("--ui-smoke") { fillPreview(); return }
+        if CommandLine.arguments.contains("--ui-smoke") { AppPaths.root=FileManager.default.temporaryDirectory.appendingPathComponent("ClaudeLink-ui-"+UUID().uuidString); fillPreview(); return }
         do { settings=try SecureSettings.load(); log("启动器已就绪。节点与订阅使用登录钥匙串密钥加密保存。") } catch { storageReadFailed=true; self.error="读取配置失败，原文件已保留。请解锁登录钥匙串后重新打开。" }
         Task { do { try await session.recover() } catch { fail("临时环境恢复未完成，请点击“恢复临时设置”。") }; if settings.AutoCheckUpdates { await checkUpdate(manual:false) } }
         monitor=Task { while !Task.isCancelled { try? await Task.sleep(for:.seconds(2)); if connected && !busy && !session.running { connected=false; log("代理会话已退出，请重新连接。",.error); do { try await session.recover() } catch { fail("临时环境尚未恢复，请点击恢复临时设置。") } } } }
@@ -56,7 +56,7 @@ import SwiftUI
             var item=existing ?? editingSubscription ?? Subscription(); if existing == nil { item.Name=editorName; item.Url=editorURL }; guard !item.Name.isEmpty else { throw ClientError.message("请输入订阅名称。") }
             let response=try await Web.fetch(item.Url,port:connected ? settings.ProxyPort : nil,limit:8*1024*1024,timeout:30); guard response.code == 200 else { throw ClientError.message("订阅下载失败。") }
             let parsed=try await Bridge.parse(String(decoding:response.data,as:UTF8.self)); guard !parsed.Nodes.isEmpty else { throw ClientError.message("订阅中没有可支持的节点。") }
-            let nodes=parsed.Nodes.map { value -> ProxyNode in var node=value; node.GroupId=item.Id; return node }; settings.Nodes.removeAll { $0.GroupId == item.Id }; settings.Nodes.append(contentsOf:nodes); item.UpdatedAt=ISO8601DateFormatter().string(from:Date())
+            let merged=try await Bridge.merge(settings,item,parsed.Nodes); let nodes=parsed.Nodes; settings.Nodes=merged.Nodes; settings.SelectedNodeId=merged.SelectedNodeId; item.UpdatedAt=ISO8601DateFormatter().string(from:Date())
             if let i=settings.Subscriptions.firstIndex(where:{$0.Id==item.Id}) { settings.Subscriptions[i]=item } else { settings.Subscriptions.append(item) }; if selectedNode == nil { settings.SelectedNodeId=nodes.first?.Id }
             saveQuietly(); showingSubscription=false; log("订阅已更新，共 \(nodes.count) 个节点。",.success)
         } catch { fail("订阅更新失败，原节点已保留。请检查地址与网络。") } }
