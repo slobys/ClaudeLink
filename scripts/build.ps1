@@ -39,12 +39,12 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $payloadArchive=Join-Path $artifacts 'payload.zip'
 if(Test-Path -LiteralPath $payloadArchive){Remove-Item -LiteralPath $payloadArchive}
 [IO.Compression.ZipFile]::CreateFromDirectory($payload,$payloadArchive,[IO.Compression.CompressionLevel]::Optimal,$false)
-$setup=Join-Path $artifacts 'ClaudeLink-Setup-1.3.0.exe'
+$setup=Join-Path $artifacts 'ClaudeLink-Setup-1.3.1.exe'
 & $compiler @common @references ('/out:'+$setup) ('/resource:'+$payloadArchive+',Payload.zip') ('/resource:'+$manifestPath+',Payload.manifest.json') (Join-Path $projectRoot 'installer\Installer.cs')
 if($LASTEXITCODE -ne 0){throw 'Installer compilation failed.'}
-Copy-Item -LiteralPath $payloadArchive -Destination (Join-Path $artifacts 'ClaudeLink-Portable-1.3.0-win-x64.zip') -Force
+Copy-Item -LiteralPath $payloadArchive -Destination (Join-Path $artifacts 'ClaudeLink-Portable-1.3.1-win-x64.zip') -Force
 $hashes=@{}
-foreach($path in @($setup,(Join-Path $artifacts 'ClaudeLink-Portable-1.3.0-win-x64.zip'),(Join-Path $publish 'ClaudeNetworkLauncher.exe'))){
+foreach($path in @($setup,(Join-Path $artifacts 'ClaudeLink-Portable-1.3.1-win-x64.zip'),(Join-Path $publish 'ClaudeNetworkLauncher.exe'))){
     $hashes[[IO.Path]::GetFileName($path)]=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 $hashes | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $artifacts 'SHA256.json') -Encoding UTF8

@@ -182,6 +182,7 @@ public static class ReleaseUpdater
     public static ProcessStartInfo InstallerStartInfo(string path)
     {
         var info = ProcessTools.Hidden(path, "/update", Environment.ProcessId.ToString(), Process.GetCurrentProcess().StartTime.ToUniversalTime().Ticks.ToString(), "/restart");
+        info.WorkingDirectory = Environment.SystemDirectory;
         info.WindowStyle = ProcessWindowStyle.Normal;
         return info;
     }

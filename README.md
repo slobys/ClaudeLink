@@ -29,13 +29,13 @@ Claude Link 用来自动完成使用 Claude Code 前的网络与环境准备。�
 
 ## 下载安装
 
-当前版本为 **v1.3.0**，按电脑类型选择安装包：
+当前版本为 **v1.3.1**，按电脑类型选择安装包：
 
 | 你的电脑 | 下载 |
 |---|---|
-| Windows 64 位 | [EXE 安装包](https://github.com/slobys/ClaudeLink/releases/download/v1.3.0/ClaudeLink-Setup-1.3.0.exe) |
-| Mac，Apple 芯片（M 系列） | [Apple 芯片 DMG](https://github.com/slobys/ClaudeLink/releases/download/v1.3.0/ClaudeLink-1.3.0-macos-arm64.dmg) |
-| Mac，Intel 芯片 | [Intel DMG](https://github.com/slobys/ClaudeLink/releases/download/v1.3.0/ClaudeLink-1.3.0-macos-x64.dmg) |
+| Windows 64 位 | [EXE 安装包](https://github.com/slobys/ClaudeLink/releases/download/v1.3.1/ClaudeLink-Setup-1.3.1.exe) |
+| Mac，Apple 芯片（M 系列） | [Apple 芯片 DMG](https://github.com/slobys/ClaudeLink/releases/download/v1.3.1/ClaudeLink-1.3.1-macos-arm64.dmg) |
+| Mac，Intel 芯片 | [Intel DMG](https://github.com/slobys/ClaudeLink/releases/download/v1.3.1/ClaudeLink-1.3.1-macos-x64.dmg) |
 
 Windows 下载后运行 EXE；Mac 打开 DMG，把应用拖入“应用程序”。不需要预装 .NET。便携版和其他版本见 [发布页](https://github.com/slobys/ClaudeLink/releases)。
 
@@ -56,7 +56,9 @@ Mac 需要 macOS 15 或更新版本，当前安装包尚未通过 Apple 公证�
 
 发现新版时，点击 **立即更新**，下载完成后点击 **安装并重启**。节点、订阅和偏好保存在本机并加密，覆盖升级会保留这些配置。
 
-**v1.2.0 / v1.2.1 如果无法检查更新，请先从托盘退出旧版，再手动覆盖安装 v1.3.0 一次。** 新版已修复 GitHub 接口限流导致的检查失败。
+**v1.3.1 修复 Windows“安装并重启”时的目录占用错误。** 如果旧版曾出现“另一个进程正在使用此文件”，重新检查并下载 v1.3.1，或从发布页手动覆盖安装，无需卸载。
+
+**v1.2.0 / v1.2.1 如果无法检查更新，请先从托盘退出旧版，再手动覆盖安装 v1.3.1 一次。** 新版已修复 GitHub 接口限流导致的检查失败。
 
 ## 开发与许可
 

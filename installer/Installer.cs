@@ -26,6 +26,10 @@ internal static class Program
         Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
         try
         {
+            // A shortcut starts the launcher inside its install directory. The updater
+            // inherits that directory and would lock its own Directory.Move even after
+            // the owning launcher has exited. Old launchers also need this safeguard.
+            Directory.SetCurrentDirectory(Environment.GetFolderPath(Environment.SpecialFolder.System));
             if (args.Length == 3 && args[0] == "/cleanup") return Cleanup(args[1], int.Parse(args[2]));
             string target = DefaultTarget;
             string testRoot = Environment.GetEnvironmentVariable("CLAUDELINK_SETUP_TEST_ROOT");
@@ -201,7 +205,7 @@ internal static class Program
                 using (var key = Registry.CurrentUser.CreateSubKey(RegistryKeyFor(target)))
                 {
                     key.SetValue("DisplayName", "Claude Link 网络启动器");
-                    key.SetValue("DisplayVersion", "1.3.0");
+                    key.SetValue("DisplayVersion", "1.3.1");
                     key.SetValue("Publisher", "Claude Link");
                     key.SetValue("InstallLocation", target);
                     key.SetValue("DisplayIcon", Path.Combine(target, "ClaudeNetworkLauncher.exe"));

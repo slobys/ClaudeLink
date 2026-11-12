@@ -42,7 +42,7 @@ if(-not $SkipInstaller){
     $testRoot=[IO.Path]::GetFullPath($testRoot).TrimEnd('\')
     $expectedParent=[IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')
     if([IO.Path]::GetDirectoryName($testRoot) -ne $expectedParent){throw 'Test root containment check failed.'}
-    $setup=Join-Path $artifacts 'ClaudeLink-Setup-1.3.0.exe'
+    $setup=Join-Path $artifacts 'ClaudeLink-Setup-1.3.1.exe'
     $registryPath='HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ClaudeLink.Test.'+$testGuid
     $env:CLAUDELINK_SETUP_TEST_ROOT=$testRoot
     try{
@@ -55,12 +55,14 @@ if(-not $SkipInstaller){
         $installerChecks+='Current-user installation and file hash verified'
         $installerChecks+='Isolated uninstall registration verified'
         Set-Content -LiteralPath (Join-Path $testRoot 'user-added-test.txt') -Value 'preserve-test'
-        $process=Start-Process -FilePath $setup -ArgumentList '/silent' -WindowStyle Hidden -PassThru
+        # Simulate an old launcher/shortcut inheriting the installation directory.
+        $process=Start-Process -FilePath $setup -WorkingDirectory $testRoot -ArgumentList '/silent' -WindowStyle Hidden -PassThru
         if(-not $process.WaitForExit(50000)){Stop-Process -Id $process.Id;throw 'Upgrade test timeout.'}
         if($process.ExitCode -ne 0){throw 'Upgrade test failed.'}
         $backup=@(Get-ChildItem -LiteralPath $expectedParent -Directory -Filter (('ClaudeLink-SetupTest-'+$testGuid)+'.previous-*'))
         if($backup.Count -ne 1 -or -not(Test-Path -LiteralPath (Join-Path $backup[0].FullName 'user-added-test.txt'))){throw 'Unknown file preservation failed.'}
         $installerChecks+='Upgrade preserves unknown files in previous installation backup'
+        $installerChecks+='Upgrade launched inside the installation directory releases its own directory lock'
         $installedUi=Join-Path $artifacts 'installed-ui-check'
         $process=Start-Process -FilePath $installedApp -ArgumentList @('--smoke-test',('"'+$installedUi+'"')) -WindowStyle Hidden -PassThru
         if(-not $process.WaitForExit(20000)){Stop-Process -Id $process.Id;throw 'Installed app launch timeout.'}
@@ -69,7 +71,7 @@ if(-not $SkipInstaller){
         $waitHelper=Start-Process -FilePath (Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe') -ArgumentList @('-NoProfile','-NonInteractive','-Command','Start-Sleep -Seconds 3') -WindowStyle Hidden -PassThru
         $waitStarted=$waitHelper.StartTime.ToUniversalTime().Ticks
         $updateWatch=[Diagnostics.Stopwatch]::StartNew()
-        $process=Start-Process -FilePath $setup -ArgumentList @('/update',$waitHelper.Id,$waitStarted,'/restart','/silent') -WindowStyle Hidden -PassThru
+        $process=Start-Process -FilePath $setup -WorkingDirectory $testRoot -ArgumentList @('/update',$waitHelper.Id,$waitStarted,'/restart','/silent') -WindowStyle Hidden -PassThru
         if(-not $process.WaitForExit(50000)){throw 'Self-update installer timeout.'}
         if($process.ExitCode -ne 0 -or $updateWatch.ElapsedMilliseconds -lt 2000){throw 'Self-update did not wait for its owner.'}
         $restartProof=Join-Path ($testRoot+'.restart-proof') 'ui-results.json'
