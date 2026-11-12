@@ -31,6 +31,11 @@ Windows x64 / macOS 15+ 中文网络启动器：节点与订阅管理、内置�
 - 当前用户 DPAPI 加密保存节点、订阅与偏好，日志不记录密码或订阅令牌。
 - 1.2.1 统一浅色界面、蓝色操作按钮；绿色通过、橙色注意、红色失败、灰色待检测，结果同时保留图标和文字。运行记录使用 16px 字号，从顶部按时间显示，并按级别着色。
 - Mac 原生 SwiftUI 客户端：钥匙串密钥加密配置、系统授权 TUN、节点与订阅、专用 Chrome / Edge、桌面与 CLI 启动、临时环境恢复及签名更新。
+- 1.2.1 恢复深色／珊瑚／米白 Logo；主界面使用矢量资源，系统图标提供抗锯齿多尺寸版本。启动确认和提示窗口采用客户端样式，明确区分返回检查和继续启动。
+
+首次安装预设：TUN、严格网络预检、临时关闭活动物理网络 IPv6、临时匹配出口时区均已勾选；语言 en-US，浏览器自动选择并优先 Chrome。这些选项只在用户点击连接并完成系统授权后生效，安装本身不改网络。旧版本更新保留已有明确选择，不包含任何个人节点、订阅或程序路径。
+
+网页自动探测地址为 `https://claude.ai/login`。HTTP 403 表示该程序请求被拒绝，不能据此认定 Chrome 无法打开或账号被停用；浏览器核对窗口也会打开该登录页。严格预检沿用自定义网络规则，不是账号封禁风险检测。
 
 支持边界与真实网络验证范围见使用指南和验证记录。需要自行安装官方 Claude 桌面应用或 CLI；不提供账户或节点服务。桌面应用的语言和账户权限由官方客户端管理，专用 Chrome 核对窗口仍默认优先 Chrome。
 
@@ -59,7 +64,7 @@ C# / WPF 与 macOS SwiftUI、.NET 10、官方 sing-box 1.14.4，固定上游压�
 3. scripts/test.ps1：运行纯逻辑、官方内核、本地协议、WPF、安装/卸载检查。
 4. scripts/package-source.ps1：生成源码包。
 
-工具在 .tools/，不改系统 PATH。App.ico 随源码提供；仅重新生成图标时需要已有的 Pillow。
+工具在 .tools/，不改系统 PATH。Logo 的原始资源为 design/brand.svg，运行 scripts/create_icon.ps1 使用项目内 WPF 渲染器重新导出 1024px PNG 和 7 种尺寸的 ICO，无需额外图像库。系统图标随源码提供；主界面直接显示矢量。
 
 macOS 构建：在对应架构的 macOS 15+ / Xcode Command Line Tools 环境运行 `bash scripts/build-macos.sh arm64` 或 `bash scripts/build-macos.sh x64`。脚本获取校验过的 SDK / 内核，执行原生测试，生成 .app、DMG 与在线更新 ZIP。GitHub Actions 为两种架构分别构建。
 

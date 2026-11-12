@@ -21,8 +21,12 @@ Reuse the existing C# node importer and sing-box configuration builder. Preserve
 ## Brand Commitments
 Keep the name Claude Link and Chinese interface. Independent project, not an Anthropic or SagerNet product. No invented capability or verification claims.
 
+User-pinned application mark uses the legacy charcoal #202C2D, coral #E49B7D and cream #F4EBDF palette. Keep the existing blue action palette; the logo is a separate identity asset rendered from vector geometry.
+
 ## Evidence on Hand
 Existing source, user screenshots, synthetic WPF renderings, protocol tests, installer tests and GitHub Releases. User screenshots are private reference material and are not published.
 
 ## Product Principles
 Status must be recognizable by color, text and icon. GUI and CLI are separate choices. Preserve work and user configuration across updates. Privileged operations require OS authorization and recoverable journals. Verify native builds on their actual target OS.
+
+New-install presets select TUN, strict checks, temporary IPv6-off and timezone matching, en-US and Chrome-first auto selection. Explicit saved preferences override defaults; presets contain no personal nodes, subscriptions or executable paths. Apply system changes only after a user-initiated authorized connection. The webpage probe is https://claude.ai/login and cannot establish browser access or account authorization.

@@ -21,6 +21,10 @@ public static class UiSmoke
     {
         Directory.CreateDirectory(directory);
         var assertions = new List<string>();
+        if (new[] { "TunCheck", "StrictCheck", "IPv6Check", "TimeZoneCheck" }.Any(name => ((CheckBox)window.FindName(name)).IsChecked != true)
+            || ((ComboBox)window.FindName("LanguageCombo")).SelectedItem?.ToString() != "en-US" || ((ComboBox)window.FindName("BrowserCombo")).SelectedValue?.ToString() != "auto")
+            throw new InvalidOperationException("Fresh setup preset did not bind to the visible controls.");
+        assertions.Add("Fresh install preset is selected in all network, language and browser controls");
         var launchReport = new NetworkReport { GeneralIP = "198.51.100.24", CloudflareIP = "198.51.100.24", ClaudeIP = "198.51.100.24", ApiCode = 401, ApiReachable = true, WebCode = 403, WebReachable = false, SameIPv4 = true, Country = "US", Tun = true, IPv6Disabled = true, TimeZoneMatches = true };
         foreach (var proceed in new[] { false, true })
         {
@@ -125,6 +129,11 @@ public static class UiSmoke
             throw new InvalidOperationException("Check result colors did not bind to their semantic states.");
         assertions.Add("Native result templates bind separate success, warning, error and pending backgrounds");
         ((ScrollViewer)window.FindName("DashboardPage")).ScrollToTop();
+        window.Navigate("Settings");
+        ((ScrollViewer)window.FindName("SettingsPage")).ScrollToBottom();
+        await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+        Capture(window, Path.Combine(directory, "settings-presets.png"));
+        ((ScrollViewer)window.FindName("SettingsPage")).ScrollToTop(); window.Navigate("Dashboard");
         dialog.Show();
         await dialog.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
         Capture(dialog, Path.Combine(directory, "add-node.png"));
