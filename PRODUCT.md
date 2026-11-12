@@ -7,13 +7,13 @@ adaptive
 Desktop scope: Windows WPF and native macOS SwiftUI. This is not a mobile or web interface.
 
 ## Users
-Chinese-speaking Claude users who want to configure their own proxy nodes, subscriptions and session environment using a desktop interface.
+Chinese-speaking Claude Code users who want to automate recurring network and session-environment setup through a desktop interface.
 
 ## Product Purpose
-Prepare networking and open the official Claude desktop Code page, or optionally the Claude Code CLI. Keep connection, account authorization and unverified results distinct.
+Automate Claude Code network-environment setup: apply saved proxy or TUN settings, handle optional temporary IPv6 and timezone changes, set language for the CLI and dedicated check browser, check connectivity, then open the official desktop Code page or CLI. On session end, attempt to restore recorded temporary changes. Node and subscription management supply the connection for this workflow. Keep connection, account authorization and unverified results distinct.
 
 ## Operating Context
-Existing Windows releases and GitHub signed updates are in use. The user requests a complete visual redesign, clearly colored results and a macOS client. Mac hardware is unknown; ship Apple Silicon and Intel packages. The user previously delegated implementation choices to the developer.
+Windows and native macOS clients are published with signed updates. Lead product explanations with automatic environment preparation, checks, launch and recovery. Present node management as support for that workflow. Provide both Apple Silicon and Intel packages; user Mac hardware is unknown.
 
 ## Capabilities and Constraints
 Reuse the existing C# node importer and sing-box configuration builder. Preserve Windows encrypted settings, nodes, subscriptions and recovery behavior. Native macOS uses Keychain-backed encryption and an OS-specific session supervisor. Target macOS 15+ to match .NET 10 supported platforms; Windows x64 remains supported. Never claim account authorization based on unauthenticated API reachability. No new large UI framework dependency. Apple Developer ID/notarization credentials have not been supplied.
