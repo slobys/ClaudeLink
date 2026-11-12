@@ -10,6 +10,8 @@ import SwiftUI
     init(preview:Bool = false) {
         if preview { fillPreview(); return }
         if CommandLine.arguments.contains("--ui-smoke") || CommandLine.arguments.contains("--shutdown-smoke") { AppPaths.root=FileManager.default.temporaryDirectory.appendingPathComponent("ClaudeLink-ui-"+UUID().uuidString); fillPreview(); return }
+        do { if try !SingleInstance.acquire() { exit(0) } }
+        catch { let alert=NSAlert(); alert.messageText="无法启动 Claude Link"; alert.informativeText="请检查配置目录权限后重试。"; alert.runModal(); exit(1) }
         do { settings=try SecureSettings.load(); log("启动器已就绪。节点与订阅使用登录钥匙串密钥加密保存。") } catch { storageReadFailed=true; self.error="读取配置失败，原文件已保留。请解锁登录钥匙串后重新打开。" }
         Task { do { try await session.recover() } catch { fail("临时环境恢复未完成，请点击“恢复临时设置”。") }; if settings.AutoCheckUpdates { await checkUpdate(manual:false) } }
         monitor=Task { while !Task.isCancelled { try? await Task.sleep(for:.seconds(2)); if connected && !busy && !session.running { connected=false; report=nil; log("代理会话已退出，请重新连接。",.error); do { try await session.recover() } catch { fail("临时环境尚未恢复，请点击恢复临时设置。") } } } }

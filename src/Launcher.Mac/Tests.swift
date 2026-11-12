@@ -1,6 +1,7 @@
 import AppKit
 import CryptoKit
 import Foundation
+import Darwin
 
 @main struct NativeTests {
     @MainActor static func main() async {
@@ -41,6 +42,9 @@ import Foundation
             let model=AppState(preview:true); model.connected=true; model.disconnect()
             for _ in 0..<30 { if !model.busy { break }; try await Task.sleep(for:.milliseconds(100)) }
             try check(!model.connected && model.report == nil,"Disconnect clears stale transport results and semantic metric colors")
+            let lockDirectory=AppPaths.root.appendingPathComponent("lock-test"); let owner=try SingleInstance.claim(lockDirectory); let duplicate=try SingleInstance.claim(lockDirectory)
+            try check(owner != nil && duplicate == nil,"Second GUI instance cannot acquire an active session owner lock"); if let owner { close(owner) }
+            let released=try SingleInstance.claim(lockDirectory); try check(released != nil,"Process lock is available after owner releases it"); if let released { close(released) }
             let result:[String:Any]=["Passed":checks.count,"Checks":checks,"Architecture":BuildInfo.arch,"OS":ProcessInfo.processInfo.operatingSystemVersionString]
             try JSONSerialization.data(withJSONObject:result,options:.prettyPrinted).write(to:URL(fileURLWithPath:CommandLine.arguments[1]))
         } catch { fputs("Native regression failed: \(error)\n",stderr); exit(1) }
