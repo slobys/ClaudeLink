@@ -15,6 +15,7 @@ try
         "parse" => Parse(request),
         "config" => Config(request),
         "merge" => Merge(request),
+        "latency-config" => NodeLatency.Build(request["selected"]!.Deserialize<List<ProxyNode>>()!, request["nodes"]!.Deserialize<List<ProxyNode>>()!, request["port"]!.GetValue<int>(), request["secret"]!.ToString()),
         _ => throw new FormatException("不支持的操作。")
     };
     Console.Write(JsonSerializer.Serialize(result, JsonDefaults.Pretty));

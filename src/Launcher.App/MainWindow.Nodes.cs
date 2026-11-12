@@ -25,7 +25,7 @@ public partial class MainWindow
         ActiveChainText.Visibility=node?.IsChain == true ? Visibility.Visible : Visibility.Collapsed;
         ActiveChainText.Text=node?.IsChain == true ? "本机 → "+ProxyChain.Path(node,settings.Nodes)+" → 目标网站" : "";
     }
-    public sealed record NodeRow(ProxyNode Node, string Group, IReadOnlyList<ProxyNode> Available, bool Current)
+    public sealed record NodeRow(ProxyNode Node, string Group, IReadOnlyList<ProxyNode> Available, bool Current, NodeLatencyResult? Latency = null)
     {
         private NodeRegion? Region => NodeRegion.ForNode(Node, Available);
         private static readonly Dictionary<string, BitmapImage> Flags = new();
@@ -37,7 +37,10 @@ public partial class MainWindow
         public string Description => Node.IsChain ? ProxyChain.Path(Node, Available) : Group;
         public string Subtitle => $"{RegionLabel} · {Description}";
         public bool Invalid => Node.IsChain && ProxyChain.IsMissing(Node, Available);
-        public string State => Invalid ? "节点失效" : Current ? "当前选择" : "待连接";
+        public string ProtocolLabel => Protocol + (Current ? " · 当前" : "");
+        public string State => Invalid ? "节点失效" : Latency?.Text ?? "未测速";
+        public string Tone => Invalid ? "Error" : Latency?.Tone ?? "Pending";
+        public string LatencyHint => Latency == null ? "点击一键测速，检测当前筛选结果。" : $"{Latency.MeasuredAt:HH:mm:ss} · {State}\n通过节点访问 HTTPS 测试地址；超时上限 8 秒。\n颜色仅供比较延迟，不代表账户状态。";
         public BitmapImage? Flag
         {
             get
@@ -75,10 +78,11 @@ public partial class MainWindow
             var query = NodeSearchBox.Text.Trim();
             var region = NodeRegionFilter.SelectedValue as string ?? "all";
             var group = NodeGroupFilter.SelectedValue as string ?? "all";
-            var rows = settings.Nodes.Select(x => new NodeRow(x, settings.Subscriptions.FirstOrDefault(s => s.Id == x.GroupId)?.Name ?? "手动添加", settings.Nodes, x.Id == settings.SelectedNodeId))
+            var rows = settings.Nodes.Select(x => new NodeRow(x, settings.Subscriptions.FirstOrDefault(s => s.Id == x.GroupId)?.Name ?? "手动添加", settings.Nodes, x.Id == settings.SelectedNodeId, CurrentLatency(x)))
                 .Where(x => (group == "all" || x.Node.GroupId == group)
                     && (region == "all" || (NodeRegion.ForNode(x.Node, settings.Nodes)?.Code ?? "unknown") == region)
                     && (query.Length == 0 || $"{x.Name} {x.Protocol} {x.Group} {x.RegionLabel} {NodeRegion.ForNode(x.Node,settings.Nodes)?.Code} {x.Server} {x.Description}".Contains(query, StringComparison.OrdinalIgnoreCase))).ToList();
+            rows = NodeLatency.Sort(rows, x => x.Latency, NodeSort?.SelectedIndex ?? 0).ToList();
             NodesGrid.ItemsSource = rows;
             NodesGrid.SelectedItem = rows.FirstOrDefault(x => x.Current);
             NodesEmpty.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -91,14 +95,14 @@ public partial class MainWindow
     private void NodeCardSelected(object sender, SelectionChangedEventArgs e)
     {
         if (refreshing || NodesGrid.SelectedItem is not NodeRow row || row.Node.Id == settings.SelectedNodeId) return;
-        if (session.Connected || ClaudeRunning) { StatusText.Text = "请先断开当前会话，再切换节点。"; RefreshNodeCards(); return; }
+        if (nodeTesting || session.Connected || ClaudeRunning) { StatusText.Text = "请先断开当前会话，再切换节点。"; RefreshNodeCards(); return; }
         settings.SelectedNodeId = row.Node.Id; report = null; store.Save(settings); RefreshLists();
         StatusText.Text = "已选择：" + row.Node.Name;
     }
     private void AddChain_Click(object sender, RoutedEventArgs e) => EditChain(null);
     private void EditChain(ProxyNode? existing)
     {
-        if (session.Connected || ClaudeRunning) { AppDialog.Notify(this, "请先断开当前会话，再编辑链式代理。"); return; }
+        if (nodeTesting || session.Connected || ClaudeRunning) { AppDialog.Notify(this, "请先断开当前会话，再编辑链式代理。"); return; }
         if (settings.Nodes.Count(x => !x.IsChain) < 2) { AppDialog.Notify(this, "请先添加入口与出口两个节点，再创建链式代理。"); return; }
         var dialog = new ChainDialog(settings.Nodes, existing, settings.SelectedNodeId) { Owner = this };
         if (dialog.ShowDialog() != true || dialog.Result == null) return;

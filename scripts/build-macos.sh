@@ -51,11 +51,11 @@ CORE_HASH="$(shasum -a 256 "$APP/Contents/Resources/sing-box" | awk '{print $1}'
 printf 'enum BuildInfo { static let coreHash = "%s" }\n' "$CORE_HASH" > "$OUT/HostBuildInfo.swift"
 TARGET_ARCH="$ARCH"; [[ "$ARCH" != x64 ]] || TARGET_ARCH=x86_64
 SWIFT=(xcrun swiftc -swift-version 5 -O -target "$TARGET_ARCH-apple-macos15.0" -parse-as-library)
-"${SWIFT[@]}" src/Launcher.Mac/Host.swift "$OUT/HostBuildInfo.swift" -o "$APP/Contents/Helpers/ClaudeLinkHost"
+"${SWIFT[@]}" src/Launcher.Mac/Host.swift src/Launcher.Mac/LatencyHost.swift "$OUT/HostBuildInfo.swift" -o "$APP/Contents/Helpers/ClaudeLinkHost"
 /usr/bin/codesign --force --sign - "$APP/Contents/Helpers/ClaudeLinkHost"
 HOST_HASH="$(shasum -a 256 "$APP/Contents/Helpers/ClaudeLinkHost" | awk '{print $1}')"
 printf 'enum BuildInfo { static let version = "%s"; static let arch = "%s"; static let coreHash = "%s"; static let hostHash = "%s" }\n' "$VERSION" "$ARCH" "$CORE_HASH" "$HOST_HASH" > "$OUT/BuildInfo.swift"
-FILES=(src/Launcher.Mac/{Models,NodePresentation,Utilities,Networking,Session,BrowserPrivacy,Launcher,Updater,SingleInstance,AppState,Views,NodeCatalog,LaunchConfirmationView,App}.swift)
+FILES=(src/Launcher.Mac/{Models,NodePresentation,Utilities,Networking,Session,BrowserPrivacy,Launcher,Updater,SingleInstance,Latency,AppState,Views,NodeCatalog,LaunchConfirmationView,App}.swift)
 "${SWIFT[@]}" "${FILES[@]}" "$OUT/BuildInfo.swift" -o "$APP/Contents/MacOS/ClaudeLink" -framework SwiftUI -framework AppKit -framework Security -framework CryptoKit
 python3 - "$APP" "$VERSION" <<'PY'
 import sys,plistlib,pathlib
@@ -68,9 +68,10 @@ for size in 16 32 128 256 512; do sips -z "$size" "$size" src/Launcher.App/Asset
 iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
 /usr/bin/codesign --force --sign - "$APP"
 /usr/bin/codesign --verify --deep --strict "$APP"
-"${SWIFT[@]}" src/Launcher.Mac/{Models,NodePresentation,Utilities,Networking,Session,BrowserPrivacy,Launcher,Updater,SingleInstance,AppState,Tests}.swift "$OUT/BuildInfo.swift" -o "$APP/Contents/MacOS/ClaudeLinkTests" -framework SwiftUI -framework AppKit -framework Security -framework CryptoKit
+"${SWIFT[@]}" src/Launcher.Mac/{Models,NodePresentation,Utilities,Networking,Session,BrowserPrivacy,Launcher,Updater,SingleInstance,Latency,AppState,Tests}.swift "$OUT/BuildInfo.swift" -o "$APP/Contents/MacOS/ClaudeLinkTests" -framework SwiftUI -framework AppKit -framework Security -framework CryptoKit
 /usr/bin/codesign --force --sign - "$APP/Contents/MacOS/ClaudeLinkTests"
 "$APP/Contents/MacOS/ClaudeLinkTests" "$OUT/native-results.json"
+python3 scripts/test-macos-latency.py "$APP" "$OUT/latency-results.json"
 # The auxiliary test executable is kept outside the shipping app after the tests.
 mv "$APP/Contents/MacOS/ClaudeLinkTests" "$OUT/ClaudeLinkTests"
 /usr/bin/codesign --force --sign - "$APP"

@@ -8,7 +8,7 @@ import SwiftUI
         if readyToExit { return .terminateNow }
         guard let model=Self.model else { return .terminateNow }
         model.resolveLaunch(false)
-        Task { do { try await model.session.stop(); readyToExit=true; sender.terminate(nil) } catch { model.fail("临时环境恢复未完成，请先恢复后退出。") } }; return .terminateCancel
+        Task { do { await model.stopNodeTest(); try await model.session.stop(); readyToExit=true; sender.terminate(nil) } catch { model.fail("临时环境恢复未完成，请先恢复后退出。") } }; return .terminateCancel
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender:NSApplication) -> Bool { true }
     func applicationWillTerminate(_ notification:Notification) {
@@ -29,6 +29,7 @@ import SwiftUI
                 guard let bitmap=view.bitmapImageRepForCachingDisplay(in:view.bounds) else { throw ClientError.message("Missing bitmap") }; view.cacheDisplay(in:view.bounds,to:bitmap)
                 try bitmap.representation(using:.png,properties:[:])!.write(to:url.appendingPathComponent(page+".png"))
             }
+            model.page="节点管理"; model.fillLatencyPreview(); model.nodeSort=1; try await Task.sleep(for:.milliseconds(500)); try saveView(view,to:url.appendingPathComponent("nodes-latency.png")); model.nodeSort=0
             model.page="节点管理"; model.nodeSearch="没有匹配的示例";try await Task.sleep(for:.milliseconds(500));try saveView(view,to:url.appendingPathComponent("nodes-empty.png"));model.nodeSearch=""
             window.setContentSize(NSSize(width:1040,height:740));try await Task.sleep(for:.milliseconds(500));try saveView(view,to:url.appendingPathComponent("nodes-small.png"));window.setContentSize(NSSize(width:1280,height:850))
             model.editingChain=model.settings.Nodes.first(where:{$0.isChain});model.showingChain=true;try await Task.sleep(for:.milliseconds(700))

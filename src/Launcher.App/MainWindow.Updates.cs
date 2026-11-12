@@ -75,7 +75,7 @@ public partial class MainWindow
         if (availableUpdate == null || checkingUpdates || downloadingUpdate || installingUpdate) return;
         if (downloadedUpdate != null)
         {
-            if (busy || ClaudeRunning) { UpdateStatusText.Text = "请先完成当前操作，或正常退出 Claude CLI 终端，再安装更新。"; return; }
+            if (busy || nodeTesting || ClaudeRunning) { UpdateStatusText.Text = "请先完成当前操作，或正常退出 Claude CLI 终端，再安装更新。"; return; }
             installingUpdate = true; UpdateActionButton.IsEnabled = false;
             await RunBusyAsync(async () =>
             {

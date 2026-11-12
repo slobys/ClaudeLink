@@ -150,14 +150,15 @@ public partial class MainWindow : Window
     }
     private void UpdateState()
     {
-        NodeCombo.IsEnabled = !session.Connected && !ClaudeRunning;
-        TunCheck.IsEnabled = !session.Connected && !ClaudeRunning && !DesktopMode;
+        UpdateLatencyControls();
+        NodeCombo.IsEnabled = !nodeTesting && !session.Connected && !ClaudeRunning;
+        TunCheck.IsEnabled = !session.Connected && !nodeTesting && !ClaudeRunning && !DesktopMode;
         TunCheck.Content = DesktopMode ? "TUN 虚拟网卡（桌面模式必需）" : "TUN 虚拟网卡";
-        LaunchTargetCombo.IsEnabled = !session.Connected && !ClaudeRunning;
-        PortBox.IsEnabled = IPv6Check.IsEnabled = TimeZoneCheck.IsEnabled = !session.Connected && !ClaudeRunning;
-        LaunchButton.IsEnabled = !ClaudeRunning;
+        LaunchTargetCombo.IsEnabled = !nodeTesting && !session.Connected && !ClaudeRunning;
+        PortBox.IsEnabled = IPv6Check.IsEnabled = TimeZoneCheck.IsEnabled = !nodeTesting && !session.Connected && !ClaudeRunning;
+        LaunchButton.IsEnabled = !nodeTesting && !ClaudeRunning;
         LaunchButton.Content = DesktopMode ? "准备并打开 Claude 桌面客户端" : "准备并启动 Claude Code CLI";
-        ConnectButton.IsEnabled = !ClaudeRunning;
+        ConnectButton.IsEnabled = !nodeTesting && !ClaudeRunning;
         ConnectButton.Content = session.Connected ? "重新检测" : "连接并检测";
         DisconnectButton.IsEnabled = session.Connected && !ClaudeRunning;
         BrowserButton.IsEnabled = session.Connected;
@@ -195,7 +196,7 @@ public partial class MainWindow : Window
     }
     private async Task RunBusyAsync(Func<Task> action, string message = "正在处理…")
     {
-        if (busy) return;
+        if (busy || nodeTesting) return;
         busy = true; Workspace.IsEnabled = false; ProgressPanel.Visibility = Visibility.Visible;
         ProgressText.Text = message; StatusText.Text = message;
         try { await action(); }
@@ -483,6 +484,7 @@ public partial class MainWindow : Window
     private async Task ExitFromTrayAsync()
     {
         ShowFromTray();
+        await StopNodeTestAsync();
         if (ClaudeRunning) { AppDialog.Notify(this, "Claude 终端仍在运行，请先正常退出，以便保存工作并恢复环境。"); return; }
         await RunBusyAsync(async () => { await session.StopAsync(); allowClose = true; }, "正在退出并恢复…");
         if (allowClose) Close();
@@ -490,6 +492,7 @@ public partial class MainWindow : Window
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
         if (allowClose || smoke) return;
+        if (nodeTesting) { e.Cancel = true; awaitNodeTestClose(); return; }
         if (busy || session.Connected || ClaudeRunning)
         {
             e.Cancel = true; tray.Visible = true; Hide();

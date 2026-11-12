@@ -50,6 +50,15 @@ public static class UiSmoke
         cards.SelectedItem=cards.Items.OfType<MainWindow.NodeRow>().Single(x=>x.Node.IsChain);
         if(((TextBlock)window.FindName("ActiveChainText")).Text.Count(x=>x=='→') != 3) throw new InvalidOperationException("Workbench chain direction missing.");
         assertions.Add("Node cards show region flags, filter regions and chains, select in one click and preserve empty-state feedback");
+        window.FillLatencyPreview();
+        var sorter=(ComboBox)window.FindName("NodeSort");sorter.SelectedIndex=1;
+        var latencyRows=cards.Items.OfType<MainWindow.NodeRow>().ToList();
+        if(!latencyRows.Where(x=>x.Latency?.HasDelay==true).Select(x=>x.Latency!.Milliseconds).SequenceEqual(latencyRows.Where(x=>x.Latency?.HasDelay==true).Select(x=>x.Latency!.Milliseconds).OrderBy(x=>x)) || latencyRows.Count(x=>x.Current)!=1)throw new InvalidOperationException("Latency sorting or selection preservation failed.");
+        Capture(window,Path.Combine(directory,"nodes-latency.png"));sorter.SelectedIndex=2;
+        var descending=cards.Items.OfType<MainWindow.NodeRow>().ToList();
+        if(descending.First().Latency?.HasDelay!=true || descending.Last().Latency?.HasDelay==true)throw new InvalidOperationException("Unmeasured nodes must stay last in both sort directions.");
+        assertions.Add("Latency states fit compact cards, measured nodes sort in both directions, and selection stays unchanged");
+        sorter.SelectedIndex=0;
         var sources=cards.Items.OfType<MainWindow.NodeRow>().Select(x=>x.Node).ToList();
         var chainDialog=new ChainDialog(sources) {Owner=window};
         SubmitAppDialog(chainDialog,()=>{

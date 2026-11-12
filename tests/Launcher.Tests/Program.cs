@@ -114,5 +114,18 @@ Reject(()=>CoreConfigBuilder.Build(chain,17890,false,nodes:chainSettings.Nodes),
 File.WriteAllText(Path.Combine(output,"chain-http.json"),chainConfig.ToJsonString(JsonDefaults.Pretty));
 File.WriteAllText(Path.Combine(output,"chain-tun.json"),CoreConfigBuilder.Build(chain,17890,true,nodes:chainNodes).ToJsonString(JsonDefaults.Pretty));
 File.WriteAllText(Path.Combine(output,"chain-socks.json"),CoreConfigBuilder.Build(ProxyChain.Create("SOCKS出口",hy.Id,socks.Id,chainNodes),17890,false,nodes:chainNodes).ToJsonString(JsonDefaults.Pretty));
+var latencyPlan=NodeLatency.Build(chainNodes,chainNodes,19876,new string('a',64));
+Assert(latencyPlan.Config["inbounds"]!.AsArray().Count == 0 && latencyPlan.Config["experimental"]!["clash_api"]!["external_controller"]!.ToString() == "127.0.0.1:19876", "Latency core exposes only an authenticated loopback controller and no traffic or TUN inbound");
+Assert(latencyPlan.Tags.Count == chainNodes.Count && latencyPlan.Config["outbounds"]!.AsArray().Single(x=>x?["tag"]?.ToString()==latencyPlan.Tags[chain.Id])!["detour"] != null,"Latency measurement preserves chain entry-to-exit direction");
+var brokenLatency=new ProxyNode { ChainNodeIds=["missing","missing-too"] };
+var invalidPlan=NodeLatency.Build([brokenLatency,vless],[vless],19876,new string('b',64));
+Assert(invalidPlan.InvalidNodeIds.SequenceEqual(new[]{brokenLatency.Id}) && invalidPlan.Tags.ContainsKey(vless.Id),"An invalid chain cannot break a batch or silently fall back to direct");
+var fingerprintBefore=NodeLatency.Fingerprint(chain,chainNodes); var oldOutbound=chainNodes[0].OutboundJson;
+chainNodes[0].OutboundJson=oldOutbound.Replace("example.com","changed.example.com");
+Assert(NodeLatency.Fingerprint(chain,chainNodes)!=fingerprintBefore,"Changing a chain hop invalidates cached latency");chainNodes[0].OutboundJson=oldOutbound;
+var delaySamples=new[]{ new NodeLatencyResult("x",LatencyState.Failed),new("x",LatencyState.Success,400),new("x",LatencyState.Pending),new("x",LatencyState.Success,80),new("x",LatencyState.Timeout),new("x",LatencyState.Success,80)};
+Assert(NodeLatency.Sort(delaySamples,x=>x,1).Take(3).Select(x=>x.Milliseconds).SequenceEqual(new int?[]{80,80,400}) && NodeLatency.Sort(delaySamples,x=>x,2).Take(3).Select(x=>x.Milliseconds).SequenceEqual(new int?[]{400,80,80}),"Both delay sort directions keep measured values first with stable ties");
+Assert(NodeLatency.Sort(delaySamples,x=>x,2).Skip(3).Select(x=>x.State).SequenceEqual(new[]{LatencyState.Failed,LatencyState.Pending,LatencyState.Timeout}) && NodeLatency.Sort(delaySamples,x=>x,0).SequenceEqual(delaySamples),"Untested and failed nodes remain last; original ordering can be restored");
+File.WriteAllText(Path.Combine(output,"latency.json"),latencyPlan.Config.ToJsonString(JsonDefaults.Pretty));
 File.WriteAllText(Path.Combine(output, "results.json"), System.Text.Json.JsonSerializer.Serialize(new { Passed = checks.Count, Checks = checks }, JsonDefaults.Pretty));
 Console.WriteLine($"All {checks.Count} regression assertions passed.");

@@ -8,31 +8,32 @@ struct NodeCatalog:View {
         Array(repeating:GridItem(.flexible(),spacing:8),count:min(4,max(1,Int(gridWidth/190))))
     }
     private var filtered:[ProxyNode] {
-        model.settings.Nodes.filter { node in
+        NodeLatency.sort(model.settings.Nodes.filter { node in
             let region=NodeRegion.resolve(node,model.settings.Nodes), group=model.settings.Subscriptions.first(where:{$0.Id == node.GroupId})?.Name ?? "手动添加"
             let searchable=[node.Name,node.kind,group,region?.Name ?? "未识别地区",region?.Code ?? "",ProxyChain.path(node,model.settings.Nodes)].joined(separator:" ")
             return (model.nodeGroup == "all" || node.GroupId == model.nodeGroup) && (model.nodeRegion == "all" || (region?.Code ?? "unknown") == model.nodeRegion) && (model.nodeSearch.isEmpty || searchable.localizedCaseInsensitiveContains(model.nodeSearch))
-        }
+        },model.nodeSort,model.latency)
     }
     private var regions:[NodeRegion] { Array(Set(model.settings.Nodes.compactMap{NodeRegion.resolve($0,model.settings.Nodes)})).sorted{$0.Name < $1.Name} }
     var body:some View {
         VStack(alignment:.leading,spacing:16) {
             actions
             filters
-            Text("地区按节点名称识别，非实测出口；实际出口以连接检测为准。")
+            Text("HTTP 延迟越低，响应通常越快；不代表下载速度或 Claude 账户可用性。")
                 .font(.system(size:12)).foregroundStyle(Palette.color("Muted"))
             if filtered.isEmpty { emptyState }
             tiles
-            footer
+            HStack { footer; Spacer(); Text(model.nodeTestProgress).font(.system(size:12)).foregroundStyle(Palette.color("Muted")) }
         }
     }
     private var actions:some View {
         HStack {
-                Button("添加节点") { model.editingNode=nil; model.editor=""; model.editorName=""; model.showingNode=true }.buttonStyle(.borderedProminent)
-                Button("创建链式代理") { model.editChain() }
+                Button("添加节点") { model.editingNode=nil; model.editor=""; model.editorName=""; model.showingNode=true }.buttonStyle(.borderedProminent).disabled(model.nodeTesting)
+                Button("创建链式代理") { model.editChain() }.disabled(model.nodeTesting)
+                Button(model.nodeTesting ? "取消测速" : "一键测速") { model.testNodes(filtered) }.disabled(model.busy || model.connected || (!model.nodeTesting && filtered.isEmpty))
                 Spacer()
-                Button("编辑") { if let node=model.selectedNode { if node.isChain { model.editChain(node) } else { model.editingNode=node; model.editor=node.OutboundJson; model.editorName=node.Name; model.showingNode=true } } }
-                Button("删除",role:.destructive) { if let node=model.selectedNode { model.deleteNode(node) } }
+                Button("编辑") { if let node=model.selectedNode { if node.isChain { model.editChain(node) } else { model.editingNode=node; model.editor=node.OutboundJson; model.editorName=node.Name; model.showingNode=true } } }.disabled(model.nodeTesting)
+                Button("删除",role:.destructive) { if let node=model.selectedNode { model.deleteNode(node) } }.disabled(model.nodeTesting)
         }.disabled(model.busy || model.connected)
     }
     private var filters:some View {
@@ -40,6 +41,7 @@ struct NodeCatalog:View {
                 InputField("搜索节点",text:$model.nodeSearch,prompt:"搜索名称、地区、协议或分组")
                 Picker("地区",selection:$model.nodeRegion) { Text("全部地区").tag("all"); ForEach(regions,id:\.Code) { Text($0.Name).tag($0.Code) }; Text("未识别地区").tag("unknown") }.labelsHidden().frame(width:145)
                 Picker("分组",selection:$model.nodeGroup) { Text("全部分组").tag("all"); Text("手动添加").tag("manual"); ForEach(model.settings.Subscriptions) { Text($0.Name).tag($0.Id) } }.labelsHidden().frame(width:155)
+                Picker("排序",selection:$model.nodeSort) { Text("原始顺序").tag(0); Text("延迟：低 → 高").tag(1); Text("延迟：高 → 低").tag(2) }.labelsHidden().frame(width:140)
         }
     }
     private var emptyState:some View {
@@ -69,7 +71,7 @@ private struct NodeChoice:View {
     var body:some View {
         Button { model.selectNode(node) } label: { NodeTile(node:node,model:model) }
             .buttonStyle(.plain)
-            .disabled(model.busy || model.connected)
+            .disabled(model.busy || model.connected || model.nodeTesting)
             .accessibilityLabel(Text(label))
     }
 }
@@ -79,6 +81,8 @@ private struct NodeTile:View {
     var invalid:Bool { ProxyChain.invalid(node,model.settings.Nodes) }
     var region:NodeRegion? { NodeRegion.resolve(node,model.settings.Nodes) }
     private var detail:String { node.isChain ? ProxyChain.path(node,model.settings.Nodes) : model.settings.Subscriptions.first(where:{$0.Id == node.GroupId})?.Name ?? "手动添加" }
+    private var latency:NodeLatencyResult? { model.latency(node) }
+    private var tone:String { invalid ? "Error" : latency?.tone ?? "Pending" }
     private var subtitle:String { (region?.Name ?? "未识别地区")+" · "+detail }
     var body:some View {
         VStack(alignment:.leading,spacing:2) {
@@ -89,7 +93,7 @@ private struct NodeTile:View {
             }
             Text(subtitle).font(.system(size:12)).lineLimit(1).foregroundStyle(Palette.color("Muted")).help(subtitle)
             Spacer(minLength:0)
-            HStack { Text(node.isChain ? "链式 · 2 跳" : node.kind).font(.system(size:12,weight:.semibold)); Spacer(); Text(invalid ? "节点失效" : current ? "当前选择" : "待连接").font(.system(size:11,weight:.semibold)).foregroundStyle(Palette.color(invalid ? "Error" : current ? "Accent" : "Pending")).padding(.horizontal,8).padding(.vertical,5).background(Palette.color(invalid ? "ErrorBg" : current ? "AccentSubtle" : "PendingBg"),in:RoundedRectangle(cornerRadius:7)) }
+            HStack { Text((node.isChain ? "链式 · 2 跳" : node.kind)+(current ? " · 当前" : "")).font(.system(size:12,weight:.semibold)); Spacer(); Text(invalid ? "节点失效" : latency?.text ?? "未测速").font(.system(size:11,weight:.semibold)).foregroundStyle(Palette.color(tone)).padding(.horizontal,8).padding(.vertical,5).background(Palette.color(tone+"Bg"),in:RoundedRectangle(cornerRadius:7)).help("通过节点访问 HTTPS 测试地址；超时上限 8 秒。颜色仅供比较延迟。") }
         }.frame(maxWidth:.infinity,minHeight:70,maxHeight:70,alignment:.leading).padding(10).foregroundStyle(Palette.color("Ink")).background(Palette.color(current ? "AccentSubtle" : "Surface"),in:RoundedRectangle(cornerRadius:12)).overlay(RoundedRectangle(cornerRadius:12).stroke(Palette.color(current ? "Accent" : "Line"),lineWidth:1))
     }
 }

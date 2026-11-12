@@ -12,6 +12,13 @@ import Darwin
             let defaults=Settings()
             try check(defaults.TunEnabled && defaults.StrictChecks && defaults.DisableIPv6 && defaults.MatchTimeZone && defaults.ProcessLanguage == "en-US" && defaults.CheckBrowser == "auto","Fresh install applies requested network and Chrome-first presets")
             try check(defaults.Nodes.isEmpty && defaults.Subscriptions.isEmpty && defaults.ClaudePath.isEmpty && defaults.DesktopPath.isEmpty,"Preset contains no personal nodes or executable paths")
+            let samples=(0..<5).map { ProxyNode(Id:"delay-\($0)",Name:"Delay",GroupId:"manual",OutboundJson:"{\"type\":\"socks\",\"server\":\"127.0.0.1\",\"server_port\":1080}") }
+            let ms:[Int?]=[nil,400,80,nil,80]
+            let delays=Dictionary(uniqueKeysWithValues:samples.enumerated().map{($0.element.Id,NodeLatencyResult(fingerprint:"fixture",state:ms[$0.offset] == nil ? .failed : .success,milliseconds:ms[$0.offset]))})
+            try check(NodeLatency.sort(samples,1,{delays[$0.Id]}).map(\.Id)==["delay-2","delay-4","delay-1","delay-0","delay-3"],"Latency ascending sort preserves ties and keeps missing results last")
+            try check(NodeLatency.sort(samples,2,{delays[$0.Id]}).map(\.Id)==["delay-1","delay-2","delay-4","delay-0","delay-3"],"Latency descending sort keeps failed nodes below measured nodes")
+            try check(NodeLatency.sort(samples,0,{delays[$0.Id]}).map(\.Id)==samples.map(\.Id),"Latency original ordering is recoverable")
+            try check(NodeLatencyResult(fingerprint:"fixture",state:.timeout).text == "超时" && NodeLatencyResult(fingerprint:"fixture",state:.failed).text == "失败" && NodeLatencyResult(fingerprint:"fixture",state:.success,milliseconds:0).hasDelay == false,"Latency failures never become zero millisecond successes")
             let privacyScript=try BrowserPrivacy.script()
             try check(BrowserPrivacy.checkURL == "https://ip.net.coffee/claude/" && privacyScript.contains("ipMaskToggle") && privacyScript.replacingOccurrences(of:"\\/",with:"/").contains("https://ip.net.coffee") && !privacyScript.contains("__CLAUDELINK_ORIGIN__"),"Dedicated browser bundles scoped IP-hiding script and a single requested destination")
             let parsed=try await Bridge.parse("socks5://user:secret@127.0.0.1:1080#Local")

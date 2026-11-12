@@ -6,6 +6,8 @@ import SwiftUI
     @Published var busy=false; @Published var connected=false; @Published var progress=""; @Published var error=""; @Published var offer:UpdateOffer?; @Published var downloaded:URL?; @Published var updateBusy=false; @Published var previewScrollCheck=""
     @Published var editor=""; @Published var editorName=""; @Published var editorURL=""; @Published var editingNode:ProxyNode?; @Published var editingSubscription:Subscription?; @Published var showingNode=false; @Published var showingSubscription=false
     @Published var launchConfirmation:LaunchConfirmation?; private var launchDecision:CheckedContinuation<Bool,Never>?
+    @Published var nodeTesting=false; @Published var nodeLatencies:[String:NodeLatencyResult]=[:]; @Published var nodeSort=0; @Published var nodeTestProgress=""
+    let nodeProbe=NodeLatencyProbe(); var nodeTestTask:Task<Void,Never>?
     @Published var nodeSearch=""; @Published var nodeRegion="all"; @Published var nodeGroup="all"
     @Published var showingChain=false; var editingChain:ProxyNode?
     let session=Session(); var operation:Task<Void,Never>?; var monitor:Task<Void,Never>?; var updateTask:Task<Void,Never>?; var storageReadFailed=false; var previewMode=false
@@ -25,7 +27,7 @@ import SwiftUI
     func chooseDirectory() { let panel=NSOpenPanel(); panel.canChooseFiles=false; panel.canChooseDirectories=true; if panel.runModal() == .OK, let url=panel.url { settings.ProjectDirectory=url.path } }
     func chooseProgram(desktop:Bool) { let panel=NSOpenPanel(); panel.canChooseDirectories=false; panel.canChooseFiles=true; panel.treatsFilePackagesAsDirectories=false; if panel.runModal() == .OK, let url=panel.url { if desktop { settings.DesktopPath=url.path } else { settings.ClaudePath=url.path } } }
     func run(_ launch:Bool) {
-        guard !busy else { return }; busy=true
+        guard !busy && !nodeTesting else { return }; busy=true
         operation=Task {
             defer { busy=false; progress=""; operation=nil }
             do {
@@ -54,27 +56,28 @@ import SwiftUI
     func resolveLaunch(_ proceed:Bool) { let decision=launchDecision; launchDecision=nil; launchConfirmation=nil; decision?.resume(returning:proceed) }
     func disconnect() { resolveLaunch(false); operation?.cancel(); busy=true; Task { defer { busy=false; progress="" }; do { try await session.stop(); connected=false; report=nil; log("会话已结束，临时设置已恢复。",.success) } catch { fail(error.localizedDescription) } } }
     func browser() { Task { do { guard connected else { throw ClientError.message("请先连接节点。") }; let hidden=try await Launcher.browser(settings); log(hidden ? "已打开专用核对页，页面 IP 已隐藏；所选语言 "+settings.ProcessLanguage+"。" : "核对窗口已打开，请手动确认网页的隐藏 IP 开关。",hidden ? .success : .warning) } catch { fail(error.localizedDescription) } } }
-    func importNode() { busy=true; Task { defer { busy=false }; do {
+    func importNode() { guard !nodeTesting else { return }; busy=true; Task { defer { busy=false }; do {
         let parsed=try await Bridge.parse(editor); guard !parsed.Nodes.isEmpty else { throw ClientError.message("未识别到支持的节点。") }
         if let old=editingNode { guard parsed.Nodes.count == 1 else { throw ClientError.message("编辑节点时只可提交一个节点。") }; var node=parsed.Nodes[0]; node.Id=old.Id; node.GroupId=old.GroupId; if !editorName.isEmpty { node.Name=editorName }; if let index=settings.Nodes.firstIndex(where:{$0.Id==old.Id}) { settings.Nodes[index]=node } }
         else { settings.Nodes.append(contentsOf:parsed.Nodes); if settings.SelectedNodeId == nil { settings.SelectedNodeId=parsed.Nodes.first?.Id } }
         saveQuietly(); showingNode=false; log("节点已保存，共 \(parsed.Nodes.count) 个。",.success); for warning in parsed.Warnings { log(warning,.warning) }
     } catch { fail("节点未保存，请检查分享链接或配置格式。") } } }
-    func selectNode(_ node:ProxyNode) { guard !connected && !busy else { return }; settings.SelectedNodeId=node.Id; report=nil; saveQuietly() }
-    func editChain(_ node:ProxyNode?=nil) { guard !connected && !busy else { return }; editingChain=node; showingChain=true }
+    func selectNode(_ node:ProxyNode) { guard !connected && !busy && !nodeTesting else { return }; settings.SelectedNodeId=node.Id; report=nil; saveQuietly() }
+    func editChain(_ node:ProxyNode?=nil) { guard !connected && !busy && !nodeTesting else { return }; editingChain=node; showingChain=true }
     func saveChain(_ name:String,_ entry:String,_ exit:String) throws {
-        guard !connected && !busy else { throw ClientError.message("请先断开当前会话。") }
+        guard !connected && !busy && !nodeTesting else { throw ClientError.message("请先断开当前会话。") }
         let node=try ProxyChain.create(name,entry,exit,settings.Nodes,id:editingChain?.Id)
         if let index=settings.Nodes.firstIndex(where:{$0.Id == node.Id}) { settings.Nodes[index]=node } else { settings.Nodes.append(node) }
         settings.SelectedNodeId=node.Id; nodeSearch=""; nodeRegion="all"; nodeGroup="all"; saveQuietly(); showingChain=false
         log("链式代理已保存：本机 → 入口 → 最终出口。",.success)
     }
     func deleteNode(_ node:ProxyNode) {
-        guard !connected && !busy else { fail("请先断开当前会话。"); return }
+        guard !connected && !busy && !nodeTesting else { fail("请先断开当前会话。"); return }
         if let chain=settings.Nodes.first(where:{$0.isChain && $0.ChainNodeIds.contains(node.Id)}) { fail("节点被链式代理「"+chain.Name+"」使用，请先编辑或删除该链路。"); return }
         settings.Nodes.removeAll { $0.Id == node.Id }; if settings.SelectedNodeId == node.Id { settings.SelectedNodeId=settings.Nodes.first?.Id }; saveQuietly(); log("节点已删除。")
     }
     func updateSubscription(_ existing:Subscription? = nil) {
+        guard !nodeTesting else { return }
         busy=true; Task { defer { busy=false }; do {
             var item=existing ?? editingSubscription ?? Subscription(); if existing == nil { item.Name=editorName; item.Url=editorURL }; guard !item.Name.isEmpty else { throw ClientError.message("请输入订阅名称。") }
             let response=try await Web.fetch(item.Url,port:connected ? settings.ProxyPort : nil,limit:8*1024*1024,timeout:30); guard response.code == 200 else { throw ClientError.message("订阅下载失败。") }
@@ -85,13 +88,14 @@ import SwiftUI
         } catch { fail("订阅更新失败，原节点已保留。请检查地址与网络。") } }
     }
     func deleteSubscription(_ item:Subscription) {
+        guard !nodeTesting else { return }
         let removed=Set(settings.Nodes.filter{$0.GroupId == item.Id}.map{$0.Id})
         if let chain=settings.Nodes.first(where:{$0.isChain && !$0.ChainNodeIds.allSatisfy{!removed.contains($0)}}) { fail("订阅节点被链式代理「"+chain.Name+"」使用，请先修改该链路。"); return }
         settings.Nodes.removeAll { $0.GroupId==item.Id }; settings.Subscriptions.removeAll { $0.Id==item.Id }; saveQuietly(); log("订阅及所属节点已删除。")
     }
     func checkUpdate(manual:Bool) async { guard !updateBusy else { return }; updateBusy=true; defer { updateBusy=false }; do { offer=try await Updater.check(); if manual { log(offer == nil ? "当前已是最新版本。" : "发现新版本，可下载更新。",.success) } } catch { if manual { fail(error.localizedDescription) } else { log("自动更新检查暂未完成，可稍后在设置中重试。",.warning) } } }
     func downloadUpdate() { guard let offer else { return }; updateBusy=true; updateTask=Task { defer { updateBusy=false; updateTask=nil }; do { downloaded=try await Updater.download(offer); log("更新包已通过发布签名与 SHA-256 校验。",.success) } catch is CancellationError { log("更新下载已取消。",.warning) } catch { if Task.isCancelled { log("更新下载已取消。",.warning) } else { fail(error.localizedDescription) } } } }
-    func installUpdate() { guard let downloaded else { return }; Task { do { try await Updater.install(downloaded,session:session) } catch { fail(error.localizedDescription); NSWorkspace.shared.activateFileViewerSelecting([downloaded]) } } }
+    func installUpdate() { guard !nodeTesting, let downloaded else { return }; Task { do { try await Updater.install(downloaded,session:session) } catch { fail(error.localizedDescription); NSWorkspace.shared.activateFileViewerSelecting([downloaded]) } } }
     func fillPreview() {
         previewMode=true
         let names=["香港 01 · 示例","香港 02 超长名称用于核对省略显示 · 示例","日本 03 · 示例","新加坡 04 · 示例","台湾 05 · 示例","英国 06 · 示例","德国 07 · 示例","美国住宅出口 · 示例","自定义节点 · 示例"]

@@ -123,5 +123,5 @@ func hostMain() throws {
     if journal.ipv6.isEmpty && journal.originalZone == nil { for name in ["config.json","control.json","core.log","sing-box"] { try? FileManager.default.removeItem(at:stage.appendingPathComponent(name)) } }
 }
 @main struct HostMain {
-    static func main() { do { try hostMain() } catch { fputs("Claude Link 后台操作失败，请检查授权、节点及恢复记录。\n",stderr); exit(1) } }
+    static func main() { do { if CommandLine.arguments.count == 3 && CommandLine.arguments[1] == "--latency" { try latencyHostMain(CommandLine.arguments[2]) } else { try hostMain() } } catch { fputs("Claude Link 后台操作失败，请检查授权、节点及恢复记录。\n",stderr); exit(1) } }
 }

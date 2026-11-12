@@ -35,6 +35,7 @@ public static partial class IntegrationSmoke
             await FeatureSmoke.RunAsync(Assert, outputPath);
             await CheckBrowserLanguagesAsync(outputPath, Assert);
             await CheckProxyChainAsync(Assert);
+            await CheckNodeLatencyAsync(Assert);
 
             await using var proxy = new HttpFixture("launcher-loopback-ok");
             var node = NodeImporter.Parse($"http://127.0.0.1:{proxy.Port}#test-proxy").Nodes.Single();

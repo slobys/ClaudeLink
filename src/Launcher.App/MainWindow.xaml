@@ -18,7 +18,7 @@
       <StackPanel><TextBlock Text="独立代理内核" Foreground="{StaticResource Ink}" FontSize="12"/>
        <TextBlock Text="sing-box 1.14.4 · x64" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,5,0,0"/></StackPanel>
      </Border>
-     <TextBlock Text="v1.3.3   /   本地加密存储" Foreground="{StaticResource Muted}" FontSize="11"/>
+     <TextBlock Text="v1.4.0   /   本地加密存储" Foreground="{StaticResource Muted}" FontSize="11"/>
     </StackPanel>
     <StackPanel>
      <Button x:Name="NavDashboard" Style="{StaticResource NavButton}" Content="工作台" Tag="Dashboard" Click="Navigate_Click"/>
@@ -122,7 +122,9 @@
     </ScrollViewer>
     <Grid x:Name="NodesPage" Visibility="Collapsed">
      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-     <WrapPanel Margin="0,0,0,12">
+     <DockPanel Margin="0,0,0,12">
+      <Button x:Name="NodeTestButton" DockPanel.Dock="Right" Content="一键测速" Click="TestNodes_Click" Margin="10,0,0,8" VerticalAlignment="Top" ToolTip="测试当前筛选结果；连接时请先断开"/>
+      <WrapPanel x:Name="NodeActions">
       <Button Content="添加 / 导入节点" Style="{StaticResource PrimaryButton}" Click="Import_Click" Margin="0,0,9,8"/>
       <Button Content="创建链式代理" Click="AddChain_Click" Margin="0,0,9,8"/>
       <Button Content="剪贴板导入" Click="Paste_Click" Margin="0,0,9,8"/>
@@ -130,15 +132,16 @@
       <Button Content="编辑" Click="EditNode_Click" Margin="0,0,9,8"/>
       <Button Content="删除" Click="DeleteNode_Click" Margin="0,0,9,8"/>
       <Button Content="前往工作台" Click="SelectNode_Click" Margin="0,0,0,8"/>
-     </WrapPanel>
+     </WrapPanel></DockPanel>
      <StackPanel Grid.Row="1" Margin="0,0,0,14">
       <WrapPanel>
       <TextBlock Text="搜索" VerticalAlignment="Center" Margin="0,0,10,8"/>
       <TextBox x:Name="NodeSearchBox" Width="230" Margin="0,0,12,8" TextChanged="NodeFilterChanged" ToolTip="搜索名称、地区、协议或分组" AutomationProperties.Name="搜索节点"/>
       <ComboBox x:Name="NodeRegionFilter" Width="140" Margin="0,0,12,8" DisplayMemberPath="Label" SelectedValuePath="Code" SelectionChanged="NodeFilterChanged" AutomationProperties.Name="筛选地区"/>
-      <ComboBox x:Name="NodeGroupFilter" Width="170" Margin="0,0,0,8" DisplayMemberPath="Label" SelectedValuePath="Code" SelectionChanged="NodeFilterChanged" AutomationProperties.Name="筛选分组"/>
+      <ComboBox x:Name="NodeGroupFilter" Width="170" Margin="0,0,12,8" DisplayMemberPath="Label" SelectedValuePath="Code" SelectionChanged="NodeFilterChanged" AutomationProperties.Name="筛选分组"/>
+      <ComboBox x:Name="NodeSort" Width="160" Margin="0,0,0,8" SelectionChanged="NodeFilterChanged" SelectedIndex="0" AutomationProperties.Name="节点排序"><ComboBoxItem Content="原始顺序"/><ComboBoxItem Content="延迟：低 → 高"/><ComboBoxItem Content="延迟：高 → 低"/></ComboBox>
       </WrapPanel>
-      <TextBlock Text="地区按节点名称识别，非实测出口；实际出口以连接检测为准。" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+      <TextBlock Text="HTTP 延迟越低，响应通常越快；不代表下载速度或 Claude 账户可用性。" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,0,0,6"/>
      </StackPanel>
      <Grid Grid.Row="2">
       <ListBox x:Name="NodesGrid" SelectionChanged="NodeCardSelected" MouseDoubleClick="SelectNode_Click" SizeChanged="NodeGridSizeChanged" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="False" Padding="0,0,0,8" AutomationProperties.Name="节点卡片">
@@ -165,18 +168,20 @@
           </Grid>
          </Grid>
          <TextBlock Grid.Row="1" Text="{Binding Subtitle}" TextTrimming="CharacterEllipsis" FontSize="12" Foreground="{StaticResource Muted}" Margin="0,4,0,4" ToolTip="{Binding Subtitle}" VerticalAlignment="Center"/>
-         <DockPanel Grid.Row="2"><Border x:Name="NodeState" DockPanel.Dock="Right" Background="{StaticResource PendingBg}" CornerRadius="7" Padding="8,4"><TextBlock x:Name="NodeStateText" Text="{Binding State}" Foreground="{StaticResource Pending}" FontSize="11" FontWeight="SemiBold"/></Border><TextBlock Text="{Binding Protocol}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/></DockPanel>
+         <DockPanel Grid.Row="2"><Border x:Name="NodeState" DockPanel.Dock="Right" Background="{StaticResource PendingBg}" CornerRadius="7" Padding="8,4" ToolTip="{Binding LatencyHint}"><TextBlock x:Name="NodeStateText" Text="{Binding State}" Foreground="{StaticResource Pending}" FontSize="11" FontWeight="SemiBold"/></Border><TextBlock Text="{Binding ProtocolLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/></DockPanel>
         </Grid>
         <DataTemplate.Triggers>
          <DataTrigger Binding="{Binding RegionLabel}" Value="未识别地区"><Setter TargetName="UnknownFlag" Property="Visibility" Value="Visible"/><Setter TargetName="CountryFlag" Property="Visibility" Value="Collapsed"/></DataTrigger>
-         <DataTrigger Binding="{Binding Current}" Value="True"><Setter TargetName="ChosenCheck" Property="Visibility" Value="Visible"/><Setter TargetName="UnchosenRing" Property="Visibility" Value="Collapsed"/><Setter TargetName="NodeStateText" Property="Foreground" Value="{StaticResource Accent}"/><Setter TargetName="NodeState" Property="Background" Value="{StaticResource AccentSubtle}"/></DataTrigger>
-         <DataTrigger Binding="{Binding Invalid}" Value="True"><Setter TargetName="NodeStateText" Property="Foreground" Value="{StaticResource Error}"/><Setter TargetName="NodeState" Property="Background" Value="{StaticResource ErrorBg}"/></DataTrigger>
+         <DataTrigger Binding="{Binding Current}" Value="True"><Setter TargetName="ChosenCheck" Property="Visibility" Value="Visible"/><Setter TargetName="UnchosenRing" Property="Visibility" Value="Collapsed"/></DataTrigger>
+         <DataTrigger Binding="{Binding Tone}" Value="Success"><Setter TargetName="NodeStateText" Property="Foreground" Value="{StaticResource Success}"/><Setter TargetName="NodeState" Property="Background" Value="{StaticResource SuccessBg}"/></DataTrigger>
+<DataTrigger Binding="{Binding Tone}" Value="Warning"><Setter TargetName="NodeStateText" Property="Foreground" Value="{StaticResource Warning}"/><Setter TargetName="NodeState" Property="Background" Value="{StaticResource WarningBg}"/></DataTrigger>
+<DataTrigger Binding="{Binding Tone}" Value="Error"><Setter TargetName="NodeStateText" Property="Foreground" Value="{StaticResource Error}"/><Setter TargetName="NodeState" Property="Background" Value="{StaticResource ErrorBg}"/></DataTrigger>
         </DataTemplate.Triggers>
        </DataTemplate></ListBox.ItemTemplate>
       </ListBox>
       <TextBlock x:Name="NodesEmpty" Text="还没有节点&#10;添加分享链接，或前往订阅管理导入订阅。" TextAlignment="Center" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center" LineHeight="26" IsHitTestVisible="False"/>
      </Grid>
-     <DockPanel Grid.Row="3" Margin="0,10,0,0"><TextBlock x:Name="NodeCountText" Style="{StaticResource MutedText}"/><TextBlock Text="单击选择，双击进入工作台。切换前请先断开。" Style="{StaticResource MutedText}" HorizontalAlignment="Right"/></DockPanel>
+     <DockPanel Grid.Row="3" Margin="0,10,0,0"><TextBlock x:Name="NodeTestProgress" DockPanel.Dock="Right" Style="{StaticResource MutedText}" Margin="12,0,0,0"/><TextBlock x:Name="NodeCountText" Style="{StaticResource MutedText}"/><TextBlock Text="单击选择，双击进入工作台。切换前请先断开。" Style="{StaticResource MutedText}" HorizontalAlignment="Right"/></DockPanel>
     </Grid>
     <Grid x:Name="SubscriptionsPage" Visibility="Collapsed">
      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
