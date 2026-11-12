@@ -113,12 +113,12 @@ components:
     backgroundColor: '{colors.Surface}'
     textColor: '{colors.Ink}'
     rounded: '{rounded.card}'
-    padding: 12px
+    padding: 10px
   node-card-selected:
     backgroundColor: '{colors.AccentSubtle}'
     textColor: '{colors.Ink}'
     rounded: '{rounded.card}'
-    padding: 12px
+    padding: 10px
   chain-route:
     backgroundColor: '{colors.AccentSubtle}'
     textColor: '{colors.Ink}'
@@ -187,6 +187,10 @@ components:
 1.3.2 节点密度调整按用户明确要求将节点卡片缩小并在用户窗口宽度及更宽时显示四列。Windows 验证来源为代码提交 `cd79fc64a6393c545ed03fec5305bc275dbd0bb4`，原生 CI `43211751714` 已通过；从该提交到 `d339fed`，Windows、Core、安装器、设计资源和脚本的运行输入无变化。本轮 Windows 原生自绘证据位于 `.impeccable/review/1.3.2/windows/`：`nodes.png`、`nodes-user-width.png` 为四列，`nodes-small.png` 为三列及纵向滚动，`nodes-empty.png` 保留无匹配引导。示例包含超长名称和链路路径，未使用屏幕捕获，也未发布用户私人参考截图。Windows 独立 finish review 的结论为 ship，无 material 项。
 
 Mac 验证来源为补齐路径／来源完整 help 的代码提交 `d339fed856cf8443d2f05f54ee3a4571caccd350`；两种架构的原生 CI `43212943064` 均已通过，各含 51 项原生、14 项后台、1 项退出和 20 项 UI 检查。`.impeccable/review/1.3.2/macos-x64/` 下的 `节点管理.png`、`nodes-small.png`、`nodes-empty.png` 已由该最终 CI 的 Intel 原生图覆盖，并逐张复查，分别记录四列、三列和空结果。两端证据分别来自上述提交；1.3.0 的 Mac 图不作为本轮密度证据。这些原生示例不证明用户 Mac 实机、真实 TUN、网络出口或账户授权已验收。
+
+1.3.3 按用户要求进一步降低节点卡片高度：四行信息合为三行，内部高度由 92 改为 70，内边距由 12 改为 10，其余列数预算、间距、字级、颜色与标志保持不变。源码核对提交为 `289d15bc62cc785e6f3262dd8cb65166e7122f0c`，范围为 `MainWindow.xaml`、`MainWindow.Nodes.cs` 与 `NodeCatalog.swift`。本轮 Windows 原生 CI `43221634447` 已通过，原生自绘证据位于 `.impeccable/review/1.3.3/windows/`：`nodes.png`、`nodes-user-width.png`、`nodes-small.png` 与 `nodes-empty.png`，分别核对宽窗／用户宽度四列、窄窗重排和无匹配引导；`ui-results.json` 记录 14 项 UI 检查通过。Windows 独立 finish review 的结论为 ship，无 material 项。
+
+同一应用提交的 macOS Apple Silicon 与 Intel 原生 CI `43221634653` 均已通过，各含 51 项原生、14 项后台、1 项退出与 20 项 UI 检查。本轮 Mac 视觉核对仅限 `.impeccable/review/1.3.3/macos-arm64/` 下的 `节点管理.png`、`nodes-small.png`、`nodes-empty.png`，分别记录四列、窄窗重排和空结果；Apple Silicon 独立 finish review 的结论为 ship，无 material 项。Intel 本轮仅记录原生 CI 通过，不扩大截图审查范围，也不将 1.3.2 的历史 Mac 证据视为本轮验证。两端图中均为示例数据，未启用屏幕捕获；这些原生示例不证明用户 Mac 实机、真实 TUN、出口、账户授权或实际 hover 操作已验收。
 
 ## Colors
 
@@ -260,7 +264,7 @@ Mac 验证来源为补齐路径／来源完整 help 的代码提交 `d339fed856c
 
 窗口缩小时保留侧栏与内容阅读顺序，长表单及检查结果纵向滚动。WPF 操作组使用 WrapPanel 按可用宽度换行，表格采用弹性列宽；Mac 在声明的最小宽度内保留 HStack 操作组，不虚构移动布局。Mac 自身截图中 1280 × 850 与最小尺寸的证据分别保存在 review 架构目录。
 
-节点页按操作、搜索及地区／分组筛选、常驻地区说明、卡片网格、数量与选择提示的阅读顺序排列。两端节点网格均按可用宽度每 190 个逻辑单位的预算计算列数，取整后限制为 1–4 列；用户窗口宽度及更宽时保持最多四列，较窄时减少列数。Windows 使用 ListBox／WrapPanel，先从网格宽度扣除系统纵向滚动条宽度和 4，再按 `floor(可用宽度 / 列数) - 8` 设置卡片宽度；Mac 使用 LazyVGrid 的等宽 flexible 列，由实际 `gridWidth` 在出现和宽度变化时重排。卡片间距为 8、内边距为 12，内部内容高度为 92；保持纵向浏览和原有筛选、选择行为。这些密度参数仅适用于节点卡片，普通任务卡片仍使用 22 内边距。
+节点页按操作、搜索及地区／分组筛选、常驻地区说明、卡片网格、数量与选择提示的阅读顺序排列。两端节点网格均按可用宽度每 190 个逻辑单位的预算计算列数，取整后限制为 1–4 列；用户窗口宽度及更宽时保持最多四列，较窄时减少列数。Windows 使用 ListBox／WrapPanel，先从网格宽度扣除系统纵向滚动条宽度和 4，再按 `floor(可用宽度 / 列数) - 8` 设置卡片宽度；Mac 使用 LazyVGrid 的等宽 flexible 列，由实际 `gridWidth` 在出现和宽度变化时重排。卡片间距为 8、内边距为 10，内部内容高度为 70；以名称、地区与来源／路径、协议与状态三行保留全部信息，完整卡片高度较 1.3.2 约再缩短 20%，保持纵向浏览和原有筛选、选择行为。这些密度参数仅适用于节点卡片，普通任务卡片仍使用 22 内边距。
 
 表单标签、控件与辅助说明保持相邻，间距使用已出现的 6／8／10／12；组之间使用 16／20，普通任务卡片使用 22。日志从容器顶部开始，较早记录在上，新记录追加在下；新记录到达时可滚动到尾部，不倒置时间顺序。
 
@@ -306,7 +310,7 @@ Mac 使用原生 roundedBorder TextField、Picker、Toggle 与 TextEditor。Inpu
 
 ### Node region cards
 
-节点卡片是用户 NaiLink 参考所指定的局部信息组织：左上为地区国旗或未知地区图形，标题为节点名称，随后显示地区、来源分组或链路路径，底部为协议及状态。名称采用 14／Semibold，地区和来源为 12，状态为 11／Semibold；内容高度为 92、内边距为 12，沿用圆角 12。长名称与来源／路径单行截断，完整内容保留原生提示：Windows 使用 tooltip，Mac 名称使用 help，路径／来源由同一 `detail` 值提供显示文字与 `.help(detail)`。链路显示“链式 · 2 跳”，地区按最终出口节点的名称推断。
+节点卡片是用户 NaiLink 参考所指定的局部信息组织，压为三行：首行为地区国旗或未知地区图形、节点名称与选择图形；中间为“地区 · 来源分组”或“地区 · 链路路径”；底部为协议及状态。名称采用 14／Semibold，合并辅助行与协议为 12，状态为 11／Semibold；内容高度为 70、内边距为 10，沿用圆角 12。长名称与合并辅助行单行截断，完整内容保留原生提示：Windows 的 `NodeRow.Subtitle` 同时提供中间行显示文字和 tooltip，Mac 的 `NodeTile.subtitle` 同时提供显示文字和 `.help(subtitle)`；名称保留原有 tooltip／help。链路显示“链式 · 2 跳”，地区按最终出口节点的名称推断，不删除地区、来源或路径等信息类别。
 
 卡片保留三态文字：“待连接”使用 Pending／PendingBg，“当前选择”使用 Accent／AccentSubtle，“节点失效”使用 Error／ErrorBg，失效状态优先于选择状态。选中卡片使用 AccentSubtle 工作面与 Accent 边界；选中表示保存的节点选择，不表示连接或检查通过。WPF 以圆环和勾选 Path 表达选择，未知地区用椭圆及地球经纬线几何；Mac 使用 circle、checkmark.circle.fill 和 globe SF Symbols。图形与状态文字配合，不用文字字符充当选择图标。WPF 悬停使用 SurfaceAlt 与 Accent 边界，键盘焦点边界增为 2；Mac 保留原生按钮焦点行为。
 
@@ -354,7 +358,7 @@ Windows 日志使用只读 RichTextBox／FlowDocument，内边距 18；Mac 使�
 - **Do** 从 design/brand.svg 派生标志资源，保持暖色身份资产与操作蓝的边界。
 - **Do** 在启动确认中分开呈现 API 传输结果、待核对项目和用户决定，并让返回检查与继续启动在长内容下仍可见。
 - **Do** 在节点筛选区常驻名称推断地区的说明，同时保留三态文字、原生选择图形和空结果引导。
-- **Do** 让节点网格按 190 宽度预算保持最多四列，以 8 间距、12 内边距、92 内容高度和 14／Semibold 名称提高密度，同时保留旗帜、地区、来源或路径、协议和状态。
+- **Do** 让节点网格按 190 宽度预算保持最多四列，以 8 间距、10 内边距、70 内容高度和 14／Semibold 名称提高密度，按三行同时保留旗帜、地区、来源或路径、协议、状态和完整内容提示。
 - **Do** 在链路编辑与工作台显示本机、入口、最终出口、目标网站的顺序，并将校验错误留在表单内。
 
 ### Don't:
