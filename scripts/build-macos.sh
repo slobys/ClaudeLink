@@ -51,7 +51,7 @@ SWIFT=(xcrun swiftc -swift-version 5 -O -target "$TARGET_ARCH-apple-macos15.0" -
 /usr/bin/codesign --force --sign - "$APP/Contents/Helpers/ClaudeLinkHost"
 HOST_HASH="$(shasum -a 256 "$APP/Contents/Helpers/ClaudeLinkHost" | awk '{print $1}')"
 printf 'enum BuildInfo { static let version = "%s"; static let arch = "%s"; static let coreHash = "%s"; static let hostHash = "%s" }\n' "$VERSION" "$ARCH" "$CORE_HASH" "$HOST_HASH" > "$OUT/BuildInfo.swift"
-FILES=(src/Launcher.Mac/{Models,Utilities,Networking,Session,Launcher,Updater,SingleInstance,AppState,Views,App}.swift)
+FILES=(src/Launcher.Mac/{Models,Utilities,Networking,Session,Launcher,Updater,SingleInstance,AppState,Views,LaunchConfirmationView,App}.swift)
 "${SWIFT[@]}" "${FILES[@]}" "$OUT/BuildInfo.swift" -o "$APP/Contents/MacOS/ClaudeLink" -framework SwiftUI -framework AppKit -framework Security -framework CryptoKit
 python3 - "$APP" "$VERSION" <<'PY'
 import sys,plistlib,pathlib

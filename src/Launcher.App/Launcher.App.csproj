@@ -8,7 +8,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyName>ClaudeNetworkLauncher</AssemblyName>
     <RootNamespace>Launcher.App</RootNamespace>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\App.ico</ApplicationIcon>
     <PublishSingleFile>true</PublishSingleFile>
@@ -20,6 +20,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Resource Include="Assets\App.png" />
+    <EmbeddedResource Include="..\..\design\brand.svg" LogicalName="Brand.logo.svg" />
     <ProjectReference Include="..\Launcher.Core\Launcher.Core.csproj" />
     <EmbeddedResource Include="..\..\vendor\sing-box.exe" LogicalName="Core.sing-box.exe" />
     <EmbeddedResource Include="..\..\vendor\core-manifest.json" LogicalName="Core.manifest.json" />

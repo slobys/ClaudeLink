@@ -25,6 +25,6 @@ import Foundation
         let language = settings.ProcessLanguage
         let html="<!doctype html><meta charset=utf-8><title>语言核对</title><style>body{font:18px system-ui;padding:32px;color:#18283D}pre{white-space:pre-wrap}</style><h1>专用浏览器语言核对</h1><p>这是独立的核对窗口；日常浏览器配置保持原样。</p><pre id=result></pre><script>result.textContent=JSON.stringify({language:navigator.language,languages:navigator.languages,timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone},null,2)</script>"
         let page=profile.appendingPathComponent("language.html"); try AppPaths.write(Data(html.utf8),to:page)
-        let process=Process(); process.executableURL=URL(fileURLWithPath:executable); process.arguments=["--user-data-dir="+profile.path,"--lang="+language,"--accept-lang="+language+",en","--no-first-run","--proxy-server=http://127.0.0.1:\(settings.ProxyPort)",page.absoluteString,"https://claude.ai"]; process.standardOutput=FileHandle.nullDevice; process.standardError=FileHandle.nullDevice; try process.run()
+        let process=Process(); process.executableURL=URL(fileURLWithPath:executable); process.arguments=["--user-data-dir="+profile.path,"--lang="+language,"--accept-lang="+language+",en","--no-first-run","--proxy-server=http://127.0.0.1:\(settings.ProxyPort)",page.absoluteString,Web.claudeLoginURL]; process.standardOutput=FileHandle.nullDevice; process.standardError=FileHandle.nullDevice; try process.run()
     }
 }

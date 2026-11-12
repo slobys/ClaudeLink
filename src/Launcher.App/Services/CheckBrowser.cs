@@ -76,7 +76,7 @@ public static class CheckBrowser
         PrepareProfile(profile, language);
         var page = Path.Combine(directory, "language-check.html");
         File.WriteAllText(page, LanguagePage(language), new UTF8Encoding(false));
-        Process.Start(StartInfo(browser, profile, language, port, [new Uri(page).AbsoluteUri, "https://ip.net.coffee/claude/"]));
+        Process.Start(StartInfo(browser, profile, language, port, [new Uri(page).AbsoluteUri, NetworkServices.ClaudeLoginUrl, "https://ip.net.coffee/claude/"]));
         return new(browser.Name, language, profile, page);
     }
     public static string LanguagePage(string language)

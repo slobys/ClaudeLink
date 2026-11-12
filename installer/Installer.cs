@@ -201,7 +201,7 @@ internal static class Program
                 using (var key = Registry.CurrentUser.CreateSubKey(RegistryKeyFor(target)))
                 {
                     key.SetValue("DisplayName", "Claude Link 网络启动器");
-                    key.SetValue("DisplayVersion", "1.2.0");
+                    key.SetValue("DisplayVersion", "1.2.1");
                     key.SetValue("Publisher", "Claude Link");
                     key.SetValue("InstallLocation", target);
                     key.SetValue("DisplayIcon", Path.Combine(target, "ClaudeNetworkLauncher.exe"));
@@ -256,9 +256,13 @@ internal static class Program
             link.TargetPath = Path.Combine(target, "ClaudeNetworkLauncher.exe"); link.WorkingDirectory = target;
             link.Description = "节点、订阅、TUN 与 Claude Code 启动"; link.IconLocation = Path.Combine(target, "ClaudeNetworkLauncher.exe"); link.Save();
             System.Runtime.InteropServices.Marshal.FinalReleaseComObject(link);
+            SHChangeNotify(0x2000, 0x0005, path, IntPtr.Zero);
         }
+        SHChangeNotify(0x2000, 0x0005, Path.Combine(target, "ClaudeNetworkLauncher.exe"), IntPtr.Zero);
         System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shell);
     }
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    private static extern void SHChangeNotify(int eventId, uint flags, string item, IntPtr unused);
     private static int Cleanup(string target, int ownerPid)
     {
         ValidateInstalledTarget(target);

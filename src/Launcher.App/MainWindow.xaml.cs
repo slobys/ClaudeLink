@@ -208,7 +208,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             var text = SafeError(ex); Log(text, LogKind.Error); StatusText.Text = text;
-            MessageBox.Show(this, text, "操作未完成", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppDialog.Notify(this, text, "操作未完成", "Error");
         }
         finally
         {
@@ -285,11 +285,7 @@ public partial class MainWindow : Window
         await EnsureConnectedAsync(); await CheckNowAsync();
         var ready = settings.StrictChecks ? report!.StrictReady : report!.BasicReady;
         ProgressPanel.Visibility = Visibility.Collapsed;
-        var reasonText = string.Join("\n", report!.BlockingReasons(settings.StrictChecks).Select(x => "• " + x));
-        var apiSummary = report.ApiReachable ? $"API HTTPS 可达（HTTP {report.ApiCode}，账户授权未验证）。" : "API 连通性尚未通过。";
-        if (!ready && MessageBox.Show(this,
-            apiSummary + "\n\n以下项目未通过或未验证：\n" + reasonText + "\n\n仍要打开所选 Claude 应用吗？继续启动不会将这些项目视为通过。",
-            "确认本次启动", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes)
+        if (!ready && !AppDialog.ConfirmLaunch(this, report!, settings.StrictChecks))
         { StatusText.Text = "已保留当前连接，尚未启动 Claude Code"; return; }
         settings.RecentProjects.RemoveAll(x => x.Equals(settings.ProjectDirectory, StringComparison.OrdinalIgnoreCase));
         settings.RecentProjects.Insert(0, settings.ProjectDirectory);
@@ -336,7 +332,7 @@ public partial class MainWindow : Window
             Log($"已打开专用 {opened.BrowserName} 核对窗口；所选语言 {opened.Language}。");
             StatusText.Text = $"专用 {opened.BrowserName} 已打开；请在「语言核对」标签确认实际语言。";
         }
-        catch (Exception ex) { MessageBox.Show(this, SafeError(ex), "浏览器核对"); }
+        catch (Exception ex) { AppDialog.Notify(this, SafeError(ex), "浏览器核对"); }
     }
     private void BrowseProject_Click(object sender, RoutedEventArgs e)
     {
@@ -356,13 +352,13 @@ public partial class MainWindow : Window
     private async void SaveSettings_Click(object sender, RoutedEventArgs e)
     {
         try { SaveUISettings(); await RefreshDesktopAsync(); Log("设置已保存。", LogKind.Success); StatusText.Text = session.Connected ? "设置已保存；连接参数在下次连接时生效" : "设置已保存"; UpdateState(); }
-        catch (Exception ex) { MessageBox.Show(this, SafeError(ex), "设置未保存"); }
+        catch (Exception ex) { AppDialog.Notify(this, SafeError(ex), "设置未保存"); }
     }
     private void Import_Click(object sender, RoutedEventArgs e) => ShowImport();
     private void Paste_Click(object sender, RoutedEventArgs e)
     {
         try { ShowImport(System.Windows.Clipboard.ContainsText() ? System.Windows.Clipboard.GetText() : ""); }
-        catch (ExternalException) { MessageBox.Show(this, "剪贴板暂时不可用，请重试。"); }
+        catch (ExternalException) { AppDialog.Notify(this, "剪贴板暂时不可用，请重试。"); }
     }
     private void ImportFile_Click(object sender, RoutedEventArgs e)
     {
@@ -373,7 +369,7 @@ public partial class MainWindow : Window
             if (new FileInfo(dialog.FileName).Length > NodeImporter.MaxBytes) throw new IOException("文件超过 8 MB。");
             ShowImport(File.ReadAllText(dialog.FileName));
         }
-        catch (Exception ex) { MessageBox.Show(this, SafeError(ex)); }
+        catch (Exception ex) { AppDialog.Notify(this, SafeError(ex)); }
     }
     private void ShowImport(string text = "")
     {
@@ -385,12 +381,12 @@ public partial class MainWindow : Window
         settings.SelectedNodeId ??= added.FirstOrDefault()?.Id;
         store.Save(settings); RefreshLists(); Log($"节点导入完成：新增 {added.Count} 个，跳过 {dialog.Result.Warnings.Count} 个不支持的条目。");
         StatusText.Text = $"已添加 {added.Count} 个节点";
-        if (dialog.Result.Warnings.Count > 0) MessageBox.Show(this, string.Join("\n", dialog.Result.Warnings.Take(8)), "部分条目未导入");
+        if (dialog.Result.Warnings.Count > 0) AppDialog.Notify(this, string.Join("\n", dialog.Result.Warnings.Take(8)), "部分条目未导入");
     }
     private void EditNode_Click(object sender, RoutedEventArgs e)
     {
         if (NodesGrid.SelectedItem is not NodeRow row) { StatusText.Text = "请先选中一个节点"; return; }
-        if (session.Connected && row.Node.Id == session.NodeId) { MessageBox.Show(this, "请先断开当前节点，再编辑。"); return; }
+        if (session.Connected && row.Node.Id == session.NodeId) { AppDialog.Notify(this, "请先断开当前节点，再编辑。"); return; }
         var dialog = new NodeDialog(existing: row.Node) { Owner = this };
         if (dialog.ShowDialog() != true || dialog.Result?.Nodes.Count != 1) return;
         var replacement = dialog.Result.Nodes[0]; replacement.Id = row.Node.Id; replacement.GroupId = row.Node.GroupId;
@@ -400,8 +396,8 @@ public partial class MainWindow : Window
     private void DeleteNode_Click(object sender, RoutedEventArgs e)
     {
         if (NodesGrid.SelectedItem is not NodeRow row) return;
-        if (session.Connected && row.Node.Id == session.NodeId) { MessageBox.Show(this, "请先断开当前节点。"); return; }
-        if (MessageBox.Show(this, "删除选中的节点？订阅节点可能在下次更新时重新出现。", "删除节点", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        if (session.Connected && row.Node.Id == session.NodeId) { AppDialog.Notify(this, "请先断开当前节点。"); return; }
+        if (!AppDialog.Confirm(this, "删除节点", "删除选中的节点？订阅节点可能在下次更新时重新出现。", "删除节点")) return;
         settings.Nodes.Remove(row.Node); store.Save(settings); RefreshLists(); Log("节点已删除。");
     }
     private void SelectNode_Click(object sender, RoutedEventArgs e)
@@ -427,7 +423,7 @@ public partial class MainWindow : Window
         store.Save(settings); RefreshLists();
         Log($"订阅更新完成：{parsed.Nodes.Count} 个节点，{parsed.Warnings.Count} 个条目未支持。");
         StatusText.Text = $"订阅已更新：{parsed.Nodes.Count} 个节点";
-        if (parsed.Warnings.Count > 0) MessageBox.Show(this, string.Join("\n", parsed.Warnings.Take(8)), "部分条目未支持");
+        if (parsed.Warnings.Count > 0) AppDialog.Notify(this, string.Join("\n", parsed.Warnings.Take(8)), "部分条目未支持");
     }
     private async void UpdateSubscription_Click(object sender, RoutedEventArgs e)
     {
@@ -456,8 +452,8 @@ public partial class MainWindow : Window
     {
         if (SubscriptionsGrid.SelectedItem is not SubscriptionRow row) return;
         if (session.Connected && settings.Nodes.Any(x => x.GroupId == row.Subscription.Id && x.Id == session.NodeId))
-        { MessageBox.Show(this, "此订阅的节点正在使用，请先断开。"); return; }
-        if (MessageBox.Show(this, "删除此订阅及其节点？", "删除订阅", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        { AppDialog.Notify(this, "此订阅的节点正在使用，请先断开。"); return; }
+        if (!AppDialog.Confirm(this, "删除订阅", "删除此订阅及其节点？", "删除订阅")) return;
         settings.Nodes.RemoveAll(x => x.GroupId == row.Subscription.Id); settings.Subscriptions.Remove(row.Subscription);
         store.Save(settings); RefreshLists(); Log("订阅及其节点已删除。");
     }
@@ -480,7 +476,7 @@ public partial class MainWindow : Window
     private async Task ExitFromTrayAsync()
     {
         ShowFromTray();
-        if (ClaudeRunning) { MessageBox.Show(this, "Claude 终端仍在运行，请先正常退出，以便保存工作并恢复环境。"); return; }
+        if (ClaudeRunning) { AppDialog.Notify(this, "Claude 终端仍在运行，请先正常退出，以便保存工作并恢复环境。"); return; }
         await RunBusyAsync(async () => { await session.StopAsync(); allowClose = true; }, "正在退出并恢复…");
         if (allowClose) Close();
     }

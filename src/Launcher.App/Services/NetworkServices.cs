@@ -41,7 +41,7 @@ public sealed class NetworkReport
         if (!IPAddress.TryParse(GeneralIP, out _)) reasons.Add("代理出口 IP 未验证" + (ExitFailure.Length > 0 ? $"：{ExitFailure}" : ""));
         if (!ApiReachable) reasons.Add(ApiCode > 0 ? $"Anthropic API 返回 HTTP {ApiCode}" : "Anthropic API 请求失败" + (ApiFailure.Length > 0 ? $"：{ApiFailure}" : ""));
         if (!strict) return reasons;
-        if (!WebReachable) reasons.Add(WebCode > 0 ? $"Claude 网页返回 HTTP {WebCode}（网页检查未通过）" : "Claude 网页未验证");
+        if (!WebReachable) reasons.Add(WebCode > 0 ? $"Claude 登录页自动探测返回 HTTP {WebCode}（需浏览器确认）" : "Claude 登录页自动探测未验证");
         if (!SameIPv4) reasons.Add("三个出口 IPv4 不一致或未验证");
         if (Country != "US") reasons.Add(Country.Length > 0 ? $"参考出口地区为 {Country}，严格模式目标为 US" : "出口地区未验证");
         if (!Tun) reasons.Add("TUN 未启用");
@@ -53,6 +53,7 @@ public sealed class NetworkReport
 
 public static class NetworkServices
 {
+    public const string ClaudeLoginUrl = "https://claude.ai/login";
     public static HttpClient ProxyClient(int port, int seconds = 15) => new(new SocketsHttpHandler
     {
         Proxy = new WebProxy($"http://127.0.0.1:{port}"), UseProxy = true,
@@ -150,7 +151,7 @@ public static class NetworkServices
         var cf = ProbeAsync(client, "https://www.cloudflare.com/cdn-cgi/trace", cancellation);
         var claude = ProbeAsync(client, "https://claude.ai/cdn-cgi/trace", cancellation);
         var api = ProbeAsync(client, "https://api.anthropic.com/v1/models", cancellation);
-        var web = ProbeAsync(client, "https://claude.ai/", cancellation);
+        var web = ProbeAsync(client, ClaudeLoginUrl, cancellation);
         await Task.WhenAll(general, cf, claude, api, web);
         cancellation.ThrowIfCancellationRequested();
         report.GeneralIP = JsonValue((await general).Text, "ip");
@@ -194,7 +195,7 @@ public static class NetworkServices
             new() { Label = "Claude 出口", Value = Empty(report.ClaudeIP), State = IsIPv4(report.ClaudeIP) ? "pass" : "warn", Detail = "端点不提供 trace 时显示未验证" },
             new() { Label = "三个 IPv4 出口", Value = report.SameIPv4 ? "一致" : "不一致或未验证", State = report.SameIPv4 ? "pass" : "warn", Detail = "保留 v1.3 的自定义检查项" },
             new() { Label = "Anthropic API", Value = report.ApiCode > 0 ? $"HTTP {report.ApiCode}" : "请求失败", State = report.ApiReachable ? "pass" : "fail", Detail = report.ApiReachable ? "HTTPS 可达；401 表示未提供认证，未验证账户授权" : report.ApiFailure },
-            new() { Label = "Claude 网页", Value = report.WebCode > 0 ? $"HTTP {report.WebCode}" : "未验证", State = report.WebReachable ? "pass" : "warn", Detail = report.WebCode == 403 ? "网站拒绝此请求；与 API 连通性分别显示" : "严格预检中的网页检查项" },
+            new() { Label = "Claude 登录页", Value = report.WebCode > 0 ? $"HTTP {report.WebCode}" + (report.WebCode == 403 ? " · 需浏览器确认" : "") : "未验证", State = report.WebReachable ? "pass" : "warn", Detail = report.WebCode == 403 ? "https://claude.ai/login · 自动请求被拒绝，不代表 Chrome 无法打开" : "https://claude.ai/login · 程序 HTTP 探测，不验证账户登录" },
             new() { Label = "出口地区", Value = report.Country.Length > 0 ? $"{report.Country} · {report.City}" : "未验证", State = report.Country == "US" ? "pass" : "warn", Detail = "第三方 IP 地理位置，仅供参考" },
             new() { Label = "系统时区", Value = report.TimeZoneMatches ? "已匹配" : "未匹配或未知", State = report.TimeZoneMatches ? "pass" : "warn", Detail = report.IanaTimeZone.Length > 0 ? report.IanaTimeZone : "未获得可靠时区" }
         ]);

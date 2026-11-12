@@ -13,7 +13,7 @@ public partial class App : Application
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
         DispatcherUnhandledException += (_, args) =>
         {
-            MessageBox.Show("操作未完成，请检查输入或文件权限后重试。", "Claude Link", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppDialog.Notify(Current?.MainWindow, "操作未完成，请检查输入或文件权限后重试。", "Claude Link", "Error");
             args.Handled = true;
         };
         try
@@ -32,6 +32,10 @@ public partial class App : Application
             {
                 Shutdown(await ReleaseProbe.RunAsync(e.Args[1])); return;
             }
+            if (e.Args.Length == 2 && e.Args[0] == "--export-brand")
+            {
+                BrandAssets.Export(e.Args[1]); Shutdown(); return;
+            }
             var smoke = e.Args.Length == 2 && e.Args[0] == "--smoke-test";
             if (smoke)
                 AppPaths.Root = Path.Combine(AppPaths.Root, "ui-tests", Guid.NewGuid().ToString("N"));
@@ -39,7 +43,7 @@ public partial class App : Application
             {
                 var sid = System.Security.Principal.WindowsIdentity.GetCurrent().User!.Value;
                 instance = new Mutex(true, @"Local\ClaudeNetworkLauncher_" + sid, out ownsMutex);
-                if (!ownsMutex) { MessageBox.Show("启动器已经运行，请从任务栏或系统托盘打开。", "Claude Link"); Shutdown(); return; }
+                if (!ownsMutex) { AppDialog.Notify(null, "启动器已经运行，请从任务栏或系统托盘打开。"); Shutdown(); return; }
             }
             Directory.CreateDirectory(AppPaths.Root);
             SessionController.CleanupStaleSessions();
@@ -54,7 +58,7 @@ public partial class App : Application
             var message = ex is CryptographicException
                 ? "无法解密本地配置。请使用原 Windows 用户登录；原配置未被覆盖。"
                 : "启动器无法完成初始化，请检查安装文件与当前用户目录的访问权限。";
-            MessageBox.Show(message, "Claude Link", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppDialog.Notify(null, message, "Claude Link", "Error");
             Shutdown(1);
         }
     }

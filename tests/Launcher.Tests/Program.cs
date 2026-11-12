@@ -13,6 +13,11 @@ ProxyNode One(string text)
     return result.Nodes[0];
 }
 const string uuid = "11111111-1111-4111-8111-111111111111";
+var defaults = new LauncherSettings();
+Assert(defaults.TunEnabled && defaults.StrictChecks && defaults.DisableIPv6 && defaults.MatchTimeZone && defaults.ProcessLanguage == "en-US" && defaults.CheckBrowser == "auto", "Fresh install uses requested network, language and Chrome-first presets");
+var previous = System.Text.Json.JsonSerializer.Deserialize<LauncherSettings>("{\"TunEnabled\":false,\"StrictChecks\":false,\"DisableIPv6\":false,\"MatchTimeZone\":false,\"ProcessLanguage\":\"zh-CN\",\"CheckBrowser\":\"edge\"}")!;
+Assert(!previous.TunEnabled && !previous.StrictChecks && !previous.DisableIPv6 && !previous.MatchTimeZone && previous.ProcessLanguage == "zh-CN" && previous.CheckBrowser == "edge", "Existing explicit preferences survive the new default presets");
+Assert(defaults.Nodes.Count == 0 && defaults.Subscriptions.Count == 0 && defaults.ClaudePath == "" && defaults.DesktopPath == "", "Preset contains no personal nodes, subscriptions or executable paths");
 var vless = One($"vless://{uuid}@example.com:443?security=tls&sni=example.com&type=ws&path=%2Fproxy&host=cdn.example.com#测试节点");
 var vlessData = JsonNode.Parse(vless.OutboundJson)!;
 Assert(vless.Name == "测试节点" && vlessData["transport"]!["path"]!.ToString() == "/proxy", "VLESS TLS WebSocket percent decoding");

@@ -52,10 +52,10 @@ public sealed class LauncherSettings
     public List<string> RecentProjects { get; set; } = [];
     public string ProjectDirectory { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     public int ProxyPort { get; set; } = 17890;
-    public bool TunEnabled { get; set; }
-    public bool StrictChecks { get; set; }
-    public bool DisableIPv6 { get; set; }
-    public bool MatchTimeZone { get; set; }
+    public bool TunEnabled { get; set; } = true;
+    public bool StrictChecks { get; set; } = true;
+    public bool DisableIPv6 { get; set; } = true;
+    public bool MatchTimeZone { get; set; } = true;
     public string ProcessLanguage { get; set; } = "en-US";
     public string CheckBrowser { get; set; } = "auto";
     public string ClaudePath { get; set; } = "";

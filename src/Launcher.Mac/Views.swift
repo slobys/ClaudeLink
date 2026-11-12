@@ -33,6 +33,7 @@ struct RootView:View {
         .tint(Palette.color("Accent"))
         .sheet(isPresented:$model.showingNode) { nodeEditor }
         .sheet(isPresented:$model.showingSubscription) { subscriptionEditor }
+        .sheet(item:$model.launchConfirmation,onDismiss:{model.resolveLaunch(false)}) { state in LaunchConfirmationView(data:state,decide:model.resolveLaunch) }
         .alert("操作未完成",isPresented:Binding(get:{!model.error.isEmpty},set:{if !$0 { model.error="" }})) {
             Button("确定") { model.error="" }
         } message:{ Text(model.error) }

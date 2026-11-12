@@ -1,4 +1,4 @@
-# Claude Link / Claude Network Launcher 1.2.0
+# Claude Link / Claude Network Launcher 1.2.1
 
 Windows x64 / macOS 15+ 中文网络启动器：节点与订阅管理、内置代理 / TUN、官方 Claude 桌面客户端 Code 页面启动，并保留 CLI 模式。Mac 同时提供 Apple 芯片 arm64 与 Intel x64 版本。
 
@@ -6,8 +6,8 @@ Windows x64 / macOS 15+ 中文网络启动器：节点与订阅管理、内置�
 
 ## 安装和使用
 
-- 安装版：artifacts/ClaudeLink-Setup-1.2.0.exe，按当前用户安装，不要求预装 .NET。
-- 便携版：artifacts/ClaudeLink-Portable-1.2.0-win-x64.zip，解压运行。
+- 安装版：artifacts/ClaudeLink-Setup-1.2.1.exe，按当前用户安装，不要求预装 .NET。
+- 便携版：artifacts/ClaudeLink-Portable-1.2.1-win-x64.zip，解压运行。
 - 独立程序：artifacts/publish/ClaudeNetworkLauncher.exe，单个 EXE 包含运行环境和代理内核。
 - 使用指南：docs/使用指南.md；验证记录：docs/VALIDATION.md。
 - Mac：下载对应芯片的 DMG，将 Claude Link 拖入“应用程序”；不确定芯片可在苹果菜单 → 关于本机查看。首次打开请参阅 [Mac 安装指南](docs/macOS.md)。
@@ -29,7 +29,7 @@ Windows x64 / macOS 15+ 中文网络启动器：节点与订阅管理、内置�
 - 可选临时 IPv6 和系统时区调整，先记恢复记录再修改，结束会话后尝试恢复。
 - 进程监护、Windows 作业对象、后台会话互斥、旧记录恢复、系统托盘。
 - 当前用户 DPAPI 加密保存节点、订阅与偏好，日志不记录密码或订阅令牌。
-- 1.2.0 统一浅色界面、蓝色操作按钮；绿色通过、橙色注意、红色失败、灰色待检测，结果同时保留图标和文字。运行记录使用 16px 字号，从顶部按时间显示，并按级别着色。
+- 1.2.1 统一浅色界面、蓝色操作按钮；绿色通过、橙色注意、红色失败、灰色待检测，结果同时保留图标和文字。运行记录使用 16px 字号，从顶部按时间显示，并按级别着色。
 - Mac 原生 SwiftUI 客户端：钥匙串密钥加密配置、系统授权 TUN、节点与订阅、专用 Chrome / Edge、桌面与 CLI 启动、临时环境恢复及签名更新。
 
 支持边界与真实网络验证范围见使用指南和验证记录。需要自行安装官方 Claude 桌面应用或 CLI；不提供账户或节点服务。桌面应用的语言和账户权限由官方客户端管理，专用 Chrome 核对窗口仍默认优先 Chrome。

@@ -7,6 +7,7 @@ import SwiftUI
     func applicationShouldTerminate(_ sender:NSApplication) -> NSApplication.TerminateReply {
         if readyToExit { return .terminateNow }
         guard let model=Self.model else { return .terminateNow }
+        model.resolveLaunch(false)
         Task { do { try await model.session.stop(); readyToExit=true; sender.terminate(nil) } catch { model.fail("临时环境恢复未完成，请先恢复后退出。") } }; return .terminateCancel
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender:NSApplication) -> Bool { true }
@@ -44,7 +45,11 @@ import SwiftUI
             model.editorName=""; model.editorURL=""; try await Task.sleep(for:.milliseconds(500)); if let emptySheet=window.sheets.first?.contentView { try saveView(emptySheet,to:url.appendingPathComponent("subscription-editor-empty.png")) }; model.showingSubscription=false
             try await Task.sleep(for:.milliseconds(500)); model.page="工作台"; model.offer=UpdateOffer(manifest:ReleaseManifest(Schema:1,Repository:Updater.repository,Version:"9.9.9",AssetName:"example.zip",Size:1,Sha256:String(repeating:"0",count:64)),url:"https://example.invalid/update",notes:"界面示例")
             try await Task.sleep(for:.milliseconds(500)); try saveView(view,to:url.appendingPathComponent("update-notice.png"))
-            try Data("{\"CapturedViews\":14,\"NativeViews\":true,\"ScreenCapture\":false}".utf8).write(to:url.appendingPathComponent("ui-results.json")); exit(0)
+            model.offer=nil; model.launchConfirmation=LaunchConfirmation(apiCode:401,apiReachable:true,reasons:["Claude 登录页自动探测返回 HTTP 403（需浏览器确认）"]); try await Task.sleep(for:.milliseconds(700))
+            guard let confirmSheet=window.sheets.first?.contentView else { throw ClientError.message("Missing launch confirmation sheet") }; try saveView(confirmSheet,to:url.appendingPathComponent("launch-confirmation.png"))
+            var many=model.launchConfirmation!; many.reasons=(1...18).map { "检查示例 \($0)：此项目尚未验证，请返回结果页面核对网络、地区与环境设置。" }; model.launchConfirmation=many; try await Task.sleep(for:.milliseconds(700))
+            if let longSheet=window.sheets.first?.contentView { try saveView(longSheet,to:url.appendingPathComponent("launch-confirmation-long.png")) }; model.resolveLaunch(false)
+            try Data("{\"CapturedViews\":16,\"NativeViews\":true,\"ScreenCapture\":false}".utf8).write(to:url.appendingPathComponent("ui-results.json")); exit(0)
         } catch { fputs("Native rendering failed\n",stderr); exit(1) }
     }
     @MainActor func saveView(_ view:NSView,to url:URL) throws {

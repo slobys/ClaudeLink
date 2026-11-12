@@ -21,6 +21,36 @@ public static class UiSmoke
     {
         Directory.CreateDirectory(directory);
         var assertions = new List<string>();
+        var launchReport = new NetworkReport { GeneralIP = "198.51.100.24", CloudflareIP = "198.51.100.24", ClaudeIP = "198.51.100.24", ApiCode = 401, ApiReachable = true, WebCode = 403, WebReachable = false, SameIPv4 = true, Country = "US", Tun = true, IPv6Disabled = true, TimeZoneMatches = true };
+        foreach (var proceed in new[] { false, true })
+        {
+            var confirmation = AppDialog.Launch(launchReport, true); confirmation.Owner = window;
+            SubmitAppDialog(confirmation, () =>
+            {
+                if (!((Button)confirmation.FindName("CancelButton")).IsDefault || ((Button)confirmation.FindName("ConfirmButton")).IsDefault)
+                    throw new InvalidOperationException("Launch confirmation must default to returning to checks.");
+                if (!proceed) Capture(confirmation, Path.Combine(directory, "launch-confirmation.png"));
+                ((Button)confirmation.FindName(proceed ? "ConfirmButton" : "CancelButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            });
+            if (confirmation.DialogResult != proceed || launchReport.StrictReady) throw new InvalidOperationException("Launch decision changed report state or ignored cancellation.");
+        }
+        assertions.Add("Themed launch dialog defaults to cancel, handles both decisions and preserves failed checks");
+        var notice = new AppDialog("操作未完成", "示例：连接未完成，请检查节点设置后重试。", tone: "Error") { Owner = window };
+        SubmitAppDialog(notice, () => { Capture(notice, Path.Combine(directory, "notice-error.png")); ((Button)notice.FindName("ConfirmButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); });
+        var longDialog = AppDialog.Launch(launchReport, true); longDialog.Owner = window;
+        ((ItemsControl)longDialog.FindName("Reasons")).ItemsSource = Enumerable.Range(1, 18).Select(i => $"检查示例 {i}：此项目尚未验证，请返回结果页面核对网络、地区与环境设置。");
+        SubmitAppDialog(longDialog, () => { Capture(longDialog, Path.Combine(directory, "launch-confirmation-long.png")); ((Button)longDialog.FindName("CancelButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); });
+        assertions.Add("Themed notice and long confirmation keep readable content and fixed action buttons");
+        var gallery = new Window { Title = "Brand scale fixtures", Width = 660, SizeToContent = SizeToContent.Height, Owner = window, Background = (Brush)window.FindResource("Surface") };
+        var icons = new WrapPanel { Margin = new Thickness(24) };
+        foreach (var size in new[] { 16, 24, 32, 42, 64, 128 }) icons.Children.Add(new Image { Source = BrandAssets.Image, Width = size, Height = size, Margin = new Thickness(10), VerticalAlignment = VerticalAlignment.Center });
+        var gallerySurface = new Grid { Background = (Brush)window.FindResource("Surface") }; gallerySurface.Children.Add(icons);
+        gallery.Content = gallerySurface; gallery.Show(); gallery.UpdateLayout(); Capture(gallery, Path.Combine(directory, "brand-scales.png")); gallery.Close();
+        var vector = new RenderTargetBitmap(42, 42, 96, 96, PixelFormats.Pbgra32); var mark = new DrawingVisual();
+        using (var drawing = mark.RenderOpen()) drawing.DrawImage(BrandAssets.Image, new Rect(0, 0, 42, 42)); vector.Render(mark);
+        var pixels = new byte[42 * 42 * 4]; vector.CopyPixels(pixels, 42 * 4, 0);
+        if (!Enumerable.Range(0, 42 * 42).Any(i => pixels[i * 4 + 3] is > 0 and < 255)) throw new InvalidOperationException("Logo edge is not anti-aliased.");
+        assertions.Add("Vector brand renders all UI sizes with anti-aliased transparent edges");
         var imported = new NodeDialog("trojan://test-only-placeholder@127.0.0.1:9443?sni=example.com#界面导入测试") { Owner = window };
         SubmitDialog(imported, () => ((Button)imported.FindName("SaveButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
         if (imported.Result?.Nodes.Single().Name != "界面导入测试") throw new InvalidOperationException("Node import dialog failed.");
@@ -122,6 +152,16 @@ public static class UiSmoke
         }), DispatcherPriority.ApplicationIdle);
         dialog.ShowDialog();
         if (failure is not null) throw failure;
+    }
+    private static void SubmitAppDialog(AppDialog dialog, Action submit)
+    {
+        Exception? failure = null;
+        dialog.Loaded += (_, _) => dialog.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            try { submit(); }
+            catch (Exception ex) { failure = ex; dialog.Close(); }
+        }), DispatcherPriority.ApplicationIdle);
+        dialog.ShowDialog(); if (failure is not null) throw failure;
     }
     private static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
     {

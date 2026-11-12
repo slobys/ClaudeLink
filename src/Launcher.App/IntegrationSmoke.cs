@@ -24,7 +24,7 @@ public static class IntegrationSmoke
         try
         {
             var secret = "test-only-secret-" + testId;
-            var settings = new LauncherSettings();
+            var settings = new LauncherSettings { TunEnabled = false, StrictChecks = false, DisableIPv6 = false, MatchTimeZone = false };
             settings.Subscriptions.Add(new Subscription { Name = "Fixture", Url = "https://example.invalid/" + secret });
             var store = new SettingsStore(); store.Save(settings);
             var bytes = File.ReadAllBytes(Path.Combine(AppPaths.Root, "settings.dat"));
@@ -49,7 +49,7 @@ public static class IntegrationSmoke
             var directory = controller.DirectoryPath!;
             var status = AppPaths.ReadJson<HostStatus>(Path.Combine(directory, "status.json"))!;
             Assert(controller.Connected && ProcessTools.IsAlive(status.CorePid, status.CoreStarted), "Independent host starts real bundled core");
-            var secondSettings = new LauncherSettings { ProxyPort = FreePort() };
+            var secondSettings = new LauncherSettings { ProxyPort = FreePort(), TunEnabled = false, StrictChecks = false, DisableIPv6 = false, MatchTimeZone = false };
             var second = new SessionController(); var secondRejected = false;
             try { await second.StartAsync(secondSettings, node); } catch (IOException) { secondRejected = true; }
             Assert(secondRejected && ProcessTools.IsAlive(status.CorePid, status.CoreStarted), "Background session lock prevents overlapping engines without stopping active core");
@@ -101,11 +101,13 @@ public static class IntegrationSmoke
 
     private static async Task CheckNetworkReportingAsync(Action<bool, string> assert)
     {
-        using var client = new HttpClient(new NetworkFixtureHandler());
+        var fixture = new NetworkFixtureHandler();
+        using var client = new HttpClient(fixture);
         var report = await NetworkServices.CheckWithClientAsync(client, true, false);
         report.IPv6Disabled = true; report.TimeZoneMatches = true;
         assert(report.ApiCode == 401 && report.ApiReachable && report.BasicReady, "API 401 represents HTTPS reachability without claiming account authorization");
         assert(report.WebCode == 403 && !report.WebReachable && !report.StrictReady, "Website 403 remains a separate strict-check failure");
+        assert(fixture.LoginRequested && report.Results.Single(x => x.Label == "Claude 登录页").Detail.Contains("不代表 Chrome"), "Website probe targets requested login URL and separates automated rejection from browser access");
         assert(report.BlockingReasons(false).Count == 0 && report.BlockingReasons(true).Single().Contains("403"), "Strict launch prompt identifies exact website failure despite passing basic API check");
         using var dnsClient = new HttpClient(new NetworkFixtureHandler(HttpRequestError.NameResolutionError));
         var dns = await NetworkServices.CheckWithClientAsync(dnsClient, false, false);
@@ -121,6 +123,7 @@ public static class IntegrationSmoke
     }
     private sealed class NetworkFixtureHandler(HttpRequestError? failure = null) : HttpMessageHandler
     {
+        public bool LoginRequested { get; private set; }
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -132,7 +135,8 @@ public static class IntegrationSmoke
             if (uri.Host == "api.ipify.org") body = """{"ip":"198.51.100.8"}""";
             else if (uri.AbsolutePath == "/cdn-cgi/trace") body = "ip=198.51.100.8\nloc=US\n";
             else if (uri.Host == "api.anthropic.com") { status = HttpStatusCode.Unauthorized; body = "{}"; }
-            else if (uri.Host == "claude.ai") { status = HttpStatusCode.Forbidden; body = "<html>Fixture denied</html>"; }
+            else if (uri.Host == "claude.ai" && uri.AbsolutePath == "/login") { LoginRequested = true; status = HttpStatusCode.Forbidden; body = "<html>Fixture denied</html>"; }
+            else if (uri.Host == "claude.ai") throw new InvalidOperationException("Unexpected Claude webpage probe target.");
             else if (uri.Host == "ipwho.is") body = """{"country_code":"US","city":"Fixture","timezone":{"id":"America/Los_Angeles"}}""";
             return Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent(body, Encoding.UTF8, "text/plain") });
         }

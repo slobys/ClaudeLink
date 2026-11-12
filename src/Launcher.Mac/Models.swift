@@ -16,7 +16,7 @@ struct Subscription: Codable, Identifiable, Hashable {
 struct Settings: Codable {
     var Nodes: [ProxyNode] = []; var Subscriptions: [Subscription] = []; var SelectedNodeId: String?
     var ProjectDirectory = FileManager.default.homeDirectoryForCurrentUser.path
-    var ProxyPort = 17890; var TunEnabled = true; var StrictChecks = false; var DisableIPv6 = false; var MatchTimeZone = false
+    var ProxyPort = 17890; var TunEnabled = true; var StrictChecks = true; var DisableIPv6 = true; var MatchTimeZone = true
     var ProcessLanguage = "en-US"; var CheckBrowser = "auto"; var LaunchTarget = "desktop"; var ClaudePath = ""; var DesktopPath = ""; var AutoCheckUpdates = true
 }
 enum Level: String, Codable, CaseIterable {
@@ -28,6 +28,7 @@ enum Level: String, Codable, CaseIterable {
     var background: Color { Palette.color(token+"Bg") }
 }
 struct CheckRow: Identifiable { var id = UUID(); var label: String; var value: String; var detail: String; var level: Level }
+struct LaunchConfirmation:Identifiable { var id=UUID(); var apiCode:Int; var apiReachable:Bool; var reasons:[String] }
 struct LogEntry: Identifiable {
     var id = UUID(); var date = Date(); var message: String; var level: Level
     private static let clock:DateFormatter = { let value=DateFormatter(); value.locale=Locale(identifier:"en_US_POSIX"); value.dateFormat="HH:mm:ss"; return value }()
@@ -47,7 +48,7 @@ struct NetworkReport {
         if !validIP { result.append("代理出口 IP 未验证") }
         if !apiReachable { result.append(apiCode > 0 ? "Anthropic API 返回 HTTP \(apiCode)" : "API 请求失败：\(apiFailure)") }
         if strict {
-            if !(200..<400).contains(webCode) { result.append("Claude 网页未通过：HTTP \(webCode)") }
+            if !(200..<400).contains(webCode) { result.append("Claude 登录页自动探测未通过：HTTP \(webCode)（需浏览器确认）") }
             if !sameIPv4 { result.append("三个 IPv4 出口不一致或未验证") }
             if country != "US" { result.append("严格模式参考地区未验证为 US") }
             if !tun { result.append("TUN 未启用") }; if !ipv6Disabled { result.append("活动物理网络 IPv6 未确认关闭") }; if !zoneMatches { result.append("系统时区未匹配") }

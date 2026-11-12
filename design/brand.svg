@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <title>Claude Link</title>
+  <desc>Original code-drawn mark; legacy coral, cream and charcoal palette restored. Source geometry for native UI and installer icons.</desc>
+  <rect x="7" y="7" width="242" height="242" rx="55" fill="#202C2D"/>
+  <path d="M160 181 A63.5 66 0 1 1 158 72" fill="none" stroke="#E49B7D" stroke-width="24"/>
+  <path d="M154 53 H210 V109 H192 V84 L131 146 L117 132 L178 71 H154 Z" fill="#F4EBDF"/>
+</svg>

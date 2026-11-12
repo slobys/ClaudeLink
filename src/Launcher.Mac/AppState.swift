@@ -5,6 +5,7 @@ import SwiftUI
     @Published var settings=Settings(); @Published var page="工作台"; @Published var logs:[LogEntry]=[]; @Published var report:NetworkReport?
     @Published var busy=false; @Published var connected=false; @Published var progress=""; @Published var error=""; @Published var offer:UpdateOffer?; @Published var downloaded:URL?; @Published var updateBusy=false; @Published var previewScrollCheck=""
     @Published var editor=""; @Published var editorName=""; @Published var editorURL=""; @Published var editingNode:ProxyNode?; @Published var editingSubscription:Subscription?; @Published var showingNode=false; @Published var showingSubscription=false
+    @Published var launchConfirmation:LaunchConfirmation?; private var launchDecision:CheckedContinuation<Bool,Never>?
     let session=Session(); var operation:Task<Void,Never>?; var monitor:Task<Void,Never>?; var updateTask:Task<Void,Never>?; var storageReadFailed=false; var previewMode=false
     var selectedNode:ProxyNode? { settings.Nodes.first { $0.Id == settings.SelectedNodeId } ?? settings.Nodes.first }
     init(preview:Bool = false) {
@@ -32,10 +33,10 @@ import SwiftUI
                 progress="正在检测出口与 API 连通性…"; var result=await Web.check(port:settings.ProxyPort,tun:session.tun,ipv6:session.ipv6Disabled); try Task.checkCancellation()
                 if settings.MatchTimeZone && !result.zone.isEmpty { progress="正在匹配系统时区…"; try await session.matchZone(result.zone); result.zoneMatches=true; Web.rows(&result); log("系统时区已临时匹配，会话结束后恢复。",.success) }
                 report=result; log(result.basicReady ? "API 基础网络可达；账户授权由官方客户端确认。" : "基础网络检测未通过，请查看结果并检查节点。",result.basicReady ? .success : .error)
-                if result.webCode == 403 { log("Claude 网页返回 HTTP 403；网页检查未通过。",.warning) }
+                if result.webCode == 403 { log("Claude 登录页自动探测返回 HTTP 403；需浏览器确认。",.warning) }
                 if launch {
                     let reasons=result.reasons(strict:settings.StrictChecks)
-                    if !reasons.isEmpty { let alert=NSAlert(); alert.messageText="部分检测未通过或未验证"; alert.informativeText=reasons.joined(separator:"\n")+"\n\n继续启动不会将这些项目视为通过。"; alert.addButton(withTitle:"返回检查"); alert.addButton(withTitle:"仍要启动"); if alert.runModal() != .alertSecondButtonReturn { return } }
+                    if !reasons.isEmpty { let approved=await confirmLaunch(result,strict:settings.StrictChecks); if !approved { return } }
                     if settings.LaunchTarget == "desktop" { try Launcher.desktop(settings); log("已请求官方 Claude 桌面客户端打开 Code 项目。",.success) } else { try Launcher.cli(settings); log("已在独立终端启动 Claude Code CLI；使用后请断开代理。",.success) }
                 }
                 saveQuietly()
@@ -45,7 +46,11 @@ import SwiftUI
         }
     }
     func saveQuietly() { guard !storageReadFailed else { fail("原配置未成功读取，已阻止覆盖。请解锁钥匙串后重新打开。 "); return }; do { try SecureSettings.save(settings) } catch { fail("配置保存失败，原配置已保留。") } }
-    func disconnect() { operation?.cancel(); busy=true; Task { defer { busy=false; progress="" }; do { try await session.stop(); connected=false; report=nil; log("会话已结束，临时设置已恢复。",.success) } catch { fail(error.localizedDescription) } } }
+    func confirmLaunch(_ result:NetworkReport,strict:Bool) async -> Bool {
+        await withCheckedContinuation { continuation in launchDecision=continuation; launchConfirmation=LaunchConfirmation(apiCode:result.apiCode,apiReachable:result.apiReachable,reasons:result.reasons(strict:strict)) }
+    }
+    func resolveLaunch(_ proceed:Bool) { let decision=launchDecision; launchDecision=nil; launchConfirmation=nil; decision?.resume(returning:proceed) }
+    func disconnect() { resolveLaunch(false); operation?.cancel(); busy=true; Task { defer { busy=false; progress="" }; do { try await session.stop(); connected=false; report=nil; log("会话已结束，临时设置已恢复。",.success) } catch { fail(error.localizedDescription) } } }
     func browser() { do { guard connected else { throw ClientError.message("请先连接节点。") }; try Launcher.browser(settings); log("已打开专用浏览器；所选语言 "+settings.ProcessLanguage+"。",.success) } catch { fail(error.localizedDescription) } }
     func importNode() { busy=true; Task { defer { busy=false }; do {
         let parsed=try await Bridge.parse(editor); guard !parsed.Nodes.isEmpty else { throw ClientError.message("未识别到支持的节点。") }
