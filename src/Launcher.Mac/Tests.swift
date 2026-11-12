@@ -48,14 +48,20 @@ import Darwin
             let server=Process(), portPipe=Pipe(); server.executableURL=URL(fileURLWithPath:"/usr/bin/python3"); server.standardOutput=portPipe; server.standardError=FileHandle.nullDevice
             server.arguments=["-u","-c","""
             from http.server import BaseHTTPRequestHandler,HTTPServer
+            import time
             class Handler(BaseHTTPRequestHandler):
                 def do_GET(self):
                     large='/large' in self.path
-                    body=b'x'*100000 if large else b'{}'
+                    slow='/slow' in self.path
+                    body=b'x'*100000 if large or slow else b'{}'
                     self.send_response(200 if large else 401)
                     self.send_header('Content-Length',str(len(body)))
                     self.end_headers()
-                    try: self.wfile.write(body)
+                    try:
+                        if slow:
+                            for _ in range(100):
+                                self.wfile.write(b'x'*1000); self.wfile.flush(); time.sleep(.1)
+                        else: self.wfile.write(body)
                     except (BrokenPipeError,ConnectionResetError): pass
                 def log_message(self,*args): pass
             server=HTTPServer(('127.0.0.1',0),Handler)
@@ -68,6 +74,8 @@ import Darwin
             let transport=try await Web.fetch("http://fixture.invalid/small",port:proxyPort,truncate:true); try check(transport.code == 401,"CFNetwork sends explicit HTTP proxy requests and preserves HTTP 401")
             let large=await Web.probe("http://fixture.invalid/large",port:proxyPort); try check(large.code == 200 && large.data.count == 65536,"Probe preserves HTTP status while truncating a large webpage")
             rejected=false; do { _=try await Web.fetch("http://fixture.invalid/large",port:proxyPort,limit:1024) } catch { rejected=true }; try check(rejected,"Subscription-style fetch rejects oversized bodies")
+            let watch=Date(); let download=Task { try await Web.fetch("http://fixture.invalid/slow",port:proxyPort,limit:200000) }; try await Task.sleep(for:.milliseconds(300)); download.cancel(); rejected=false
+            do { _=try await download.value } catch { rejected=true }; try check(rejected && Date().timeIntervalSince(watch) < 3,"Cancel interrupts an active streamed HTTP download")
             let result:[String:Any]=["Passed":checks.count,"Checks":checks,"Architecture":BuildInfo.arch,"OS":ProcessInfo.processInfo.operatingSystemVersionString]
             try JSONSerialization.data(withJSONObject:result,options:.prettyPrinted).write(to:URL(fileURLWithPath:CommandLine.arguments[1]))
         } catch { fputs("Native regression failed: \(error)\n",stderr); exit(1) }

@@ -7,12 +7,14 @@ enum Web {
         let config = URLSessionConfiguration.ephemeral; config.timeoutIntervalForRequest=timeout; config.timeoutIntervalForResource=timeout
         if let port { config.connectionProxyDictionary=["HTTPEnable":1,"HTTPProxy":"127.0.0.1","HTTPPort":port,"HTTPSEnable":1,"HTTPSProxy":"127.0.0.1","HTTPSPort":port] } else { config.connectionProxyDictionary=[:] }
         let session = URLSession(configuration:config); defer { session.invalidateAndCancel() }
+        return try await withTaskCancellationHandler {
         var request = URLRequest(url:url); request.setValue("ClaudeLink/"+BuildInfo.version,forHTTPHeaderField:"User-Agent")
         let (bytes,response) = try await session.bytes(for:request)
         guard let response = response as? HTTPURLResponse else { throw ClientError.message("服务器响应无效。") }
         if response.expectedContentLength > limit && !truncate { throw ClientError.message("服务器响应超过大小限制。") }
-        var data = Data(); for try await byte in bytes { if data.count >= limit { if truncate { break }; throw ClientError.message("服务器响应超过大小限制。") }; data.append(byte) }
+        var data = Data(); for try await byte in bytes { if data.count & 16383 == 0 { try Task.checkCancellation() }; if data.count >= limit { if truncate { break }; throw ClientError.message("服务器响应超过大小限制。") }; data.append(byte) }
         return WebResponse(code:response.statusCode,data:data,headers:response.allHeaderFields)
+        } onCancel: { session.invalidateAndCancel() }
     }
     static func probe(_ address: String, port: Int) async -> WebResponse { (try? await fetch(address,port:port,truncate:true)) ?? WebResponse(code:0,data:Data(),headers:[:]) }
     static func object(_ response: WebResponse) -> [String:Any] { (try? JSONSerialization.jsonObject(with:response.data)) as? [String:Any] ?? [:] }
