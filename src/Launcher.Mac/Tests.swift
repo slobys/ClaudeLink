@@ -65,7 +65,7 @@ import Darwin
             try server.run(); defer { server.terminate(); server.waitUntilExit() }; var portText=""
             while let byte=try portPipe.fileHandleForReading.read(upToCount:1), !byte.isEmpty { if byte[0] == 10 { break }; portText += String(decoding:byte,as:UTF8.self) }
             guard let proxyPort=Int(portText) else { throw ClientError.message("HTTP fixture failed") }
-            let transport=await Web.probe("http://fixture.invalid/small",port:proxyPort); try check(transport.code == 401,"CFNetwork sends explicit HTTP proxy requests and preserves HTTP 401")
+            let transport=try await Web.fetch("http://fixture.invalid/small",port:proxyPort,truncate:true); try check(transport.code == 401,"CFNetwork sends explicit HTTP proxy requests and preserves HTTP 401")
             let large=await Web.probe("http://fixture.invalid/large",port:proxyPort); try check(large.code == 200 && large.data.count == 65536,"Probe preserves HTTP status while truncating a large webpage")
             rejected=false; do { _=try await Web.fetch("http://fixture.invalid/large",port:proxyPort,limit:1024) } catch { rejected=true }; try check(rejected,"Subscription-style fetch rejects oversized bodies")
             let result:[String:Any]=["Passed":checks.count,"Checks":checks,"Architecture":BuildInfo.arch,"OS":ProcessInfo.processInfo.operatingSystemVersionString]

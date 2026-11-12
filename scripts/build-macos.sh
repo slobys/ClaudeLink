@@ -56,7 +56,7 @@ FILES=(src/Launcher.Mac/{Models,Utilities,Networking,Session,Launcher,Updater,Si
 python3 - "$APP" "$VERSION" <<'PY'
 import sys,plistlib,pathlib
 app,version=sys.argv[1:]
-plist={'CFBundleIdentifier':'com.slobys.ClaudeLink','CFBundleName':'Claude Link','CFBundleExecutable':'ClaudeLink','CFBundlePackageType':'APPL','CFBundleShortVersionString':version,'CFBundleVersion':version,'LSMinimumSystemVersion':'15.0','NSHighResolutionCapable':True,'CFBundleIconFile':'AppIcon','NSPrincipalClass':'NSApplication'}
+plist={'CFBundleIdentifier':'com.slobys.ClaudeLink','CFBundleName':'Claude Link','CFBundleExecutable':'ClaudeLink','CFBundlePackageType':'APPL','CFBundleShortVersionString':version,'CFBundleVersion':version,'LSMinimumSystemVersion':'15.0','NSHighResolutionCapable':True,'CFBundleIconFile':'AppIcon','NSPrincipalClass':'NSApplication','NSAppTransportSecurity':{'NSAllowsArbitraryLoads':True}}
 pathlib.Path(app,'Contents/Info.plist').write_bytes(plistlib.dumps(plist))
 PY
 ICONSET="$OUT/AppIcon.iconset"; mkdir -p "$ICONSET"
