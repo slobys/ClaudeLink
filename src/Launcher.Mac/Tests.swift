@@ -45,6 +45,29 @@ import Darwin
             let lockDirectory=AppPaths.root.appendingPathComponent("lock-test"); let owner=try SingleInstance.claim(lockDirectory); let duplicate=try SingleInstance.claim(lockDirectory)
             try check(owner != nil && duplicate == nil,"Second GUI instance cannot acquire an active session owner lock"); if let owner { close(owner) }
             let released=try SingleInstance.claim(lockDirectory); try check(released != nil,"Process lock is available after owner releases it"); if let released { close(released) }
+            let server=Process(), portPipe=Pipe(); server.executableURL=URL(fileURLWithPath:"/usr/bin/python3"); server.standardOutput=portPipe; server.standardError=FileHandle.nullDevice
+            server.arguments=["-u","-c","""
+            from http.server import BaseHTTPRequestHandler,HTTPServer
+            class Handler(BaseHTTPRequestHandler):
+                def do_GET(self):
+                    large='/large' in self.path
+                    body=b'x'*100000 if large else b'{}'
+                    self.send_response(200 if large else 401)
+                    self.send_header('Content-Length',str(len(body)))
+                    self.end_headers()
+                    try: self.wfile.write(body)
+                    except (BrokenPipeError,ConnectionResetError): pass
+                def log_message(self,*args): pass
+            server=HTTPServer(('127.0.0.1',0),Handler)
+            print(server.server_address[1],flush=True)
+            server.serve_forever()
+            """]
+            try server.run(); defer { server.terminate(); server.waitUntilExit() }; var portText=""
+            while let byte=try portPipe.fileHandleForReading.read(upToCount:1), !byte.isEmpty { if byte[0] == 10 { break }; portText += String(decoding:byte,as:UTF8.self) }
+            guard let proxyPort=Int(portText) else { throw ClientError.message("HTTP fixture failed") }
+            let transport=await Web.probe("http://fixture.invalid/small",port:proxyPort); try check(transport.code == 401,"CFNetwork sends explicit HTTP proxy requests and preserves HTTP 401")
+            let large=await Web.probe("http://fixture.invalid/large",port:proxyPort); try check(large.code == 200 && large.data.count == 65536,"Probe preserves HTTP status while truncating a large webpage")
+            rejected=false; do { _=try await Web.fetch("http://fixture.invalid/large",port:proxyPort,limit:1024) } catch { rejected=true }; try check(rejected,"Subscription-style fetch rejects oversized bodies")
             let result:[String:Any]=["Passed":checks.count,"Checks":checks,"Architecture":BuildInfo.arch,"OS":ProcessInfo.processInfo.operatingSystemVersionString]
             try JSONSerialization.data(withJSONObject:result,options:.prettyPrinted).write(to:URL(fileURLWithPath:CommandLine.arguments[1]))
         } catch { fputs("Native regression failed: \(error)\n",stderr); exit(1) }

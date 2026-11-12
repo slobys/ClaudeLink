@@ -2,7 +2,7 @@ import Foundation
 
 struct WebResponse { var code: Int; var data: Data; var headers: [AnyHashable:Any] }
 enum Web {
-    static func fetch(_ address: String, port: Int? = nil, limit: Int = 65536, timeout: Double = 15) async throws -> WebResponse {
+    static func fetch(_ address: String, port: Int? = nil, limit: Int = 65536, timeout: Double = 15, truncate: Bool = false) async throws -> WebResponse {
         guard let url = URL(string:address), ["https","http"].contains(url.scheme), url.user == nil, url.password == nil else { throw ClientError.message("请输入有效的 HTTP 或 HTTPS 地址。") }
         let config = URLSessionConfiguration.ephemeral; config.timeoutIntervalForRequest=timeout; config.timeoutIntervalForResource=timeout
         if let port { config.connectionProxyDictionary=["HTTPEnable":1,"HTTPProxy":"127.0.0.1","HTTPPort":port,"HTTPSEnable":1,"HTTPSProxy":"127.0.0.1","HTTPSPort":port] } else { config.connectionProxyDictionary=[:] }
@@ -10,11 +10,11 @@ enum Web {
         var request = URLRequest(url:url); request.setValue("ClaudeLink/"+BuildInfo.version,forHTTPHeaderField:"User-Agent")
         let (bytes,response) = try await session.bytes(for:request)
         guard let response = response as? HTTPURLResponse else { throw ClientError.message("服务器响应无效。") }
-        if response.expectedContentLength > limit { throw ClientError.message("服务器响应超过大小限制。") }
-        var data = Data(); for try await byte in bytes { if data.count >= limit { throw ClientError.message("服务器响应超过大小限制。") }; data.append(byte) }
+        if response.expectedContentLength > limit && !truncate { throw ClientError.message("服务器响应超过大小限制。") }
+        var data = Data(); for try await byte in bytes { if data.count >= limit { if truncate { break }; throw ClientError.message("服务器响应超过大小限制。") }; data.append(byte) }
         return WebResponse(code:response.statusCode,data:data,headers:response.allHeaderFields)
     }
-    static func probe(_ address: String, port: Int) async -> WebResponse { (try? await fetch(address,port:port)) ?? WebResponse(code:0,data:Data(),headers:[:]) }
+    static func probe(_ address: String, port: Int) async -> WebResponse { (try? await fetch(address,port:port,truncate:true)) ?? WebResponse(code:0,data:Data(),headers:[:]) }
     static func object(_ response: WebResponse) -> [String:Any] { (try? JSONSerialization.jsonObject(with:response.data)) as? [String:Any] ?? [:] }
     static func traceIP(_ response: WebResponse) -> String { String(decoding:response.data,as:UTF8.self).components(separatedBy:"\n").first(where:{$0.hasPrefix("ip=")}).map { String($0.dropFirst(3)) } ?? "" }
     static func check(port: Int,tun: Bool,ipv6: Bool) async -> NetworkReport {
