@@ -12,7 +12,7 @@ public partial class ChainDialog : Window
     {
         InitializeComponent(); this.nodes = nodes; this.existing = existing;
         Heading.Text = existing == null ? "创建链式代理" : "编辑链式代理";
-        NameBox.Text = existing?.Name ?? "住宅出口链路";
+        NameBox.Text = existing?.Name ?? "新建双跳链路";
         EntryCombo.ItemsSource = nodes.Where(x => !x.IsChain).ToList();
         ExitCombo.ItemsSource = nodes.Where(ProxyChain.SupportsExit).ToList();
         EntryCombo.SelectedValue = existing?.ChainNodeIds.ElementAtOrDefault(0) ?? selected;

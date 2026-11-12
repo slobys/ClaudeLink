@@ -131,12 +131,15 @@
       <Button Content="删除" Click="DeleteNode_Click" Margin="0,0,9,8"/>
       <Button Content="前往工作台" Click="SelectNode_Click" Margin="0,0,0,8"/>
      </WrapPanel>
-     <WrapPanel Grid.Row="1" Margin="0,0,0,14">
+     <StackPanel Grid.Row="1" Margin="0,0,0,14">
+      <WrapPanel>
       <TextBlock Text="搜索" VerticalAlignment="Center" Margin="0,0,10,8"/>
       <TextBox x:Name="NodeSearchBox" Width="230" Margin="0,0,12,8" TextChanged="NodeFilterChanged" ToolTip="搜索名称、地区、协议或分组" AutomationProperties.Name="搜索节点"/>
       <ComboBox x:Name="NodeRegionFilter" Width="140" Margin="0,0,12,8" DisplayMemberPath="Label" SelectedValuePath="Code" SelectionChanged="NodeFilterChanged" AutomationProperties.Name="筛选地区"/>
       <ComboBox x:Name="NodeGroupFilter" Width="170" Margin="0,0,0,8" DisplayMemberPath="Label" SelectedValuePath="Code" SelectionChanged="NodeFilterChanged" AutomationProperties.Name="筛选分组"/>
-     </WrapPanel>
+      </WrapPanel>
+      <TextBlock Text="地区按节点名称识别，非实测出口；实际出口以连接检测为准。" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+     </StackPanel>
      <Grid Grid.Row="2">
       <ListBox x:Name="NodesGrid" SelectionChanged="NodeCardSelected" MouseDoubleClick="SelectNode_Click" SizeChanged="NodeGridSizeChanged" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="False" Padding="0,0,0,8" AutomationProperties.Name="节点卡片">
        <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ListBox.ItemsPanel>
@@ -151,9 +154,15 @@
         <Grid Height="112"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
          <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/><ColumnDefinition Width="20"/></Grid.ColumnDefinitions>
           <Image x:Name="CountryFlag" Source="{Binding Flag}" Width="26" Height="24" HorizontalAlignment="Left" ToolTip="{Binding RegionHint}"/>
-          <TextBlock x:Name="UnknownFlag" Text="◎" FontSize="23" Foreground="{StaticResource Muted}" Visibility="Collapsed"/>
+          <Grid x:Name="UnknownFlag" Width="24" Height="24" HorizontalAlignment="Left" Visibility="Collapsed">
+           <Ellipse Width="22" Height="22" Stroke="{StaticResource Muted}" StrokeThickness="1.4"/>
+           <Path Data="M 1,12 L 23,12 M 12,1 C 5,7 5,17 12,23 C 19,17 19,7 12,1" Stroke="{StaticResource Muted}" StrokeThickness="1.4"/>
+          </Grid>
           <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip="{Binding Node.Name}"/>
-          <TextBlock x:Name="ChosenGlyph" Grid.Column="2" Text="○" Foreground="{StaticResource Muted}" FontSize="17" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+          <Grid Grid.Column="2" Width="18" Height="18" HorizontalAlignment="Right" VerticalAlignment="Center">
+           <Ellipse x:Name="UnchosenRing" Width="12" Height="12" Stroke="{StaticResource Muted}" StrokeThickness="1.3"/>
+           <Path x:Name="ChosenCheck" Data="M 2,9 L 7,14 L 16,3" Stroke="{StaticResource Accent}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Visibility="Collapsed"/>
+          </Grid>
          </Grid>
          <TextBlock Grid.Row="1" Text="{Binding RegionLabel}" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,9,0,0"/>
          <TextBlock Grid.Row="2" Text="{Binding Description}" TextTrimming="CharacterEllipsis" FontSize="12" Foreground="{StaticResource Muted}" Margin="0,7,0,6" ToolTip="{Binding Description}" VerticalAlignment="Center"/>
@@ -161,7 +170,7 @@
         </Grid>
         <DataTemplate.Triggers>
          <DataTrigger Binding="{Binding RegionLabel}" Value="未识别地区"><Setter TargetName="UnknownFlag" Property="Visibility" Value="Visible"/><Setter TargetName="CountryFlag" Property="Visibility" Value="Collapsed"/></DataTrigger>
-         <DataTrigger Binding="{Binding Current}" Value="True"><Setter TargetName="ChosenGlyph" Property="Text" Value="✓"/><Setter TargetName="ChosenGlyph" Property="Foreground" Value="{StaticResource Accent}"/><Setter TargetName="NodeStateText" Property="Foreground" Value="{StaticResource Accent}"/><Setter TargetName="NodeState" Property="Background" Value="{StaticResource AccentSubtle}"/></DataTrigger>
+         <DataTrigger Binding="{Binding Current}" Value="True"><Setter TargetName="ChosenCheck" Property="Visibility" Value="Visible"/><Setter TargetName="UnchosenRing" Property="Visibility" Value="Collapsed"/><Setter TargetName="NodeStateText" Property="Foreground" Value="{StaticResource Accent}"/><Setter TargetName="NodeState" Property="Background" Value="{StaticResource AccentSubtle}"/></DataTrigger>
          <DataTrigger Binding="{Binding Invalid}" Value="True"><Setter TargetName="NodeStateText" Property="Foreground" Value="{StaticResource Error}"/><Setter TargetName="NodeState" Property="Background" Value="{StaticResource ErrorBg}"/></DataTrigger>
         </DataTemplate.Triggers>
        </DataTemplate></ListBox.ItemTemplate>

@@ -15,6 +15,8 @@ struct NodeCatalog:View {
         VStack(alignment:.leading,spacing:16) {
             actions
             filters
+            Text("地区按节点名称识别，非实测出口；实际出口以连接检测为准。")
+                .font(.system(size:12)).foregroundStyle(Palette.color("Muted"))
             if filtered.isEmpty { emptyState }
             tiles
             footer
@@ -91,7 +93,7 @@ struct ChainEditor:View {
     @State private var error=""
     init(model:AppState) {
         self.model=model;let old=model.editingChain
-        _name=State(initialValue:old?.Name ?? "住宅出口链路")
+        _name=State(initialValue:old?.Name ?? "新建双跳链路")
         let entry=old?.ChainNodeIds.first ?? model.settings.Nodes.first(where:{$0.Id == model.settings.SelectedNodeId && !$0.isChain})?.Id ?? model.settings.Nodes.first(where:{!$0.isChain})?.Id ?? ""
         let exit=old?.ChainNodeIds.last ?? ""
         _entry=State(initialValue:model.settings.Nodes.contains(where:{$0.Id == entry}) ? entry : "")
