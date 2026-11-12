@@ -1,4 +1,22 @@
-# v1.2.1 验证记录
+# v1.2.2 验证记录
+
+本版更新检查优先使用最新正式发布附件的直链，固定版本获取签名；只在 HTTP / 网络失败时使用 REST API 备用入口。无效清单、签名错误和用户取消均直接停止。测试覆盖 API 403 / 429、同版本 / 旧版本、签名篡改、版本路径、体积限制和取消；旧的下载哈希、损坏文件拒绝及安装重启回归保留。
+
+修复后的 Windows 程序在当前匿名 API 额度为 0 的网络下，通过自己的公开下载链路发现并完整下载 v1.2.1 安装包，ECDSA 与 SHA-256 校验通过；没有调用登录后的 GitHub CLI 代取更新信息，没有执行安装器或改变用户网络。证据为 artifacts/live-release-1.2.2-before-publish.json。
+
+专用浏览器只打开 `https://ip.net.coffee/claude/`，在页面结果出现前设置隐藏 IP，并在刷新时重新应用。Chrome / Edge 使用本地夹具验证单标签、动态结果和刷新；另以 Chrome 实际访问指定网站验证单标签、开关开启、刷新后开启和完整 IPv4 可见项为 0。验证输出只记录计数和开关，不记录访问者 IP；没有使用屏幕捕获。网页隐藏只影响显示，不改变出口或检测结果。
+
+本版未执行用户 Mac 实机的浏览器或真实 TUN / IPv6 / 时区变更。Mac 的公共脚本资源、原生编译和签名清单逻辑在对应架构 CI 验证；真实网页行为证据来自 Windows Chrome。
+
+最终应用代码为 `f803367057cf7579b3d5d9ac194760476605d8c5`：[Windows CI](https://github.com/slobys/ClaudeLink/actions/runs/43150206030)、[macOS 双架构 CI](https://github.com/slobys/ClaudeLink/actions/runs/43150205974)。后续文档与源码打包清单提交不改变应用代码。
+
+| 层次 | 结果 |
+|---|---|
+| Windows | 34 项核心断言、12 份官方内核配置、77 项隔离集成断言、12 项 WPF 交互、6 项安装检查通过 |
+| macOS arm64 / x64 | 各 42 项原生断言、14 项后台生命周期与恢复检查、1 项 GUI 退出检查通过；各生成 16 张原生视图 |
+| 浏览器 | Windows Chrome 实际指定网页及刷新验证通过；Chrome / Edge 隔离夹具验证单标签、异步 IP 遮挡和刷新 |
+
+## v1.2.1 历史验证记录
 
 本版应用代码对应 `c03a206d3748e16dd3084d6853196c755060ea94`：[Windows CI](https://github.com/slobys/ClaudeLink/actions/runs/43144546858)、[macOS 双架构 CI](https://github.com/slobys/ClaudeLink/actions/runs/43144546851)。后续设计文档和图标导出开发脚本的提交不改变已通过测试的应用代码。
 
