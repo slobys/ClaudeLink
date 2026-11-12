@@ -76,6 +76,11 @@ for iteration in {1..90}; do kill -0 "$UI_PID" 2>/dev/null || break; sleep 1; do
 if kill -0 "$UI_PID" 2>/dev/null; then kill "$UI_PID"; echo 'Native UI checks timed out'; exit 1; fi
 wait "$UI_PID"
 test -f "$OUT/ui/ui-results.json"
+"$APP/Contents/MacOS/ClaudeLink" --shutdown-smoke "$OUT/shutdown-results.json" & QUIT_PID=$!
+for iteration in {1..20}; do kill -0 "$QUIT_PID" 2>/dev/null || break; sleep 1; done
+if kill -0 "$QUIT_PID" 2>/dev/null; then kill "$QUIT_PID"; echo 'Native graceful shutdown timed out'; exit 1; fi
+wait "$QUIT_PID"
+test -f "$OUT/shutdown-results.json"
 /usr/bin/codesign --verify --deep --strict "$APP"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$ROOT/artifacts/ClaudeLink-$VERSION-macos-$ARCH.zip"
 DMG="$OUT/dmg"; mkdir -p "$DMG"; ditto "$APP" "$DMG/Claude Link.app"; ln -s /Applications "$DMG/Applications"

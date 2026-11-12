@@ -11,7 +11,7 @@ enum Updater {
         let key = try P256.Signing.PublicKey(derRepresentation:Data(base64Encoded:publicKey)!)
         guard let raw=Data(base64Encoded:String(decoding:signature,as:UTF8.self).trimmingCharacters(in:.whitespacesAndNewlines)), key.isValidSignature(try P256.Signing.ECDSASignature(rawRepresentation:raw),for:bytes) else { throw ClientError.message("更新签名校验失败，已停止更新。") }
         let manifest = try JSONDecoder().decode(ReleaseManifest.self,from:bytes)
-        guard manifest.Schema == 1, manifest.Repository == repository, manifest.AssetName == "ClaudeLink-\(manifest.Version)-macos-\(BuildInfo.arch).zip", manifest.Size > 0, manifest.Size < 512*1024*1024, manifest.Sha256.range(of:"^[a-f0-9]{64}$",options:.regularExpression) != nil else { throw ClientError.message("更新清单不适用于当前系统。") }; return manifest
+        guard manifest.Schema == 1, manifest.Repository == repository, manifest.Version.range(of:#"^\d+\.\d+\.\d+$"#,options:.regularExpression) != nil, manifest.AssetName == "ClaudeLink-\(manifest.Version)-macos-\(BuildInfo.arch).zip", manifest.Size > 0, manifest.Size < 512*1024*1024, manifest.Sha256.range(of:"^[a-f0-9]{64}$",options:.regularExpression) != nil else { throw ClientError.message("更新清单不适用于当前系统。") }; return manifest
     }
     static func check() async throws -> UpdateOffer? {
         let response = try await Web.fetch("https://api.github.com/repos/"+repository+"/releases/latest",limit:1024*1024,timeout:25)

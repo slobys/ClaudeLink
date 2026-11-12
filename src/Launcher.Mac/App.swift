@@ -3,16 +3,21 @@ import SwiftUI
 
 @MainActor final class AppDelegate:NSObject,NSApplicationDelegate {
     static weak var model:AppState?
+    private var readyToExit=false
     func applicationShouldTerminate(_ sender:NSApplication) -> NSApplication.TerminateReply {
+        if readyToExit { return .terminateNow }
         guard let model=Self.model else { return .terminateNow }
-        Task { do { try await model.session.stop(); sender.reply(toApplicationShouldTerminate:true) } catch { model.fail("临时环境恢复未完成，请先恢复后退出。"); sender.reply(toApplicationShouldTerminate:false) } }; return .terminateLater
+        Task { do { try await model.session.stop(); readyToExit=true; sender.terminate(nil) } catch { model.fail("临时环境恢复未完成，请先恢复后退出。") } }; return .terminateCancel
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender:NSApplication) -> Bool { true }
+    func applicationWillTerminate(_ notification:Notification) {
+        if let index=CommandLine.arguments.firstIndex(of:"--shutdown-smoke"), CommandLine.arguments.count > index+1 { try? AppPaths.write(Data("{\"Passed\":1,\"RestoredBeforeQuit\":true}".utf8),to:URL(fileURLWithPath:CommandLine.arguments[index+1])) }
+    }
 }
 @main struct ClaudeLinkApp:App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject var model=AppState()
-    var body:some Scene { WindowGroup("Claude Link") { RootView(model:model).frame(minWidth:1040,minHeight:700).preferredColorScheme(.light).onAppear { AppDelegate.model=model; if let position=CommandLine.arguments.firstIndex(of:"--ui-smoke"), CommandLine.arguments.count > position+1 { let folder=CommandLine.arguments[position+1]; Task { try? await Task.sleep(for:.seconds(2)); await capture(folder) } } } }.defaultSize(width:1280,height:850).commands { CommandGroup(replacing:.newItem) {}; CommandGroup(after:.appInfo) { Button("检查更新…") { Task { await model.checkUpdate(manual:true) } } } } }
+    var body:some Scene { WindowGroup("Claude Link") { RootView(model:model).frame(minWidth:1040,minHeight:700).preferredColorScheme(.light).onAppear { AppDelegate.model=model; if let position=CommandLine.arguments.firstIndex(of:"--ui-smoke"), CommandLine.arguments.count > position+1 { let folder=CommandLine.arguments[position+1]; Task { try? await Task.sleep(for:.seconds(2)); await capture(folder) } }; if CommandLine.arguments.contains("--shutdown-smoke") { Task { try? await Task.sleep(for:.seconds(1)); NSApplication.shared.terminate(nil) } } } }.defaultSize(width:1280,height:850).commands { CommandGroup(replacing:.newItem) {}; CommandGroup(after:.appInfo) { Button("检查更新…") { Task { await model.checkUpdate(manual:true) } } } } }
     @MainActor func capture(_ folder:String) async {
         do {
             let url=URL(fileURLWithPath:folder); try FileManager.default.createDirectory(at:url,withIntermediateDirectories:true)

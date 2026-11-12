@@ -8,7 +8,7 @@ import SwiftUI
     let session=Session(); var operation:Task<Void,Never>?; var monitor:Task<Void,Never>?; var updateTask:Task<Void,Never>?; var storageReadFailed=false
     var selectedNode:ProxyNode? { settings.Nodes.first { $0.Id == settings.SelectedNodeId } ?? settings.Nodes.first }
     init() {
-        if CommandLine.arguments.contains("--ui-smoke") { AppPaths.root=FileManager.default.temporaryDirectory.appendingPathComponent("ClaudeLink-ui-"+UUID().uuidString); fillPreview(); return }
+        if CommandLine.arguments.contains("--ui-smoke") || CommandLine.arguments.contains("--shutdown-smoke") { AppPaths.root=FileManager.default.temporaryDirectory.appendingPathComponent("ClaudeLink-ui-"+UUID().uuidString); fillPreview(); return }
         do { settings=try SecureSettings.load(); log("启动器已就绪。节点与订阅使用登录钥匙串密钥加密保存。") } catch { storageReadFailed=true; self.error="读取配置失败，原文件已保留。请解锁登录钥匙串后重新打开。" }
         Task { do { try await session.recover() } catch { fail("临时环境恢复未完成，请点击“恢复临时设置”。") }; if settings.AutoCheckUpdates { await checkUpdate(manual:false) } }
         monitor=Task { while !Task.isCancelled { try? await Task.sleep(for:.seconds(2)); if connected && !busy && !session.running { connected=false; log("代理会话已退出，请重新连接。",.error); do { try await session.recover() } catch { fail("临时环境尚未恢复，请点击恢复临时设置。") } } } }
