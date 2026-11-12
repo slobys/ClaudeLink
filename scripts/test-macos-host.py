@@ -34,6 +34,9 @@ try:
     with socket.create_connection(('127.0.0.1',port),3): pass
     check(True,'Owned local proxy accepts connections')
     check((stage/'config.json').stat().st_uid==0 and (stage/'config.json').stat().st_mode & 0o777 == 0o600,'Root config stays private in root-owned stage')
+    (mailbox/'stop').write_text('incorrect-nonce')
+    time.sleep(.5)
+    check(json.loads((stage/'status.json').read_text())['state']=='running','Incorrect nonce cannot stop an owned session')
     (mailbox/'stop').write_text(nonce)
     host.wait(timeout=15)
     status=json.loads((stage/'status.json').read_text())
@@ -46,4 +49,33 @@ finally:
     if host.poll() is None:
         (mailbox/'stop').write_text(nonce)
         host.wait(timeout=15)
+
+for scenario in ['parent-exit','host-crash']:
+    recovery_stage=stage.parent/str(uuid.uuid4())
+    subprocess.run(['sudo','mkdir','-m','755',str(recovery_stage)],check=True)
+    guardian=subprocess.Popen(['/bin/sleep','45']) if scenario=='parent-exit' else None
+    parent=guardian.pid if guardian else os.getpid()
+    control['parent']=parent
+    control['parentStamp']=subprocess.check_output(['/bin/ps','-p',str(parent),'-o','lstart='],text=True).strip()
+    (mailbox/'control.json').write_text(json.dumps(control)); (mailbox/'stop').write_text('not-the-nonce')
+    for src,name,mode in [(app/'Contents/Resources/sing-box','sing-box','755'),(app/'Contents/Helpers/ClaudeLinkHost','ClaudeLinkHost','755'),(mailbox/'config.json','config.json','600'),(mailbox/'control.json','control.json','600')]:
+        subprocess.run(['sudo','install','-m',mode,str(src),str(recovery_stage/name)],check=True)
+    child=subprocess.Popen(['sudo',str(recovery_stage/'ClaudeLinkHost'),'--run',str(recovery_stage)])
+    try:
+        for _ in range(100):
+            if (recovery_stage/'status.json').exists() and json.loads((recovery_stage/'status.json').read_text()).get('state')=='running': break
+            time.sleep(.1)
+        check((recovery_stage/'status.json').exists() and json.loads((recovery_stage/'status.json').read_text())['state']=='running',scenario+' fixture starts')
+        if guardian:
+            guardian.terminate(); guardian.wait(timeout=5); child.wait(timeout=15)
+            check(json.loads((recovery_stage/'status.json').read_text())['state']=='stopped','Parent exit automatically stops and restores supervisor session')
+        else:
+            root_pid=json.loads((recovery_stage/'status.json').read_text())['pid']
+            subprocess.run(['sudo','kill','-9',str(root_pid)],check=True); child.wait(timeout=10)
+            subprocess.run(['sudo',str(recovery_stage/'ClaudeLinkHost'),'--recover',str(recovery_stage)],check=True)
+            check(json.loads((recovery_stage/'status.json').read_text())['state']=='stopped','Persisted journal recovers after forced supervisor crash')
+        with socket.socket() as sock: check(sock.connect_ex(('127.0.0.1',port))!=0,scenario+' releases owned proxy port')
+    finally:
+        if guardian and guardian.poll() is None: guardian.terminate(); guardian.wait(timeout=5)
+        if child.poll() is None: (mailbox/'stop').write_text(nonce); child.wait(timeout=15)
 (output/'supervisor-results.json').write_text(json.dumps({'Passed':len(checks),'Checks':checks,'Scope':'root-owned loopback session; no TUN routes, IPv6 or timezone mutations'},indent=2))

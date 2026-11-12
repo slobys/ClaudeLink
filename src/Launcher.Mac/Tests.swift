@@ -11,6 +11,10 @@ import Foundation
             let parsed=try await Bridge.parse("socks5://user:secret@127.0.0.1:1080#Local")
             try check(parsed.Nodes.count == 1,"Shared bridge imports SOCKS credentials")
             let node=parsed.Nodes[0]
+            let subscription=Subscription(Id:UUID().uuidString,Name:"Test",Url:"https://example.invalid/sub")
+            var original=Settings(); var subscribed=node; subscribed.GroupId=subscription.Id; original.Nodes=[subscribed]; original.SelectedNodeId=subscribed.Id
+            let merged=try await Bridge.merge(original,subscription,parsed.Nodes)
+            try check(merged.Nodes.count == 1 && merged.SelectedNodeId == subscribed.Id && merged.Nodes[0].Id == subscribed.Id,"Subscription refresh preserves selected node identity")
             for tun in [false,true] {
                 let config=try await Bridge.config(node,port:17991,tun:tun,route:false)
                 let value=try JSONSerialization.jsonObject(with:config) as! [String:Any]
