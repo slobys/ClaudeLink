@@ -30,6 +30,7 @@ import SwiftUI
                 try bitmap.representation(using:.png,properties:[:])!.write(to:url.appendingPathComponent(page+".png"))
             }
             model.page="节点管理"; model.fillLatencyPreview(); model.nodeSort=1; try await Task.sleep(for:.milliseconds(500)); try saveView(view,to:url.appendingPathComponent("nodes-latency.png")); model.nodeSort=0
+            model.nodeTesting=true; model.nodeTestProgress="测速 3 / 10 · 界面示例"; try await Task.sleep(for:.milliseconds(500)); try saveView(view,to:url.appendingPathComponent("nodes-latency-running.png")); model.nodeTesting=false; model.nodeTestProgress="界面示例 · 非实测数据"
             model.page="节点管理"; model.nodeSearch="没有匹配的示例";try await Task.sleep(for:.milliseconds(500));try saveView(view,to:url.appendingPathComponent("nodes-empty.png"));model.nodeSearch=""
             window.setContentSize(NSSize(width:1040,height:740));try await Task.sleep(for:.milliseconds(500));try saveView(view,to:url.appendingPathComponent("nodes-small.png"));window.setContentSize(NSSize(width:1280,height:850))
             model.editingChain=model.settings.Nodes.first(where:{$0.isChain});model.showingChain=true;try await Task.sleep(for:.milliseconds(700))

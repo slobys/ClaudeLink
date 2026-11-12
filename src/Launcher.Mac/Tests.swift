@@ -19,6 +19,12 @@ import Darwin
             try check(NodeLatency.sort(samples,2,{delays[$0.Id]}).map(\.Id)==["delay-1","delay-2","delay-4","delay-0","delay-3"],"Latency descending sort keeps failed nodes below measured nodes")
             try check(NodeLatency.sort(samples,0,{delays[$0.Id]}).map(\.Id)==samples.map(\.Id),"Latency original ordering is recoverable")
             try check(NodeLatencyResult(fingerprint:"fixture",state:.timeout).text == "超时" && NodeLatencyResult(fingerprint:"fixture",state:.failed).text == "失败" && NodeLatencyResult(fingerprint:"fixture",state:.success,milliseconds:0).hasDelay == false,"Latency failures never become zero millisecond successes")
+            let latencyPreview=AppState(preview:true);let selectedBefore=latencyPreview.settings.SelectedNodeId
+            latencyPreview.nodeTesting=true;latencyPreview.selectNode(latencyPreview.settings.Nodes.last!);latencyPreview.run(false)
+            try check(latencyPreview.settings.SelectedNodeId == selectedBefore && latencyPreview.operation == nil,"Latency progress blocks selection changes and connection startup")
+            latencyPreview.nodeTestTask=Task { try? await Task.sleep(for:.seconds(60)) };latencyPreview.testNodes(latencyPreview.settings.Nodes)
+            try check(latencyPreview.nodeTestTask?.isCancelled == true,"Latency cancel action cancels the active native task")
+            await latencyPreview.stopNodeTest();latencyPreview.nodeTesting=false
             let privacyScript=try BrowserPrivacy.script()
             try check(BrowserPrivacy.checkURL == "https://ip.net.coffee/claude/" && privacyScript.contains("ipMaskToggle") && privacyScript.replacingOccurrences(of:"\\/",with:"/").contains("https://ip.net.coffee") && !privacyScript.contains("__CLAUDELINK_ORIGIN__"),"Dedicated browser bundles scoped IP-hiding script and a single requested destination")
             let parsed=try await Bridge.parse("socks5://user:secret@127.0.0.1:1080#Local")
