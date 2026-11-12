@@ -59,6 +59,12 @@ public static class UiSmoke
         if(descending.First().Latency?.HasDelay!=true || descending.Last().Latency?.HasDelay==true)throw new InvalidOperationException("Unmeasured nodes must stay last in both sort directions.");
         assertions.Add("Latency states fit compact cards, measured nodes sort in both directions, and selection stays unchanged");
         sorter.SelectedIndex=0;
+        window.PreviewNodeTest(true);
+        if(((Button)window.FindName("ConnectButton")).IsEnabled || ((WrapPanel)window.FindName("NodeActions")).IsEnabled || !((Button)window.FindName("NodeTestButton")).IsEnabled)throw new InvalidOperationException("Latency progress must block connect and mutations while keeping cancel enabled.");
+        Capture(window,Path.Combine(directory,"nodes-latency-running.png"));
+        ((Button)window.FindName("NodeTestButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        if(!window.PreviewNodeTest(false))throw new InvalidOperationException("Latency cancel button did not cancel the active batch.");
+        assertions.Add("Latency progress keeps cancellation reachable and prevents concurrent connect or node edits");
         var sources=cards.Items.OfType<MainWindow.NodeRow>().Select(x=>x.Node).ToList();
         var chainDialog=new ChainDialog(sources) {Owner=window};
         SubmitAppDialog(chainDialog,()=>{

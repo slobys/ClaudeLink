@@ -63,4 +63,12 @@ public partial class MainWindow
         }
         RefreshNodeCards(); NodeTestProgress.Text="界面示例 · 非实测数据";
     }
+    internal bool PreviewNodeTest(bool running)
+    {
+        if(!smoke)throw new InvalidOperationException("Preview requires isolated UI smoke mode.");
+        var cancelled=nodeTestCancellation?.IsCancellationRequested == true;
+        nodeTestCancellation?.Dispose(); nodeTestCancellation=running ? new CancellationTokenSource() : null;
+        nodeTesting=running; UpdateState(); NodeTestProgress.Text=running ? "测速 3 / 10 · 界面示例" : "界面示例 · 非实测数据";
+        return cancelled;
+    }
 }

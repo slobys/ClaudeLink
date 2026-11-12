@@ -86,9 +86,8 @@ enum NodeLatency {
             // Four workers share one isolated core. Each API request targets an explicit outbound tag.
             let entries=Array(tags); var next=0
             try await withThrowingTaskGroup(of:(String,LatencyState,Int?).self) { group in
-                @MainActor func enqueue(_ item:(key:String,value:String)) {
-                    changed(item.key,.running,nil)
-                    group.addTask { let value=try await NodeLatency.measure(client,base,secret,item.value); return (item.key,value.0,value.1) }
+                func enqueue(_ item:(key:String,value:String)) {
+                    group.addTask { await changed(item.key,.running,nil); let value=try await NodeLatency.measure(client,base,secret,item.value); return (item.key,value.0,value.1) }
                 }
                 while next<min(4,entries.count) { enqueue(entries[next]); next+=1 }
                 while let result=try await group.next() { changed(result.0,result.1,result.2); try Task.checkCancellation(); if next<entries.count { enqueue(entries[next]); next+=1 } }

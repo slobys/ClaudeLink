@@ -110,7 +110,7 @@ def launch(nodes, all_nodes, owner):
     bridge = app / "Contents/Resources/bridge/ClaudeLink.Bridge"
     plan = json.loads(subprocess.check_output([str(bridge)], input=json.dumps(request).encode()))
     config = plan["Config"]
-    
+
     root = Path(tempfile.gettempdir()).resolve() / ("ClaudeLink-Latency-" + str(uuid.uuid4()))
     root.mkdir(mode=0o700)
     roots.append(root)
