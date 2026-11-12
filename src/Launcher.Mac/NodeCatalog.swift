@@ -19,7 +19,7 @@ struct NodeCatalog:View {
         VStack(alignment:.leading,spacing:16) {
             actions
             filters
-            Text("HTTP 延迟越低，响应通常越快；不代表下载速度或 Claude 账户可用性。")
+            Text("地区按名称识别，实际出口以连接检测为准；测速为 HTTP 延迟，不代表下载速度或账户可用性。")
                 .font(.system(size:12)).foregroundStyle(Palette.color("Muted"))
             if filtered.isEmpty { emptyState }
             tiles
@@ -30,7 +30,7 @@ struct NodeCatalog:View {
         HStack {
                 Button("添加节点") { model.editingNode=nil; model.editor=""; model.editorName=""; model.showingNode=true }.buttonStyle(.borderedProminent).disabled(model.nodeTesting)
                 Button("创建链式代理") { model.editChain() }.disabled(model.nodeTesting)
-                Button(model.nodeTesting ? "取消测速" : "一键测速") { model.testNodes(filtered) }.disabled(model.busy || model.connected || (!model.nodeTesting && filtered.isEmpty))
+                Button(model.nodeTesting ? "取消测速" : "一键测速") { model.testNodes(filtered) }.help("测速当前筛选结果（\(filtered.count) 个）；连接时请先断开").disabled(model.busy || model.connected || (!model.nodeTesting && filtered.isEmpty))
                 Spacer()
                 Button("编辑") { if let node=model.selectedNode { if node.isChain { model.editChain(node) } else { model.editingNode=node; model.editor=node.OutboundJson; model.editorName=node.Name; model.showingNode=true } } }.disabled(model.nodeTesting)
                 Button("删除",role:.destructive) { if let node=model.selectedNode { model.deleteNode(node) } }.disabled(model.nodeTesting)

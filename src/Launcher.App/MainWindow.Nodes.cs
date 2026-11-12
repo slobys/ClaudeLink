@@ -87,6 +87,7 @@ public partial class MainWindow
             NodesGrid.SelectedItem = rows.FirstOrDefault(x => x.Current);
             NodesEmpty.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             NodesEmpty.Text = settings.Nodes.Count == 0 ? "还没有节点\n添加分享链接，或前往订阅管理导入订阅。" : "没有匹配节点\n清空搜索或更换地区与分组。";
+            NodeTestButton.ToolTip = nodeTesting ? "取消当前测速，保留已完成结果" : $"测速当前筛选结果（{rows.Count} 个）；连接时请先断开";
             NodeCountText.Text = $"显示 {rows.Count} / {settings.Nodes.Count} · {settings.Nodes.Count(x => x.IsChain)} 条链路";
         }
         finally { refreshing = prior; }

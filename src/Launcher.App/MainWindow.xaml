@@ -141,7 +141,7 @@
       <ComboBox x:Name="NodeGroupFilter" Width="170" Margin="0,0,12,8" DisplayMemberPath="Label" SelectedValuePath="Code" SelectionChanged="NodeFilterChanged" AutomationProperties.Name="筛选分组"/>
       <ComboBox x:Name="NodeSort" Width="160" Margin="0,0,0,8" SelectionChanged="NodeFilterChanged" SelectedIndex="0" AutomationProperties.Name="节点排序"><ComboBoxItem Content="原始顺序"/><ComboBoxItem Content="延迟：低 → 高"/><ComboBoxItem Content="延迟：高 → 低"/></ComboBox>
       </WrapPanel>
-      <TextBlock Text="HTTP 延迟越低，响应通常越快；不代表下载速度或 Claude 账户可用性。" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+      <TextBlock Text="地区按名称识别，实际出口以连接检测为准；测速为 HTTP 延迟，不代表下载速度或账户可用性。" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,0,0,6"/>
      </StackPanel>
      <Grid Grid.Row="2">
       <ListBox x:Name="NodesGrid" SelectionChanged="NodeCardSelected" MouseDoubleClick="SelectNode_Click" SizeChanged="NodeGridSizeChanged" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="False" Padding="0,0,0,8" AutomationProperties.Name="节点卡片">
