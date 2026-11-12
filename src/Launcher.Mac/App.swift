@@ -38,11 +38,13 @@ import SwiftUI
             try saveView(view,to:url.appendingPathComponent("settings-cli.png")); model.settings.LaunchTarget="desktop"
             model.page="节点管理"; model.editor="socks5://127.0.0.1:1080#界面示例"; model.showingNode=true; try await Task.sleep(for:.milliseconds(700))
             guard let nodeSheet=window.sheets.first?.contentView else { throw ClientError.message("Missing node sheet") }; try saveView(nodeSheet,to:url.appendingPathComponent("node-editor.png"))
+            model.editingNode=model.settings.Nodes.first; model.editorName=""; try await Task.sleep(for:.milliseconds(500)); if let emptySheet=window.sheets.first?.contentView { try saveView(emptySheet,to:url.appendingPathComponent("node-editor-empty.png")) }
             model.showingNode=false; try await Task.sleep(for:.milliseconds(500)); model.page="订阅管理"; model.editorName="界面示例订阅"; model.editorURL="https://example.invalid/sub"; model.showingSubscription=true; try await Task.sleep(for:.milliseconds(700))
-            guard let subSheet=window.sheets.first?.contentView else { throw ClientError.message("Missing subscription sheet") }; try saveView(subSheet,to:url.appendingPathComponent("subscription-editor.png")); model.showingSubscription=false
+            guard let subSheet=window.sheets.first?.contentView else { throw ClientError.message("Missing subscription sheet") }; try saveView(subSheet,to:url.appendingPathComponent("subscription-editor.png"))
+            model.editorName=""; model.editorURL=""; try await Task.sleep(for:.milliseconds(500)); if let emptySheet=window.sheets.first?.contentView { try saveView(emptySheet,to:url.appendingPathComponent("subscription-editor-empty.png")) }; model.showingSubscription=false
             try await Task.sleep(for:.milliseconds(500)); model.page="工作台"; model.offer=UpdateOffer(manifest:ReleaseManifest(Schema:1,Repository:Updater.repository,Version:"9.9.9",AssetName:"example.zip",Size:1,Sha256:String(repeating:"0",count:64)),url:"https://example.invalid/update",notes:"界面示例")
             try await Task.sleep(for:.milliseconds(500)); try saveView(view,to:url.appendingPathComponent("update-notice.png"))
-            try Data("{\"CapturedViews\":12,\"NativeViews\":true,\"ScreenCapture\":false}".utf8).write(to:url.appendingPathComponent("ui-results.json")); exit(0)
+            try Data("{\"CapturedViews\":14,\"NativeViews\":true,\"ScreenCapture\":false}".utf8).write(to:url.appendingPathComponent("ui-results.json")); exit(0)
         } catch { fputs("Native rendering failed\n",stderr); exit(1) }
     }
     @MainActor func saveView(_ view:NSView,to url:URL) throws {
