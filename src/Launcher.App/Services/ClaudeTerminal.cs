@@ -57,6 +57,6 @@ public static class ClaudeTerminal
             "if($launcherExitCode -ne 0){[void](Read-Host '按回车关闭窗口')}\r\n" +
             "exit $launcherExitCode\r\n";
     }
-    public static BrowserCheckLaunch OpenBrowserCheck(string sessionDirectory, int port, string language, string preference = "auto")
-        => CheckBrowser.Open(sessionDirectory, port, language, preference);
+    public static Task<BrowserCheckLaunch> OpenBrowserCheckAsync(string sessionDirectory, int port, string language, string preference = "auto")
+        => CheckBrowser.OpenAsync(sessionDirectory, port, language, preference);
 }

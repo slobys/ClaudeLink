@@ -12,6 +12,8 @@ import Darwin
             let defaults=Settings()
             try check(defaults.TunEnabled && defaults.StrictChecks && defaults.DisableIPv6 && defaults.MatchTimeZone && defaults.ProcessLanguage == "en-US" && defaults.CheckBrowser == "auto","Fresh install applies requested network and Chrome-first presets")
             try check(defaults.Nodes.isEmpty && defaults.Subscriptions.isEmpty && defaults.ClaudePath.isEmpty && defaults.DesktopPath.isEmpty,"Preset contains no personal nodes or executable paths")
+            let privacyScript=try BrowserPrivacy.script()
+            try check(BrowserPrivacy.checkURL == "https://ip.net.coffee/claude/" && privacyScript.contains("ipMaskToggle") && privacyScript.replacingOccurrences(of:"\\/",with:"/").contains("https://ip.net.coffee") && !privacyScript.contains("__CLAUDELINK_ORIGIN__"),"Dedicated browser bundles scoped IP-hiding script and a single requested destination")
             let parsed=try await Bridge.parse("socks5://user:secret@127.0.0.1:1080#Local")
             try check(parsed.Nodes.count == 1,"Shared bridge imports SOCKS credentials")
             let node=parsed.Nodes[0]

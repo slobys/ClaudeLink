@@ -51,7 +51,7 @@ import SwiftUI
     }
     func resolveLaunch(_ proceed:Bool) { let decision=launchDecision; launchDecision=nil; launchConfirmation=nil; decision?.resume(returning:proceed) }
     func disconnect() { resolveLaunch(false); operation?.cancel(); busy=true; Task { defer { busy=false; progress="" }; do { try await session.stop(); connected=false; report=nil; log("会话已结束，临时设置已恢复。",.success) } catch { fail(error.localizedDescription) } } }
-    func browser() { do { guard connected else { throw ClientError.message("请先连接节点。") }; try Launcher.browser(settings); log("已打开专用浏览器；所选语言 "+settings.ProcessLanguage+"。",.success) } catch { fail(error.localizedDescription) } }
+    func browser() { Task { do { guard connected else { throw ClientError.message("请先连接节点。") }; let hidden=try await Launcher.browser(settings); log(hidden ? "已打开专用核对页，页面 IP 已隐藏；所选语言 "+settings.ProcessLanguage+"。" : "核对窗口已打开，请手动确认网页的隐藏 IP 开关。",hidden ? .success : .warning) } catch { fail(error.localizedDescription) } } }
     func importNode() { busy=true; Task { defer { busy=false }; do {
         let parsed=try await Bridge.parse(editor); guard !parsed.Nodes.isEmpty else { throw ClientError.message("未识别到支持的节点。") }
         if let old=editingNode { guard parsed.Nodes.count == 1 else { throw ClientError.message("编辑节点时只可提交一个节点。") }; var node=parsed.Nodes[0]; node.Id=old.Id; node.GroupId=old.GroupId; if !editorName.isEmpty { node.Name=editorName }; if let index=settings.Nodes.firstIndex(where:{$0.Id==old.Id}) { settings.Nodes[index]=node } }

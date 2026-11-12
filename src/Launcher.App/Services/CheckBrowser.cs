@@ -1,10 +1,11 @@
 using System.Globalization;
+using System.Net.WebSockets;
 using System.Text.Encodings.Web;
 
 namespace Launcher.App.Services;
 
 public sealed record BrowserInstallation(string Id, string Name, string Path);
-public sealed record BrowserCheckLaunch(string BrowserName, string Language, string ProfileDirectory, string LanguagePage);
+public sealed record BrowserCheckLaunch(string BrowserName, string Language, string ProfileDirectory, bool IpHidden);
 
 public static class CheckBrowser
 {
@@ -68,16 +69,21 @@ public static class CheckBrowser
         foreach (var target in targets) info.ArgumentList.Add(target);
         return info;
     }
-    public static BrowserCheckLaunch Open(string sessionDirectory, int port, string language, string preference)
+    public static async Task<BrowserCheckLaunch> OpenAsync(string sessionDirectory, int port, string language, string preference)
     {
         var browser = Select(preference);
         var directory = Path.Combine(sessionDirectory, "browser-checks", Guid.NewGuid().ToString("N"));
         var profile = Path.Combine(directory, "profile");
         PrepareProfile(profile, language);
-        var page = Path.Combine(directory, "language-check.html");
-        File.WriteAllText(page, LanguagePage(language), new UTF8Encoding(false));
-        Process.Start(StartInfo(browser, profile, language, port, [new Uri(page).AbsoluteUri, NetworkServices.ClaudeLoginUrl, "https://ip.net.coffee/claude/"]));
-        return new(browser.Name, language, profile, page);
+        var info = StartInfo(browser, profile, language, port, ["about:blank"]);
+        info.ArgumentList.Add("--new-window");
+        info.ArgumentList.Add("--remote-debugging-port=0");
+        info.ArgumentList.Add("--remote-debugging-address=127.0.0.1");
+        using var process = Process.Start(info) ?? throw new IOException("无法打开核对浏览器。");
+        var hidden = false;
+        try { hidden = await BrowserPrivacy.ConfigureAsync(profile); }
+        catch (Exception ex) when (ex is IOException or HttpRequestException or OperationCanceledException or WebSocketException or JsonException) { }
+        return new(browser.Name, language, profile, hidden);
     }
     public static string LanguagePage(string language)
     {

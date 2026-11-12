@@ -323,16 +323,19 @@ public partial class MainWindow : Window
         StatusText.Text = "已断开，临时环境已恢复"; Log("已停止代理并恢复临时环境。", LogKind.Success);
     }, "正在断开并恢复…");
     private void Cancel_Click(object sender, RoutedEventArgs e) { networkCancellation?.Cancel(); CancelButton.IsEnabled = false; }
-    private void Browser_Click(object sender, RoutedEventArgs e)
+    private async void Browser_Click(object sender, RoutedEventArgs e)
     {
         try
         {
             SaveUISettings();
-            var opened = ClaudeTerminal.OpenBrowserCheck(session.DirectoryPath!, session.Port, settings.ProcessLanguage, settings.CheckBrowser);
-            Log($"已打开专用 {opened.BrowserName} 核对窗口；所选语言 {opened.Language}。");
-            StatusText.Text = $"专用 {opened.BrowserName} 已打开；请在「语言核对」标签确认实际语言。";
+            BrowserButton.IsEnabled = false;
+            StatusText.Text = "正在打开核对页并开启隐藏 IP…";
+            var opened = await ClaudeTerminal.OpenBrowserCheckAsync(session.DirectoryPath!, session.Port, settings.ProcessLanguage, settings.CheckBrowser);
+            Log($"已打开专用 {opened.BrowserName} 核对窗口；所选语言 {opened.Language}；" + (opened.IpHidden ? "已开启页面隐藏 IP。" : "请在网页手动开启隐藏 IP。"));
+            StatusText.Text = opened.IpHidden ? $"专用 {opened.BrowserName} 已打开核对页，页面 IP 已隐藏。" : "核对窗口已打开；未能自动确认隐藏 IP，请检查网页开关。";
         }
         catch (Exception ex) { AppDialog.Notify(this, SafeError(ex), "浏览器核对"); }
+        finally { BrowserButton.IsEnabled = session.Connected; }
     }
     private void BrowseProject_Click(object sender, RoutedEventArgs e)
     {

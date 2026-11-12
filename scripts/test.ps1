@@ -18,7 +18,8 @@ foreach($config in Get-ChildItem -LiteralPath $configs -Filter '*.json' | Where-
 $app=Join-Path $artifacts 'publish\ClaudeNetworkLauncher.exe'
 $integration=Join-Path $artifacts 'integration-results.json'
 $process=Start-Process -FilePath $app -ArgumentList @('--integration-test',('"'+$integration+'"')) -WindowStyle Hidden -PassThru
-$integrationDeadline=(Get-Date).AddMinutes(3)
+# Includes six native browser launches plus protocol and process lifecycle fixtures on hosted runners.
+$integrationDeadline=(Get-Date).AddMinutes(5)
 while(-not $process.WaitForExit(500)){
     if((Get-Date) -gt $integrationDeadline){
         Stop-Process -Id $process.Id

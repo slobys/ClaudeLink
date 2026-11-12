@@ -187,7 +187,7 @@
         <ComboBox x:Name="LanguageCombo" Width="170" HorizontalAlignment="Left"/>
         <TextBlock Text="专用核对浏览器" Margin="0,17,0,7"/>
         <ComboBox x:Name="BrowserCombo" Width="230" HorizontalAlignment="Left" DisplayMemberPath="Label" SelectedValuePath="Id"/>
-        <TextBlock Text="从工作台打开独立浏览器窗口，应用所选语言列表；“语言核对”标签会显示网页实际读取的结果。" Style="{StaticResource MutedText}" Margin="0,9,0,0"/>
+        <TextBlock Text="独立窗口应用所选语言，只打开 IP 核对页并默认隐藏页面 IP；网页的设备信息中可核对实际语言。" Style="{StaticResource MutedText}" Margin="0,9,0,0"/>
        </StackPanel>
       </Border>
       <Border Style="{StaticResource Card}" Margin="0,0,0,16">

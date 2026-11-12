@@ -150,6 +150,24 @@ public static class IntegrationSmoke
         var results = new List<object>();
         foreach (var browser in installed)
         {
+            const string privacyHtml = """
+<!doctype html><meta charset="utf-8"><input id="ipMaskToggle" type="checkbox"><a class="ip-link" id="ip">198.51.100.24</a>
+<script>
+window.__ipMaskOn=false;
+window.applyAllIpMasks=()=>{ip.textContent=window.__ipMaskOn?'198.51.*.*':'198.51.100.24'};
+document.addEventListener('DOMContentLoaded',()=>{ipMaskToggle.checked=false;ipMaskToggle.addEventListener('change',()=>{window.__ipMaskOn=ipMaskToggle.checked;applyAllIpMasks()})});
+setTimeout(()=>{ip.textContent='198.51.100.24';applyAllIpMasks();window.dynamicIPReady=true},120);
+</script>
+""";
+            await using (var privacyPage = new HttpFixture(privacyHtml) { ContentType = "text/html; charset=utf-8" })
+            {
+                var profile = Path.Combine(AppPaths.Root, "browser-tests", browser.Id + "-privacy");
+                CheckBrowser.PrepareProfile(profile, "en-US");
+                var privacyState = await ReadNativeBrowserStateAsync(browser, profile, "en-US", $"http://127.0.0.1:{privacyPage.Port}/claude/", privacy: true);
+                assert(privacyState["hidden"]!.GetValue<bool>() && privacyState["masked"]!.GetValue<bool>() && privacyState["reloaded"]!.GetValue<bool>(),
+                    browser.Name + " dedicated page enables IP hiding before dynamic results and after reload");
+                assert(privacyState["pages"]!.GetValue<int>() == 1, browser.Name + " dedicated browser contains only the requested check page");
+            }
             foreach (var language in new[] { "en-US", "zh-CN" })
             {
                 await using var page = new HttpFixture(CheckBrowser.LanguagePage(language)) { ContentType = "text/html; charset=utf-8" };
@@ -171,9 +189,9 @@ public static class IntegrationSmoke
         AppPaths.WriteJson(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(outputPath))!, "browser-language-results.json"), results);
     }
 
-    private static async Task<JsonNode> ReadNativeBrowserStateAsync(BrowserInstallation browser, string profile, string language, string url)
+    private static async Task<JsonNode> ReadNativeBrowserStateAsync(BrowserInstallation browser, string profile, string language, string url, bool privacy = false)
     {
-        var info = CheckBrowser.StartInfo(browser, profile, language, null, [url]);
+        var info = CheckBrowser.StartInfo(browser, profile, language, null, [privacy ? "about:blank" : url]);
         info.WindowStyle = ProcessWindowStyle.Hidden;
         info.ArgumentList.Add("--remote-debugging-port=0");
         info.ArgumentList.Add("--remote-debugging-address=127.0.0.1");
@@ -185,6 +203,7 @@ public static class IntegrationSmoke
         using var client = new HttpClient(new SocketsHttpHandler { UseProxy = false });
         try
         {
+            if (privacy && !await BrowserPrivacy.ConfigureAsync(profile, url)) throw new IOException("IP privacy setup failed.");
             var portFile = Path.Combine(profile, "DevToolsActivePort");
             string? port = null;
             while (port == null)
@@ -210,11 +229,19 @@ public static class IntegrationSmoke
                 else await Task.Delay(100, budget.Token);
             }
             await socket.ConnectAsync(target, budget.Token);
+            if (privacy)
+            {
+                await socket.SendAsync(Encoding.UTF8.GetBytes("{\"id\":99,\"method\":\"Page.reload\"}").AsMemory(), WebSocketMessageType.Text, true, budget.Token);
+                await Task.Delay(500, budget.Token);
+            }
             var id = 0;
             while (true)
             {
                 var requestId = ++id;
-                var command = JsonSerializer.SerializeToUtf8Bytes(new { id = requestId, method = "Runtime.evaluate", @params = new { expression = "document.getElementById('browser-state')?.textContent || ''", returnByValue = true } });
+                var expression = privacy
+                    ? "window.dynamicIPReady && performance.navigation.type===1 && document.documentElement.dataset.claudeLinkIpHidden==='true' ? JSON.stringify({hidden:ipMaskToggle.checked,masked:ip.textContent==='198.51.*.*',reloaded:true}) : ''"
+                    : "document.getElementById('browser-state')?.textContent || ''";
+                var command = JsonSerializer.SerializeToUtf8Bytes(new { id = requestId, method = "Runtime.evaluate", @params = new { expression, returnByValue = true } });
                 await socket.SendAsync(command.AsMemory(), WebSocketMessageType.Text, true, budget.Token);
                 while (true)
                 {
@@ -231,7 +258,16 @@ public static class IntegrationSmoke
                     if (response["id"]?.GetValue<int>() != requestId) continue;
                     if (response["error"] != null) throw new IOException("Native browser evaluation failed.");
                     var value = response["result"]?["result"]?["value"]?.ToString();
-                    if (!string.IsNullOrWhiteSpace(value)) return JsonNode.Parse(value)!;
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        var state = JsonNode.Parse(value)!;
+                        if (privacy)
+                        {
+                            var pages = JsonNode.Parse(await client.GetStringAsync("http://127.0.0.1:" + port + "/json/list", budget.Token))!.AsArray();
+                            state["pages"] = pages.Count(x => x?["type"]?.ToString() == "page");
+                        }
+                        return state;
+                    }
                     break;
                 }
                 await Task.Delay(100, budget.Token);
