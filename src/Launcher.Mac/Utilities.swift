@@ -1,6 +1,7 @@
 import Foundation
 import Security
 import CryptoKit
+import Darwin
 
 enum ClientError: LocalizedError { case message(String); var errorDescription: String? { if case .message(let text) = self { return text }; return nil } }
 func shellQuote(_ value: String) -> String { "'" + value.replacingOccurrences(of:"'",with:"'\\''") + "'" }
@@ -43,7 +44,13 @@ enum SecureSettings {
         guard SecItemAdd(add as CFDictionary,nil) == errSecSuccess else { throw ClientError.message("配置密钥写入钥匙串失败。") }; return SymmetricKey(data:bytes)
     }
     static func save(_ settings: Settings) throws { try AppPaths.prepare(); let data = try JSONEncoder().encode(settings); let sealed = try AES.GCM.seal(data,using:key()); try AppPaths.write(sealed.combined!,to:AppPaths.root.appendingPathComponent("settings.dat")) }
-    static func load() throws -> Settings { try AppPaths.prepare(); let path = AppPaths.root.appendingPathComponent("settings.dat"); if !FileManager.default.fileExists(atPath:path.path) { return Settings() }; let bytes = try Data(contentsOf:path); return try JSONDecoder().decode(Settings.self,from:AES.GCM.open(AES.GCM.SealedBox(combined:bytes),using:key())) }
+    static func load() throws -> Settings {
+        try AppPaths.prepare(); let path=AppPaths.root.appendingPathComponent("settings.dat"); if !FileManager.default.fileExists(atPath:path.path) { return Settings() }
+        let clear=try AES.GCM.open(AES.GCM.SealedBox(combined:Data(contentsOf:path)),using:key())
+        guard let saved=try JSONSerialization.jsonObject(with:clear) as? [String:Any], var defaults=try JSONSerialization.jsonObject(with:JSONEncoder().encode(Settings())) as? [String:Any] else { throw ClientError.message("配置内容无效。") }
+        for (name,value) in saved { defaults[name]=value }
+        return try JSONDecoder().decode(Settings.self,from:JSONSerialization.data(withJSONObject:defaults))
+    }
 }
 enum Bridge {
     struct Parsed: Decodable { var Nodes: [ProxyNode]; var Warnings: [String] }

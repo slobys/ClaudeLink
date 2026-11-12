@@ -32,7 +32,8 @@ struct PendingSession: Codable { var stage: String; var mailbox: String; var non
         let port = settings.ProxyPort; guard (1025...65535).contains(port) else { throw ClientError.message("端口范围为 1025–65535。") }
         // Never send requests through another application's listener after a failed bind.
         let listener = try await Commands.run("/usr/sbin/lsof",["-nP","-iTCP:\(port)","-sTCP:LISTEN"])
-        guard listener.output.isEmpty else { throw ClientError.message("本地端口已被占用，请在环境设置更换端口。") }
+        let connect=try await Commands.run("/usr/bin/nc",["-z","-G","1","127.0.0.1",String(port)],timeout:3)
+        guard listener.output.isEmpty && connect.code != 0 else { throw ClientError.message("本地端口已被占用，请在环境设置更换端口。") }
         tun = settings.TunEnabled || settings.LaunchTarget == "desktop"
         let id = UUID().uuidString, mailbox = AppPaths.sessions.appendingPathComponent(id)
         try FileManager.default.createDirectory(at:mailbox,withIntermediateDirectories:true,attributes:[.posixPermissions:0o700])
@@ -62,7 +63,7 @@ struct PendingSession: Codable { var stage: String; var mailbox: String; var non
             do { try await authorize(script) } catch { if !FileManager.default.fileExists(atPath:stage) { pending=nil; try? FileManager.default.removeItem(at:pendingFile) }; throw error }
         }
         for _ in 0..<80 {
-            if running { let test = try await Commands.run("/usr/bin/nc",["-z","-G","1","127.0.0.1",String(port)],timeout:3); if test.code == 0 { try? FileManager.default.removeItem(at:configPath); return } }
+            if running { let test = try await Commands.run("/usr/bin/nc",["-z","-G","1","127.0.0.1",String(port)],timeout:3); if test.code == 0 { try await Task.sleep(for:.milliseconds(350)); guard running else { throw ClientError.message("本地代理启动失败，请检查端口及节点。") }; try? FileManager.default.removeItem(at:configPath); return } }
             if let pending, status(pending)?.state == "failed" { throw ClientError.message(status(pending)?.message ?? "内核启动失败。") }
             try await Task.sleep(for:.milliseconds(150))
         }

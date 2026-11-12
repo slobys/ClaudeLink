@@ -14,23 +14,98 @@ struct RootView:View {
     let pages=[("工作台","square.grid.2x2"),("节点管理","point.3.connected.trianglepath.dotted"),("订阅管理","arrow.triangle.2.circlepath"),("环境设置","slider.horizontal.3"),("运行记录","list.bullet.rectangle")]
     var body:some View {
         HStack(spacing:0) {
-            VStack(alignment:.leading,spacing:6) {
-                HStack(spacing:12) { Image(nsImage:NSImage(named:NSImage.applicationIconName) ?? NSImage()).resizable().frame(width:42,height:42); Text("Claude Link").font(.system(size:22,weight:.bold)) }.padding(.bottom,32)
-                ForEach(pages,id:\.0) { name,icon in Button { model.page=name } label: { Label(name,systemImage:icon).font(.system(size:15,weight:model.page == name ? .semibold : .regular)).frame(maxWidth:.infinity,alignment:.leading).padding(13).foregroundStyle(Palette.color(model.page == name ? "Accent" : "Muted")).background(model.page == name ? Palette.color("AccentSubtle") : .clear,in:RoundedRectangle(cornerRadius:8)) }.buttonStyle(.plain) }
-                Spacer(); VStack(alignment:.leading,spacing:8) { Text("独立代理内核").fontWeight(.semibold); Text("sing-box 1.14.4 · "+BuildInfo.arch).font(.system(size:12)).foregroundStyle(Palette.color("Muted")) }.padding(14).frame(maxWidth:.infinity,alignment:.leading).background(Palette.color("SurfaceAlt"),in:RoundedRectangle(cornerRadius:10))
-                Text("v"+BuildInfo.version+"  ·  钥匙串加密存储").font(.system(size:11)).foregroundStyle(Palette.color("Muted")).padding(.top,12)
-            }.padding(22).frame(width:224).background(Palette.color("Sidebar"))
+            sidebar
             Rectangle().fill(Palette.color("Line")).frame(width:1)
-            VStack(alignment:.leading,spacing:20) {
-                HStack(alignment:.top) { VStack(alignment:.leading,spacing:8) { Text(model.page).font(.system(size:28,weight:.bold)); Text(subtitle).foregroundStyle(Palette.color("Muted")) }; Spacer(); StatusBadge(text:model.connected ? "本地代理已启动" : "未连接",level:model.connected ? .success : .pending) }
-                if let offer=model.offer { HStack { Label("新版本 "+offer.manifest.Version+" 可用",systemImage:"arrow.down.circle").fontWeight(.semibold); Spacer(); if model.updateBusy { ProgressView().controlSize(.small); Button("取消下载") { model.updateTask?.cancel() }.disabled(model.updateTask == nil) } else if model.downloaded != nil { Button("安装并重启") { model.installUpdate() }.buttonStyle(.borderedProminent) } else { Button("下载更新") { model.downloadUpdate() }.buttonStyle(.borderedProminent) } }.padding(14).background(Level.info.background,in:RoundedRectangle(cornerRadius:10)) }
-                if model.busy { HStack { ProgressView().controlSize(.small); Text(model.progress.isEmpty ? "正在处理…" : model.progress); Spacer(); Button("取消检测") { model.operation?.cancel() }.disabled(model.operation == nil || !model.progress.contains("检测")) }.padding(14).background(Level.info.background,in:RoundedRectangle(cornerRadius:10)) }
-                if model.page == "运行记录" { logs } else { ScrollView { VStack(alignment:.leading,spacing:18) { switch model.page { case "工作台": dashboard; case "节点管理": nodes; case "订阅管理": subscriptions; default: settings }.padding(.bottom,6) }.frame(maxWidth:.infinity,alignment:.leading) }.scrollIndicators(.automatic) }
-                HStack { Text(model.connected ? "会话保持连接；使用结束后点击断开。" : "就绪 · 添加节点或订阅即可开始").font(.system(size:12)).foregroundStyle(Palette.color("Muted")); Spacer(); Button("恢复临时设置") { model.disconnect() }.disabled(model.busy) }
-            }.padding(28).background(Palette.color("Background"))
-        }.foregroundStyle(Palette.color("Ink")).font(.system(size:14)).tint(Palette.color("Accent"))
-        .sheet(isPresented:$model.showingNode) { nodeEditor }.sheet(isPresented:$model.showingSubscription) { subscriptionEditor }
-        .alert("操作未完成",isPresented:Binding(get:{!model.error.isEmpty},set:{if !$0 { model.error="" }})) { Button("确定") { model.error="" } } message:{ Text(model.error) }
+            mainContent
+        }
+        .foregroundStyle(Palette.color("Ink"))
+        .font(.system(size:14))
+        .tint(Palette.color("Accent"))
+        .sheet(isPresented:$model.showingNode) { nodeEditor }
+        .sheet(isPresented:$model.showingSubscription) { subscriptionEditor }
+        .alert("操作未完成",isPresented:Binding(get:{!model.error.isEmpty},set:{if !$0 { model.error="" }})) {
+            Button("确定") { model.error="" }
+        } message:{ Text(model.error) }
+    }
+    var sidebar:some View {
+        VStack(alignment:.leading,spacing:6) {
+            HStack(spacing:12) {
+                Image(nsImage:NSImage(named:NSImage.applicationIconName) ?? NSImage()).resizable().frame(width:42,height:42)
+                Text("Claude Link").font(.system(size:22,weight:.bold))
+            }.padding(.bottom,32)
+            ForEach(pages,id:\.0) { item in
+                Button { model.page=item.0 } label: {
+                    Label(item.0,systemImage:item.1)
+                        .font(.system(size:15,weight:model.page == item.0 ? .semibold : .regular))
+                        .frame(maxWidth:.infinity,alignment:.leading).padding(13)
+                        .foregroundStyle(Palette.color(model.page == item.0 ? "Accent" : "Muted"))
+                        .background(model.page == item.0 ? Palette.color("AccentSubtle") : Color.clear,in:RoundedRectangle(cornerRadius:8))
+                }.buttonStyle(.plain)
+            }
+            Spacer()
+            VStack(alignment:.leading,spacing:8) {
+                Text("独立代理内核").fontWeight(.semibold)
+                Text("sing-box 1.14.4 · "+BuildInfo.arch).font(.system(size:12)).foregroundStyle(Palette.color("Muted"))
+            }.padding(14).frame(maxWidth:.infinity,alignment:.leading).background(Palette.color("SurfaceAlt"),in:RoundedRectangle(cornerRadius:10))
+            Text("v"+BuildInfo.version+"  ·  钥匙串加密存储").font(.system(size:11)).foregroundStyle(Palette.color("Muted")).padding(.top,12)
+        }.padding(22).frame(width:224).background(Palette.color("Sidebar"))
+    }
+    var mainContent:some View {
+        VStack(alignment:.leading,spacing:20) {
+            HStack(alignment:.top) {
+                VStack(alignment:.leading,spacing:8) {
+                    Text(model.page).font(.system(size:28,weight:.bold))
+                    Text(subtitle).foregroundStyle(Palette.color("Muted"))
+                }
+                Spacer()
+                StatusBadge(text:model.connected ? "本地代理已启动" : "未连接",level:model.connected ? .success : .pending)
+            }
+            updateBanner
+            if model.busy {
+                HStack {
+                    ProgressView().controlSize(.small)
+                    Text(model.progress.isEmpty ? "正在处理…" : model.progress)
+                    Spacer()
+                    Button("取消检测") { model.operation?.cancel() }.disabled(model.operation == nil || !model.progress.contains("检测"))
+                }.padding(14).background(Level.info.background,in:RoundedRectangle(cornerRadius:10))
+            }
+            if model.page == "运行记录" { logs }
+            else {
+                ScrollView {
+                    VStack(alignment:.leading,spacing:18) { pageContent }
+                        .padding(.bottom,6).frame(maxWidth:.infinity,alignment:.leading)
+                }.scrollIndicators(.automatic)
+            }
+            HStack {
+                Text(model.connected ? "会话保持连接；使用结束后点击断开。" : "就绪 · 添加节点或订阅即可开始").font(.system(size:12)).foregroundStyle(Palette.color("Muted"))
+                Spacer()
+                Button("恢复临时设置") { model.disconnect() }.disabled(model.busy)
+            }
+        }.padding(28).background(Palette.color("Background"))
+    }
+    @ViewBuilder var updateBanner:some View {
+        if let offer=model.offer {
+            HStack {
+                Label("新版本 "+offer.manifest.Version+" 可用",systemImage:"arrow.down.circle").fontWeight(.semibold)
+                Spacer()
+                if model.updateBusy {
+                    ProgressView().controlSize(.small)
+                    Button("取消下载") { model.updateTask?.cancel() }.disabled(model.updateTask == nil)
+                } else if model.downloaded != nil {
+                    Button("安装并重启") { model.installUpdate() }.buttonStyle(.borderedProminent)
+                } else {
+                    Button("下载更新") { model.downloadUpdate() }.buttonStyle(.borderedProminent)
+                }
+            }.padding(14).background(Level.info.background,in:RoundedRectangle(cornerRadius:10))
+        }
+    }
+    @ViewBuilder var pageContent:some View {
+        switch model.page {
+        case "工作台": dashboard
+        case "节点管理": nodes
+        case "订阅管理": subscriptions
+        default: settings
+        }
     }
     var subtitle:String { switch model.page { case "工作台":"选择节点，准备网络并打开 Claude。"; case "节点管理":"管理手动添加及订阅导入的节点。"; case "订阅管理":"更新订阅，失败时保留原有节点。"; case "环境设置":"选择本次会话的代理、客户端和临时环境。"; default:"按时间查看操作结果与恢复状态。" } }
     var dashboard:some View {

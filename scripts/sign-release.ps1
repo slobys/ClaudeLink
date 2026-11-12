@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([switch]$InitializeKey)
+param([switch]$InitializeKey,[switch]$IncludeMac)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 Add-Type -AssemblyName System.Security.Cryptography.ProtectedData
@@ -31,5 +31,18 @@ try{
     $signature=[ClaudeLinkReleaseSigning]::Sign($privateBytes,$payload)
     [IO.File]::WriteAllBytes((Join-Path $artifacts 'update.json'),$payload)
     [IO.File]::WriteAllText((Join-Path $artifacts 'update.json.sig'),[Convert]::ToBase64String($signature),[Text.UTF8Encoding]::new($false))
+    if($IncludeMac){
+        $macSource=[IO.File]::ReadAllText((Join-Path $projectRoot 'src/Launcher.Mac/Updater.swift'))
+        if(-not $macSource.Contains($publicKey)){throw 'Mac trust key differs from the release signing key.'}
+        foreach($architecture in @('arm64','x64')){
+            $macAsset='ClaudeLink-'+$version+'-macos-'+$architecture+'.zip'
+            $macFile=Get-Item -LiteralPath (Join-Path $artifacts $macAsset)
+            $macManifest=[ordered]@{Schema=1;Repository='slobys/ClaudeLink';Version=$version;AssetName=$macAsset;Size=$macFile.Length;Sha256=(Get-FileHash -LiteralPath $macFile.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
+            $macPayload=[Text.UTF8Encoding]::new($false).GetBytes(($macManifest | ConvertTo-Json))
+            $macName='update-macos-'+$architecture+'.json'
+            [IO.File]::WriteAllBytes((Join-Path $artifacts $macName),$macPayload)
+            [IO.File]::WriteAllText((Join-Path $artifacts ($macName+'.sig')),[Convert]::ToBase64String([ClaudeLinkReleaseSigning]::Sign($privateBytes,$macPayload)),[Text.UTF8Encoding]::new($false))
+        }
+    }
     @{Version=$version;SignedManifest='update.json';PrivateKeyPublished=$false} | ConvertTo-Json
 }finally{[Array]::Clear($privateBytes,0,$privateBytes.Length)}

@@ -85,7 +85,7 @@ public static class CheckBrowser
         var list = HtmlEncoder.Default.Encode(LanguageList(language));
         return """
 <!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Claude Link · 语言核对</title>
-<style>body{font:16px/1.7 "Segoe UI","Microsoft YaHei UI",sans-serif;background:#f5f5f0;color:#252a30;margin:40px auto;max-width:760px;padding:24px}main{background:white;border:1px solid #dfe1de;border-radius:16px;padding:32px}h1{font-size:26px}pre{white-space:pre-wrap;background:#f3f4ee;padding:18px;border-radius:8px}a{color:#ad4d35}#result{font-weight:bold}</style>
+<style>body{font:16px/1.7 "Segoe UI","Microsoft YaHei UI",sans-serif;background:#F4F7FB;color:#18283D;margin:40px auto;max-width:760px;padding:24px}main{background:white;border:1px solid #D8E1EC;border-radius:16px;padding:32px}h1{font-size:26px}pre{white-space:pre-wrap;background:#F8FAFC;padding:18px;border-radius:8px}a{color:#2563EB}#result{font-weight:bold}</style>
 <main><h1>当前专用窗口的语言</h1><p>所选语言列表：EXPECTED_LIST</p>
 <p id="result">正在读取浏览器设置…</p><pre id="browser-state"></pre>
 <p>这里显示当前窗口实际提供给网页的语言与时区。网络核对页已在另一个标签打开。</p>
@@ -96,7 +96,7 @@ const state={language:navigator.language,languages:Array.from(navigator.language
 document.getElementById('browser-state').textContent=JSON.stringify(state,null,2);
 const matched=state.language.toLowerCase()===expected.toLowerCase()&&state.languages[0]?.toLowerCase()===expected.toLowerCase();
 document.getElementById('result').textContent=matched?'语言匹配：'+state.language:'语言未匹配，请检查浏览器策略或重新打开专用窗口';
-document.getElementById('result').style.color=matched?'#276140':'#a63e2d';
+document.getElementById('result').style.color=matched?'#067647':'#B42318';
 </script></html>
 """.Replace("EXPECTED_JSON", expected).Replace("EXPECTED_LIST", list);
     }
