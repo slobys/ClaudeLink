@@ -68,11 +68,16 @@ private struct NodeChoice:View {
         let region=NodeRegion.resolve(node,model.settings.Nodes)?.Name ?? "未识别地区"
         return "\(node.Name)，\(region)，\(node.kind)"
     }
+    private var resultValue:String {
+        let result=ProxyChain.invalid(node,model.settings.Nodes) ? "节点失效" : model.latency(node)?.text ?? "未测速"
+        return (model.selectedNode?.Id == node.Id ? "当前选择，" : "未选择，")+result
+    }
     var body:some View {
         Button { model.selectNode(node) } label: { NodeTile(node:node,model:model) }
             .buttonStyle(.plain)
             .disabled(model.busy || model.connected || model.nodeTesting)
             .accessibilityLabel(Text(label))
+            .accessibilityValue(Text(resultValue))
     }
 }
 private struct NodeTile:View {
