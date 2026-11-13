@@ -126,12 +126,12 @@ components:
     backgroundColor: '{colors.Surface}'
     textColor: '{colors.Ink}'
     rounded: '{rounded.card}'
-    padding: 16px 18px
+    padding: 10px 12px
   subscription-card-selected:
     backgroundColor: '{colors.AccentSubtle}'
     textColor: '{colors.Ink}'
     rounded: '{rounded.card}'
-    padding: 16px 18px
+    padding: 10px 12px
   chain-route:
     backgroundColor: '{colors.AccentSubtle}'
     textColor: '{colors.Ink}'
@@ -212,6 +212,8 @@ Mac 验证来源为补齐路径／来源完整 help 的代码提交 `d339fed856c
 
 1.5.0 的订阅扩展核对 MainWindow.xaml、MainWindow.Subscriptions.cs、App.xaml 及 SubscriptionCatalog.swift、SubscriptionTraffic.swift。Windows 证据为 artifacts/ui-final-1.5.0/ 的选中、窄窗、状态与空列表图；Mac 最终双架构 CI 43339872373 的 25 张原生视图及 artifacts/macos-final-arm64-evidence/ui/ 对应样本覆盖静态未知轨道、低余量、到期及空列表。两端独立界面复核均为 ship，不把 CI 扩大为用户真实网络、账户或 VoiceOver 验收。
 
+1.5.1 按用户要求压缩订阅卡片，核对 MainWindow.xaml、MainWindow.Subscriptions.cs 与 SubscriptionCatalog.swift：名称和节点数合并，剩余量和到期同行，更新时间为单行，进度与告警语义保持不变。Windows 原生自绘样本位于 `.impeccable/review/1.5.1/windows/`；Mac 对应样本位于 `artifacts/macos-1.5.1-arm64-evidence/ui/`。Windows 19 项 UI 断言及 Mac 双架构 CI 43343064924 通过，两端独立界面复核均为 ship。常规卡片约为 112 个逻辑单位，不把合成视图或 CI 扩大为用户设备、真实账户或 VoiceOver 验收。
+
 ## Colors
 
 色板以清晰的操作蓝和冷中性色为底，绿色、琥珀色、红色与信息蓝只传达具体结果或反馈。设计面板 sidecar 中的 tonalRamp 为这些色值派生的八级展示色带，不属于运行时颜色令牌；产品仅使用前置颜色表中的规范色值。
@@ -285,7 +287,7 @@ Mac 验证来源为补齐路径／来源完整 help 的代码提交 `d339fed856c
 
 窗口缩小时保留侧栏与内容阅读顺序，长表单及检查结果纵向滚动。WPF 操作组使用 WrapPanel 按可用宽度换行，表格采用弹性列宽；Mac 在声明的最小宽度内保留 HStack 操作组，不虚构移动布局。Mac 自身截图中 1280 × 850 与最小尺寸的证据分别保存在 review 架构目录。
 
-订阅列表使用单列伸展卡片，按名称／节点数、已用量与比例、流量轨道、剩余量／到期／更新时间的顺序阅读。Windows 卡片之间间距为 12、内边距为横向 18／纵向 16；Mac 卡片之间为 16、四周内边距为 18。订阅卡片高度由内容决定，不套用节点网格的固定密度。Windows 操作组位于列表滚动区外；Mac 沿用 RootView 的原生滚动内容，不声称工具栏固定。
+订阅列表使用单列伸展卡片，按名称与节点数、已用量与比例、流量轨道、剩余量与到期及更新时间的顺序阅读。名称与节点数同行，剩余量与到期时间同行，更新时间保留为单行。两端卡片内边距为横向 12／纵向 10；Windows 卡片间距为 8，内部主要间距为 8／6／8，底行的剩余量与到期间隔 14；Mac 卡片间距为 12、内部纵向间距为 6，底行间距为 14。订阅卡片高度仍由内容决定，不套用节点网格的固定高度；WPF 底行剩余量与到期可随空间换行。Windows 操作组位于列表滚动区外；Mac 沿用 RootView 的原生滚动内容，不声称工具栏固定。
 
 节点页按操作及一键测速、搜索及地区／分组筛选与延迟排序、常驻地区和测速说明、卡片网格、数量及测速进度的阅读顺序排列。两端节点网格均按可用宽度每 190 个逻辑单位的预算计算列数，取整后限制为 1–4 列；用户窗口宽度及更宽时保持最多四列，较窄时减少列数。Windows 使用 ListBox／WrapPanel，先从网格宽度扣除系统纵向滚动条宽度和 4，再按 `floor(可用宽度 / 列数) - 8` 设置卡片宽度；Mac 使用 LazyVGrid 的等宽 flexible 列，由实际 `gridWidth` 在出现和宽度变化时重排。卡片间距为 8、内边距为 10，内部内容高度为 70；以名称、地区与来源／路径、协议与状态三行保留全部信息，完整卡片高度较 1.3.2 约再缩短 20%，保持纵向浏览和原有筛选、选择行为。这些密度参数仅适用于节点卡片，普通任务卡片仍使用 22 内边距。
 
@@ -335,11 +337,11 @@ WPF 导航的键盘焦点使用独立 `RoundedFocus`：Accent 边界宽 2、圆�
 
 ### Subscription quota cards
 
-卡片沿用 Surface、Line 的 1 单位边界和圆角 12。名称为 17／Semibold，已用量为 14，比例及剩余量为 13／Semibold；节点数、到期与更新时间为 12，状态标签与“最近更新”标题为 11。名称只占一行，完整内容保留 tooltip／help；已用量和辅助说明随可用空间排布。
+卡片沿用 Surface、Line 的 1 单位边界和圆角 12。名称为 17／Semibold，已用量为 14，比例及剩余量为 13／Semibold；节点数和到期为 12，状态标签和单行更新时间为 11。名称只占一行，完整内容保留 tooltip／help；已用量和辅助说明随可用空间排布。更新时间有值时显示“更新”与日期，无值时只显示“尚未更新”；“最近更新”的含义保留原生提示，不再独占一行标题。
 
 选择使用 AccentSubtle、Accent 边界与独立勾选路径／SF Symbol；不将卡片整片涂成警告色。Windows 悬停改变边界，键盘焦点再叠加 2 单位 Accent 边界，单选状态由原生 ListBox 维护；Mac 保留原生 Button 的键盘反馈。刷新保持存在的选中订阅 ID。未选中时更新选中、编辑与删除禁用；Windows 无订阅时更新全部也禁用。空列表保留添加订阅入口和文字说明。
 
-流量条只在上传、下载与正数总量均可用时表示已用比例，显示范围限制为 0–100%。Windows 轨道高 8、端部圆角 4，Mac 使用原生 ProgressView；总量未知或信息不完整时，两端改为纯灰 Line 轨道，文字保留“暂无比例／剩余流量未知”，不向读屏提供虚假的 0% 进度。剩余量不小于零，超出总量时保留“已超出总量”文字。
+流量条只在上传、下载与正数总量均可用时表示已用比例，显示范围限制为 0–100%。Windows 数值轨道高 6、模板端部圆角 4，未知轨道高 6、圆角 3；Mac 使用原生 ProgressView，未知轨道为高 6 的 Capsule。总量未知或信息不完整时，两端使用纯灰 Line 轨道，文字保留“暂无比例／剩余流量未知”，不向读屏提供虚假的 0% 进度。剩余量不小于零，超出总量时保留“已超出总量”文字。
 
 普通配额使用 Accent；已用达到 80% 或三天内到期时使用 Warning／WarningBg，已过期或配额用尽时使用 Error／ErrorBg。状态标签与进度条保留相同语义，选中底色不能覆盖警告和错误。到期、流量、节点数和最近更新时间分别呈现，服务商未提供的字段保持未知；旧版汇总仅作为有提示的估算，不暗示已经获得精确新数据。
 
