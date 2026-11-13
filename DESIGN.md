@@ -36,6 +36,9 @@ typography:
   session-title:
     fontSize: 21px
     fontWeight: 600
+  subscription-title:
+    fontSize: 17px
+    fontWeight: 600
   section-title-windows:
     fontSize: 17px
     fontWeight: 600
@@ -119,6 +122,16 @@ components:
     textColor: '{colors.Ink}'
     rounded: '{rounded.card}'
     padding: 10px
+  subscription-card:
+    backgroundColor: '{colors.Surface}'
+    textColor: '{colors.Ink}'
+    rounded: '{rounded.card}'
+    padding: 16px 18px
+  subscription-card-selected:
+    backgroundColor: '{colors.AccentSubtle}'
+    textColor: '{colors.Ink}'
+    rounded: '{rounded.card}'
+    padding: 16px 18px
   chain-route:
     backgroundColor: '{colors.AccentSubtle}'
     textColor: '{colors.Ink}'
@@ -197,6 +210,8 @@ Mac 验证来源为补齐路径／来源完整 help 的代码提交 `d339fed856c
 
 1.4.1 是对上述节点流程的局部性能修复：将短超时、有界并发和结果批量回显落实到既有原生界面，颜色、字级、卡片密度与动态可访问值保持不变。Windows 本机完整验证含 57 项核心、16 份官方配置、94 项集成、17 项 UI 与 7 项安装检查；CI `43238417845` 成功。`.impeccable/review/1.4.1/windows/` 中的延迟、运行中、用户宽度、窄窗和空结果图用于核对布局、结果和取消入口；卡片对象复用与选择保持由增量交互断言验证，独立 finish review 为 ship，无 material 项。Mac 两架构 CI `43238417795` 均成功，其中 Apple 芯片证据含 58 项原生、10 项延迟、14 项后台、1 项退出检查及 22 张原生视图；`.impeccable/review/1.4.1/macos/` 的对应五张图用于核对同一界面流程，独立 Mac finish review 完整结论为 ship，无 material 项。24 条唯一模拟线路（一半正常、一半等待超时）的 Windows 网络参数隔离复测为 25.038 秒→3.962 秒，约 6.32 倍；Apple 芯片的同类隔离参数对比为约 5.64 倍。两者分开记录，不把 Windows 比值推广到 Mac 或用户节点。这不是用户真实节点测速、旧版完整界面耗时或帧率实测，不能据此证明真实 Mac、账户或 VoiceOver 已验收。
 
+1.5.0 的订阅扩展核对 MainWindow.xaml、MainWindow.Subscriptions.cs、App.xaml 及 SubscriptionCatalog.swift、SubscriptionTraffic.swift。Windows 证据为 artifacts/ui-final-1.5.0/ 的选中、窄窗、状态与空列表图；Mac 最终双架构 CI 43339872373 的 25 张原生视图及 artifacts/macos-final-arm64-evidence/ui/ 对应样本覆盖静态未知轨道、低余量、到期及空列表。两端独立界面复核均为 ship，不把 CI 扩大为用户真实网络、账户或 VoiceOver 验收。
+
 ## Colors
 
 色板以清晰的操作蓝和冷中性色为底，绿色、琥珀色、红色与信息蓝只传达具体结果或反馈。设计面板 sidecar 中的 tonalRamp 为这些色值派生的八级展示色带，不属于运行时颜色令牌；产品仅使用前置颜色表中的规范色值。
@@ -244,6 +259,7 @@ Mac 验证来源为补齐路径／来源完整 help 的代码提交 `d339fed856c
 | 页面标题 | 26 / Semibold | 28 / Bold | 当前页面 |
 | 会话卡片标题 | 21 / Semibold | 21 / Semibold | 会话准备表单 |
 | 常规分区标题 | 17 / Semibold | 19 / Semibold | 设置或列表分区；Windows 检查标题为 16 |
+| 订阅名称 | 17 / Semibold | 17 / Semibold | 卡片首行；单行省略，完整名称保留提示 |
 | 正文 | 14 / Regular | 14 / Regular | 标签、结果说明、控件 |
 | 导航 | 15 | 15 | 当前项为 Semibold |
 | 辅助说明 | 13；检查细节 12 | 12 | 非主要结果和提示 |
@@ -268,6 +284,8 @@ Mac 验证来源为补齐路径／来源完整 help 的代码提交 `d339fed856c
 | 内容组间距 | 主要为 16 / 20 | 主要为 16 / 18 / 20 |
 
 窗口缩小时保留侧栏与内容阅读顺序，长表单及检查结果纵向滚动。WPF 操作组使用 WrapPanel 按可用宽度换行，表格采用弹性列宽；Mac 在声明的最小宽度内保留 HStack 操作组，不虚构移动布局。Mac 自身截图中 1280 × 850 与最小尺寸的证据分别保存在 review 架构目录。
+
+订阅列表使用单列伸展卡片，按名称／节点数、已用量与比例、流量轨道、剩余量／到期／更新时间的顺序阅读。Windows 卡片之间间距为 12、内边距为横向 18／纵向 16；Mac 卡片之间为 16、四周内边距为 18。订阅卡片高度由内容决定，不套用节点网格的固定密度。Windows 操作组位于列表滚动区外；Mac 沿用 RootView 的原生滚动内容，不声称工具栏固定。
 
 节点页按操作及一键测速、搜索及地区／分组筛选与延迟排序、常驻地区和测速说明、卡片网格、数量及测速进度的阅读顺序排列。两端节点网格均按可用宽度每 190 个逻辑单位的预算计算列数，取整后限制为 1–4 列；用户窗口宽度及更宽时保持最多四列，较窄时减少列数。Windows 使用 ListBox／WrapPanel，先从网格宽度扣除系统纵向滚动条宽度和 4，再按 `floor(可用宽度 / 列数) - 8` 设置卡片宽度；Mac 使用 LazyVGrid 的等宽 flexible 列，由实际 `gridWidth` 在出现和宽度变化时重排。卡片间距为 8、内边距为 10，内部内容高度为 70；以名称、地区与来源／路径、协议与状态三行保留全部信息，完整卡片高度较 1.3.2 约再缩短 20%，保持纵向浏览和原有筛选、选择行为。这些密度参数仅适用于节点卡片，普通任务卡片仍使用 22 内边距。
 
@@ -309,9 +327,25 @@ Mac 使用原生 roundedBorder TextField、Picker、Toggle 与 TextEditor。Inpu
 
 两端五页保持同一顺序：工作台、节点管理、订阅管理、环境设置、运行记录。默认文字为 Muted，当前项使用 Accent、AccentSubtle 与 Semibold；WPF 为文字按钮，Mac 在文字前使用 SF Symbols。Mac 不用网页导航壳替换系统窗口。
 
+WPF 导航的键盘焦点使用独立 `RoundedFocus`：Accent 边界宽 2、圆角 9、外距 2。焦点提示与当前导航的浅蓝底分别保留，不通过隐藏焦点来改善选中外观。
+
 ### Cards / Lists
 
-普通 Card 为 Surface、Line 细边界、圆角 12、内边距 22。状态摘要卡可减少内边距，保持相同材料。Windows 订阅仍使用原生只读 DataGrid：行高 48、全行单选、无网格线、SurfaceAlt 表头与交替行、AccentSubtle 选中行。Mac 订阅使用卡片内的横向记录和 Divider，保留原生行内按钮。节点管理使用下述地区卡片；没有记录时显示文字引导，不展示假的节点或成功统计。
+普通 Card 为 Surface、Line 细边界、圆角 12、内边距 22。状态摘要卡可减少内边距，保持相同材料。订阅管理使用下述流量卡片，Windows 保留原生 ListBox 单选，Mac 以原生 plain Button 选择卡片，动作集中于上方操作组。节点管理使用下述地区卡片；没有记录时显示文字引导，不展示假的节点或成功统计。
+
+### Subscription quota cards
+
+卡片沿用 Surface、Line 的 1 单位边界和圆角 12。名称为 17／Semibold，已用量为 14，比例及剩余量为 13／Semibold；节点数、到期与更新时间为 12，状态标签与“最近更新”标题为 11。名称只占一行，完整内容保留 tooltip／help；已用量和辅助说明随可用空间排布。
+
+选择使用 AccentSubtle、Accent 边界与独立勾选路径／SF Symbol；不将卡片整片涂成警告色。Windows 悬停改变边界，键盘焦点再叠加 2 单位 Accent 边界，单选状态由原生 ListBox 维护；Mac 保留原生 Button 的键盘反馈。刷新保持存在的选中订阅 ID。未选中时更新选中、编辑与删除禁用；Windows 无订阅时更新全部也禁用。空列表保留添加订阅入口和文字说明。
+
+流量条只在上传、下载与正数总量均可用时表示已用比例，显示范围限制为 0–100%。Windows 轨道高 8、端部圆角 4，Mac 使用原生 ProgressView；总量未知或信息不完整时，两端改为纯灰 Line 轨道，文字保留“暂无比例／剩余流量未知”，不向读屏提供虚假的 0% 进度。剩余量不小于零，超出总量时保留“已超出总量”文字。
+
+普通配额使用 Accent；已用达到 80% 或三天内到期时使用 Warning／WarningBg，已过期或配额用尽时使用 Error／ErrorBg。状态标签与进度条保留相同语义，选中底色不能覆盖警告和错误。到期、流量、节点数和最近更新时间分别呈现，服务商未提供的字段保持未知；旧版汇总仅作为有提示的估算，不暗示已经获得精确新数据。
+
+Windows 行的可访问名称包含名称、节点数、已用量、剩余量、到期和状态；Mac 卡片名称包含名称、已用量、剩余量和到期，并通过 accessibilityValue 表达选择。两端数值进度控件都有“订阅流量使用比例”标签；未知轨道是装饰性结构，不作为可操作控件。源码具备这些属性不等于已完成用户设备读屏验收。
+
+**The 配额事实 Rule.** 进度表示服务商给出的流量比例；未知不表示零或无限，选中不表示可连接，配额不表示 Claude 账户额度。
 
 ### Node region cards
 
@@ -380,6 +414,8 @@ Windows 日志使用只读 RichTextBox／FlowDocument，内边距 18；Mac 使�
 - **Do** 让节点网格按 190 宽度预算保持最多四列，以 8 间距、10 内边距、70 内容高度和 14／Semibold 名称提高密度，按三行同时保留旗帜、地区、来源或路径、协议、状态和完整内容提示。
 - **Do** 在测速期间保留取消和进度，将无数值结果排在有效延迟后面，排序后保持当前选择。
 - **Do** 以有界并发、短超时及 100 ms 批量回显改善测速等待，复用已有卡片并在完成／取消时清空待回显结果。
+- **Do** 在订阅卡片中同时保留流量比例、剩余量、到期及更新时间；用浅蓝底和勾选表达选择，独立保留警告颜色与键盘焦点。
+- **Do** 在没有可选订阅时禁用依赖选择的操作，同时保留添加入口和未知信息说明。
 - **Do** 在链路编辑与工作台显示本机、入口、最终出口、目标网站的顺序，并将校验错误留在表单内。
 
 ### Don't:
@@ -393,5 +429,6 @@ Windows 日志使用只读 RichTextBox／FlowDocument，内边距 18；Mac 使�
 - **Don't** 把国旗、名称推断地区或“当前选择”当成实测出口、住宅 IP 或连接成功。
 - **Don't** 把较低延迟、绿色测速徽章或排序首位解释为下载带宽、Claude 账户可用性或封禁风险结论。
 - **Don't** 在链路缺失或入口失败时替换出口、旁路直连，或把 HTTP 出口描述为已验证支持 UDP。
+- **Don't** 把未知订阅流量画成 0% 或无限流量，也不要把服务商配额当成节点连通性、Claude 账户额度或安全结论。
 
 未提升为系统规则的遗留项：Windows 标志下的 `NETWORK LAUNCHER` 小号英文眉题仅记录为本版残留排法，不推广成新页面的标题模式；未消费的 AccentHover 不作为交互规范。此次仅文档化，未修改这些产品代码。

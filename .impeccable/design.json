@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-12T14:42:51Z",
+  "generatedAt": "2026-11-13T00:52:55Z",
   "title": "Design System: Claude Link",
   "extensions": {
     "colorMeta": {
@@ -387,6 +387,10 @@
       "status-label": {
         "displayName": "status-label",
         "purpose": "已构建原生界面的 status-label 角色；Windows DIP / macOS point，不是截图像素。"
+      },
+      "subscription-title": {
+        "displayName": "订阅名称",
+        "purpose": "订阅卡片名称采用 17 / Semibold；Windows DIP 与 macOS point，长名称保留完整原生提示。"
       }
     },
     "shadows": [],
@@ -505,6 +509,14 @@
       "description": "WPF 链路表单材料预览：中性初始名称、入口／最终出口、显式两跳方向、TCP 限制、内联校验与取消／保存。Mac 使用原生 sheet 和 Picker；此静态示例不执行保存或网络。",
       "html": "<section class=\"ds-chain\" role=\"dialog\" aria-label=\"创建链式代理\"><h2>创建链式代理</h2><p class=\"ds-chain-intro\">先连接入口节点，再通过住宅 IP 或其他节点访问目标网站。</p><label>链路名称<input value=\"新建双跳链路\" maxlength=\"120\"></label><label>入口节点<select><option>示例入口</option></select><small>负责先连通出口，可选择机场或其他可用节点。</small></label><label>最终出口<select><option>选择出口</option><option>示例出口</option></select><small>目标网站看到的是出口 IP；住宅代理通常使用 HTTP / SOCKS。</small></label><div class=\"ds-chain-route\">本机 → 示例入口 → 选择出口 → 目标网站</div><p class=\"ds-chain-note\">HTTP 出口用于网页和 API 等 TCP 流量；UDP 需要节点额外支持。</p><p class=\"ds-chain-error\" role=\"status\">请选择入口节点和最终出口。</p><footer><button type=\"button\">取消</button><button class=\"ds-chain-save\" type=\"button\">保存链式代理</button></footer></section>",
       "css": ".ds-chain {box-sizing:border-box;font-family:\"Segoe UI\",\"Microsoft YaHei UI\",system-ui;width:650px;max-width:100%;color:#18283D;background:#FFFFFF;padding:28px;font-size:14px;} .ds-chain h2 {margin:0;font-size:24px;font-weight:600;} .ds-chain-intro {color:#5C6D82;margin:8px 0 22px;line-height:22px;} .ds-chain label {display:flex;flex-direction:column;font-weight:600;gap:8px;margin-bottom:18px;} .ds-chain input,.ds-chain select {box-sizing:border-box;font:inherit;font-weight:400;color:#18283D;background:#FFFFFF;border:1px solid #D8E1EC;border-radius:8px;padding:9px 12px;min-height:40px;} .ds-chain input:focus-visible,.ds-chain select:focus-visible {outline:2px solid #2563EB;outline-offset:1px;} .ds-chain small {font-size:13px;font-weight:400;color:#5C6D82;line-height:20px;} .ds-chain-route {background:#EAF1FF;border-radius:10px;padding:14px;line-height:24px;overflow-wrap:anywhere;} .ds-chain-note {color:#5C6D82;font-size:13px;margin:10px 0 0;line-height:20px;} .ds-chain-error {color:#B42318;margin:12px 0 0;line-height:22px;} .ds-chain footer {display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;margin-top:20px;} .ds-chain button {box-sizing:border-box;font:inherit;min-height:40px;padding:10px 16px;border:1px solid #D8E1EC;border-radius:8px;background:#F8FAFC;color:#18283D;} .ds-chain .ds-chain-save {background:#2563EB;color:#FFFFFF;border-color:#2563EB;font-weight:600;} .ds-chain button:hover {opacity:.82;} .ds-chain button:active {opacity:.68;} .ds-chain button:focus-visible {outline:2px solid #2563EB;outline-offset:2px;} .ds-chain button:disabled {opacity:.42;}"
+    },
+    {
+      "name": "订阅流量卡片 · 选中与余量提醒",
+      "kind": "card",
+      "refersTo": "subscription-card-selected",
+      "description": "WPF 订阅卡片材料的隔离预览：名称、节点数、已用比例、剩余量、到期和更新时间，浅蓝选中与橙色余量提示独立。Mac 使用原生 Button 与 ProgressView。示例不是用户配额；未知值在产品中使用纯灰装饰轨道，不提供虚假 0%。",
+      "html": "<button type=\"button\" class=\"ds-subscription\" aria-pressed=\"true\" aria-label=\"示例订阅，9 个节点，已用 90 GB，总量 100 GB，剩余 10 GB，2030-03-18 到期，余量较低，已选\"><span class=\"ds-subscription-head\"><span><strong class=\"ds-subscription-name\">示例订阅</strong><span class=\"ds-subscription-meta\">9 个节点</span></span><span class=\"ds-subscription-state\">余量较低</span><svg class=\"ds-subscription-check\" width=\"18\" height=\"18\" viewBox=\"0 0 18 18\" fill=\"none\" aria-hidden=\"true\"><path d=\"M2 9L7 14L16 3\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span><span class=\"ds-subscription-usage\"><span>已用 90 GB / 共 100 GB</span><strong>90%</strong></span><span class=\"ds-subscription-track\" role=\"progressbar\" aria-label=\"订阅流量使用比例\" aria-valuemin=\"0\" aria-valuemax=\"100\" aria-valuenow=\"90\"><span></span></span><span class=\"ds-subscription-bottom\"><span><strong>剩余 10 GB</strong><span class=\"ds-subscription-meta\">2030-03-18 到期</span></span><span class=\"ds-subscription-updated\"><span>最近更新</span><span class=\"ds-subscription-meta\">11-13 08:00</span></span></span></button>",
+      "css": ".ds-subscription {display:block;width:560px;max-width:100%;font-family:\"Segoe UI\",\"Microsoft YaHei UI\",system-ui;font-size:14px;text-align:left;color:#18283D;background:#EAF1FF;border:1px solid #2563EB;border-radius:12px;padding:16px 18px;cursor:pointer;} .ds-subscription:hover {border-color:#2563EB;} .ds-subscription:focus-visible {outline:2px solid #2563EB;outline-offset:-2px;} .ds-subscription-head {display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;} .ds-subscription-head>span:first-child {min-width:0;flex:1;} .ds-subscription-name {display:block;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} .ds-subscription-meta {display:block;margin-top:5px;font-size:12px;font-weight:400;color:#5C6D82;} .ds-subscription-state {align-self:center;font-size:11px;font-weight:600;color:#92400E;background:#FFFAEB;border-radius:6px;padding:4px 8px;} .ds-subscription-check {align-self:center;flex:none;color:#2563EB;} .ds-subscription-usage {display:flex;justify-content:space-between;gap:12px;margin-bottom:8px;} .ds-subscription-usage strong {font-size:13px;font-weight:600;} .ds-subscription-track {display:block;height:8px;border-radius:4px;background:#D8E1EC;overflow:hidden;} .ds-subscription-track>span {display:block;width:90%;height:100%;border-radius:4px;background:#92400E;} .ds-subscription-bottom {display:flex;justify-content:space-between;gap:20px;margin-top:10px;font-size:13px;} .ds-subscription-bottom strong {font-weight:600;} .ds-subscription-updated {align-self:flex-end;text-align:right;font-size:11px;color:#5C6D82;}"
     }
   ],
   "narrative": {
@@ -537,6 +549,11 @@
         "name": "平面分层",
         "body": "工作面依靠背景色、细边界与间距形成层级；不为卡片添加装饰性阴影。系统窗口与弹层的原生阴影由操作系统管理。",
         "section": "elevation"
+      },
+      {
+        "name": "配额事实",
+        "body": "进度表示服务商给出的流量比例；未知不表示零或无限，选中不表示可连接，配额不表示 Claude 账户额度。",
+        "section": "components"
       }
     ],
     "dos": [
@@ -551,7 +568,9 @@
       "Do 让节点网格按 190 宽度预算保持最多四列，以 8 间距、10 内边距、70 内容高度和 14／Semibold 名称提高密度，按三行同时保留旗帜、地区、来源或路径、协议、状态和完整内容提示。",
       "Do 在链路编辑与工作台显示本机、入口、最终出口、目标网站的顺序，并将校验错误留在表单内。",
       "Do 在测速期间保留取消和进度，将无数值结果排在有效延迟后面，排序后保持当前选择。",
-      "Do 以有界并发、短超时及 100 ms 批量回显改善测速等待，复用已有卡片并在完成／取消时清空待回显结果。"
+      "Do 以有界并发、短超时及 100 ms 批量回显改善测速等待，复用已有卡片并在完成／取消时清空待回显结果。",
+      "Do 在订阅卡片中同时保留流量比例、剩余量、到期及更新时间；用浅蓝底和勾选表达选择，独立保留警告颜色与键盘焦点。",
+      "Do 在没有可选订阅时禁用依赖选择的操作，同时保留添加入口和未知信息说明。"
     ],
     "donts": [
       "Don't 把 API 401、网页 403 或代理启动合并成账户已获授权的结论。",
@@ -562,7 +581,8 @@
       "Don't 把界面示例截图当作用户网络、登录、键盘操作或管理员授权已经验证的证据。",
       "Don't 把国旗、名称推断地区或“当前选择”当成实测出口、住宅 IP 或连接成功。",
       "Don't 在链路缺失或入口失败时替换出口、旁路直连，或把 HTTP 出口描述为已验证支持 UDP。",
-      "Don't 把较低延迟、绿色测速徽章或排序首位解释为下载带宽、Claude 账户可用性或封禁风险结论。"
+      "Don't 把较低延迟、绿色测速徽章或排序首位解释为下载带宽、Claude 账户可用性或封禁风险结论。",
+      "Don't 把未知订阅流量画成 0% 或无限流量，也不要把服务商配额当成节点连通性、Claude 账户额度或安全结论。"
     ]
   }
 }
