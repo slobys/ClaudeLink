@@ -509,6 +509,11 @@ public partial class MainWindow : Window
             new() { Label = "普通出口", Value = "198.51.100.24", Detail = "界面示例数据，不代表真实网络检测结果", State = "pass" },
             new() { Label = "Anthropic API", Value = "HTTP 401 · HTTPS 可达", Detail = "未提供认证，账户授权仍未验证", State = "pass" },
             new() { Label = "Claude 网页", Value = "HTTP 403", Detail = "示例：网页请求被拒绝，与 API 连通性分别显示", State = "warn" },
+            new() { Label = "登录跳转域名", Value = "HTTP 200", Detail = "claude.com · 界面示例，不验证账户登录", State = "pass" },
+            new() { Label = "OAuth 服务域名", Value = "HTTP 200", Detail = "platform.claude.com · 界面示例，未发送令牌", State = "pass" },
+            new() { Label = "HTTPS / TLS 校验", Value = "核心域名已完成握手", Detail = "界面示例 · 403 不等于证书失败或账户封禁", State = "pass" },
+            new() { Label = "账户、套餐与额度", Value = "未验证", Detail = "由官方客户端确认，不能从 HTTP 401 推断账户授权", State = "pending" },
+            new() { Label = "出口地区", Value = "US · 界面示例", Detail = "第三方 IP 定位，不判定实际使用资格", State = "info" },
             new() { Label = "连接失败示例", Value = "DNS 解析失败", Detail = "示例：请更换节点或检查服务器域名", State = "fail" },
             new() { Label = "系统时区", Value = "尚未检测", Detail = "无可靠检测结果时保持未验证", State = "pending" }
         };

@@ -9,7 +9,7 @@ public sealed class CheckResult
     public string Value { get; set; } = "";
     public string Detail { get; set; } = "";
     public string State { get; set; } = "pending";
-    public string StateLabel => State switch { "pass" => "通过", "fail" => "失败", "warn" => "注意", "info" => "参考", _ => "待检测" };
+    public string StateLabel => State switch { "pass" => "通过", "fail" => "失败", "warn" => "注意", "info" => "参考", _ => Value=="未验证" ? "未验证" : "待检测" };
     public string Symbol => State switch { "pass" => "✓", "fail" => "×", "warn" => "!", _ => "·" };
 }
 public sealed class NetworkReport
