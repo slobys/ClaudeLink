@@ -195,8 +195,8 @@ public static class UiSmoke
         if(((MainWindow.SubscriptionRow)subscriptions.SelectedItem).Subscription.Id!=subscriptionRows[1].Subscription.Id)throw new InvalidOperationException("Subscription refresh lost selection.");
         subscriptions.ScrollIntoView(subscriptions.Items[3]);await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
         Capture(window,Path.Combine(directory,"subscriptions-states.png"));
-        var originalItems=subscriptions.ItemsSource;subscriptions.ItemsSource=Array.Empty<MainWindow.SubscriptionRow>();((TextBlock)window.FindName("SubscriptionsEmpty")).Visibility=Visibility.Visible;
-        await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);await Task.Delay(150);Capture(window,Path.Combine(directory,"subscriptions-empty.png"));subscriptions.ItemsSource=originalItems;((TextBlock)window.FindName("SubscriptionsEmpty")).Visibility=Visibility.Collapsed;
+        var originalSubscriptions=subscriptionRows.Select(x=>x.Subscription).ToList();window.PreviewSubscriptions([]);
+        await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);await Task.Delay(150);Capture(window,Path.Combine(directory,"subscriptions-empty.png"));window.PreviewSubscriptions(originalSubscriptions);
         assertions.Add("Subscription cards expose usage, remaining and expiry, distinguish low quota, unknown and expired, and preserve selection after refresh");
         window.Width=1000;window.Height=740;subscriptions.ScrollIntoView(subscriptions.Items[0]);await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);Capture(window,Path.Combine(directory,"subscriptions-small.png"));window.Width=1280;window.Height=850;
         var fullWidth=window.Width;
