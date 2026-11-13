@@ -12,12 +12,6 @@ public partial class MainWindow
         SubscriptionsGrid.SelectedItem=rows.FirstOrDefault(x=>x.Subscription.Id==selected) ?? rows.FirstOrDefault();
         SubscriptionCountText.Text=$"{rows.Count} 个订阅 · 选中后可更新、编辑或删除";
     }
-    internal void PreviewSubscriptions(IEnumerable<Subscription> items)
-    {
-        if(!smoke)throw new InvalidOperationException("Preview requires isolated UI test mode.");
-        settings.Subscriptions=items.ToList();RefreshSubscriptions();
-        SubscriptionsEmpty.Visibility=settings.Subscriptions.Count==0 ? Visibility.Visible : Visibility.Collapsed;
-    }
     public sealed class SubscriptionRow(Subscription subscription,int count)
     {
         public Subscription Subscription { get; }=subscription;

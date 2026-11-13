@@ -43,6 +43,7 @@ public partial class App : Application
                 BrandAssets.Export(e.Args[1]); Shutdown(); return;
             }
             var smoke = e.Args.Length == 2 && e.Args[0] == "--smoke-test";
+            if(smoke)System.Windows.Media.RenderOptions.ProcessRenderMode=System.Windows.Interop.RenderMode.SoftwareOnly;
             if (smoke)
                 AppPaths.Root = Path.Combine(AppPaths.Root, "ui-tests", Guid.NewGuid().ToString("N"));
             if (!smoke)

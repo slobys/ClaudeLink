@@ -214,6 +214,7 @@
          <StackPanel><TextBlock Text="{Binding Name}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/><TextBlock Text="{Binding NodesText}" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,5,0,0"/></StackPanel>
         </DockPanel>
         <DockPanel Grid.Row="1" Margin="0,0,0,8"><TextBlock Text="{Binding Traffic.PercentText}" DockPanel.Dock="Right" FontSize="13" FontWeight="SemiBold"/><TextBlock Text="{Binding Traffic.UsedText}" FontSize="14" TextWrapping="Wrap" ToolTip="{Binding Traffic.Hint}"/></DockPanel>
+        <Border x:Name="UsageUnknownTrack" Grid.Row="2" Height="8" CornerRadius="4" Background="{StaticResource Line}" Visibility="Collapsed"/>
         <ProgressBar x:Name="UsageProgress" Grid.Row="2" Minimum="0" Maximum="100" Value="{Binding Traffic.Percent,Mode=OneWay}" Height="8" BorderThickness="0" Foreground="{StaticResource Accent}" Background="{StaticResource Line}" ToolTip="{Binding Traffic.Hint}" AutomationProperties.Name="订阅流量使用比例">
          <ProgressBar.Template><ControlTemplate TargetType="ProgressBar"><Grid x:Name="PART_Track" ClipToBounds="True"><Border CornerRadius="4" Background="{TemplateBinding Background}"/><Border x:Name="PART_Indicator" HorizontalAlignment="Left" CornerRadius="4" Background="{TemplateBinding Foreground}"/></Grid></ControlTemplate></ProgressBar.Template>
         </ProgressBar>
@@ -222,6 +223,7 @@
          <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Bottom"><TextBlock Text="最近更新" FontSize="11" Foreground="{StaticResource Muted}" HorizontalAlignment="Right"/><TextBlock Text="{Binding Updated}" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,5,0,0" HorizontalAlignment="Right"/></StackPanel>
         </Grid>
        </Grid><DataTemplate.Triggers>
+        <DataTrigger Binding="{Binding Traffic.HasQuota}" Value="False"><Setter TargetName="UsageProgress" Property="Visibility" Value="Collapsed"/><Setter TargetName="UsageUnknownTrack" Property="Visibility" Value="Visible"/></DataTrigger>
         <DataTrigger Binding="{Binding IsSelected,RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True"><Setter TargetName="SubscriptionChosen" Property="Visibility" Value="Visible"/></DataTrigger>
         <DataTrigger Binding="{Binding Traffic.Tone}" Value="Accent"><Setter TargetName="UsageState" Property="Background" Value="{StaticResource AccentSubtle}"/><Setter TargetName="UsageStateText" Property="Foreground" Value="{StaticResource Accent}"/></DataTrigger>
         <DataTrigger Binding="{Binding Traffic.Tone}" Value="Warning"><Setter TargetName="UsageState" Property="Background" Value="{StaticResource WarningBg}"/><Setter TargetName="UsageStateText" Property="Foreground" Value="{StaticResource Warning}"/><Setter TargetName="UsageProgress" Property="Foreground" Value="{StaticResource Warning}"/></DataTrigger>

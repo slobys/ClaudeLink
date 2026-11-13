@@ -38,7 +38,11 @@ private struct SubscriptionTile:View {
                 if selected {Image(systemName:"checkmark").foregroundStyle(Palette.color("Accent")).accessibilityHidden(true)}
             }
             HStack {Text(traffic.usedText).font(.system(size:14));Spacer();Text(traffic.percentText).font(.system(size:13,weight:.semibold))}.help(traffic.hint)
-            ProgressView(value:traffic.percent,total:100).tint(Palette.color(traffic.tone)).accessibilityLabel("订阅流量使用比例").help(traffic.hint)
+            if traffic.hasQuota {
+                ProgressView(value:traffic.percent,total:100).tint(Palette.color(traffic.tone)).accessibilityLabel("订阅流量使用比例").help(traffic.hint)
+            } else {
+                Capsule().fill(Palette.color("Line")).frame(height:6).accessibilityHidden(true)
+            }
             HStack(alignment:.bottom) {
                 VStack(alignment:.leading,spacing:5) {Text(traffic.remainingText).font(.system(size:13,weight:.semibold));Text(traffic.expiryText).font(.system(size:12)).foregroundStyle(Palette.color("Muted"))}
                 Spacer()

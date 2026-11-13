@@ -195,8 +195,9 @@ public static class UiSmoke
         if(((MainWindow.SubscriptionRow)subscriptions.SelectedItem).Subscription.Id!=subscriptionRows[1].Subscription.Id)throw new InvalidOperationException("Subscription refresh lost selection.");
         subscriptions.ScrollIntoView(subscriptions.Items[3]);await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
         Capture(window,Path.Combine(directory,"subscriptions-states.png"));
-        var originalSubscriptions=subscriptionRows.Select(x=>x.Subscription).ToList();window.PreviewSubscriptions([]);
-        await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);await Task.Delay(150);Capture(window,Path.Combine(directory,"subscriptions-empty.png"));window.PreviewSubscriptions(originalSubscriptions);
+        var emptyWindow=new MainWindow(new LauncherSettings { ProjectDirectory=@"C:\Projects\my-project" },true) {Owner=window,Width=window.Width,Height=window.Height};
+        emptyWindow.Navigate("Subscriptions");emptyWindow.Show();
+        await emptyWindow.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);await Task.Delay(150);Capture(emptyWindow,Path.Combine(directory,"subscriptions-empty.png"),true);emptyWindow.CloseForSmoke();
         assertions.Add("Subscription cards expose usage, remaining and expiry, distinguish low quota, unknown and expired, and preserve selection after refresh");
         window.Width=1000;window.Height=740;subscriptions.ScrollIntoView(subscriptions.Items[0]);await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);Capture(window,Path.Combine(directory,"subscriptions-small.png"));window.Width=1280;window.Height=850;
         var fullWidth=window.Width;
@@ -268,11 +269,17 @@ public static class UiSmoke
             foreach (var nested in Descendants<T>(child)) yield return nested;
         }
     }
-    private static void Capture(Window window, string path)
+    private static void Capture(Window window, string path, bool useVisualBrush=false)
     {
         window.UpdateLayout();
         window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
         var content = (FrameworkElement)window.Content;
+        // Force a complete retained-view redraw; unchanged subtrees may otherwise
+        // be omitted by WPF's render cache during rapid fixture state changes.
+        content.InvalidateVisual();
+        foreach(var element in Descendants<UIElement>(content))element.InvalidateVisual();
+        window.UpdateLayout();
+        window.Dispatcher.Invoke(()=>{},DispatcherPriority.Render);
         var dpi = VisualTreeHelper.GetDpi(content);
         var width = content.ActualWidth + content.Margin.Left + content.Margin.Right;
         var height = content.ActualHeight + content.Margin.Top + content.Margin.Bottom;
@@ -285,7 +292,7 @@ public static class UiSmoke
             context.DrawRectangle(window.Background, null, new Rect(0, 0, width + 1, height + 1));
             context.DrawRectangle(new VisualBrush(content) { Stretch = Stretch.Fill, ViewboxUnits=BrushMappingMode.Absolute, Viewbox=new Rect(0,0,content.ActualWidth,content.ActualHeight) }, null, new Rect(content.Margin.Left, content.Margin.Top, content.ActualWidth, content.ActualHeight));
         }
-        if(window is MainWindow) bitmap.Render(content);
+        if(window is MainWindow && !useVisualBrush)bitmap.Render(content);
         else bitmap.Render(drawing);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using var file = File.Create(path); encoder.Save(file);
