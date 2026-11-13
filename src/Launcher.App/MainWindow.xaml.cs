@@ -100,7 +100,7 @@ public partial class MainWindow : Window
         NodeCombo.ItemsSource = null; NodeCombo.ItemsSource = settings.Nodes; NodeCombo.SelectedItem = selected;
         RefreshNodeFilters(); RefreshNodeCards();
         RefreshChainPreview();
-        SubscriptionsGrid.ItemsSource = settings.Subscriptions.Select(x => new SubscriptionRow(x, settings.Nodes.Count(n => n.GroupId == x.Id))).ToList();
+        RefreshSubscriptions();
         SubscriptionsEmpty.Visibility = settings.Subscriptions.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         refreshing = false;
     }
@@ -264,8 +264,8 @@ public partial class MainWindow : Window
         ExitMetric.Foreground = (Brush)FindResource(report.Country.Length > 0 ? "Success" : "Pending");
         var reasons = report.BlockingReasons(settings.StrictChecks);
         CheckSummary.Text = settings.StrictChecks
-            ? report.StrictReady ? "严格预检通过。账户登录与授权仍由 Claude Code 处理。"
-                : (report.BasicReady ? "API 基础网络可达；严格预检未通过：" : "严格预检未通过：") + string.Join("；", reasons)
+            ? report.StrictReady ? "自定义严格预检通过。账户登录与授权仍由 Claude Code 处理。"
+                : (report.BasicReady ? "API 基础网络可达；自定义严格预检未通过：" : "自定义严格预检未通过：") + string.Join("；", reasons)
             : report.BasicReady ? "基础网络可达。账户授权未验证；其他检查结果供核对。" : "基础检测未通过：" + string.Join("；", reasons);
         ProgressText.Text = "检测完成";
         if (session.DirectoryPath is { } path) AppPaths.WriteJson(Path.Combine(path, "network-report.json"), report);
@@ -424,8 +424,8 @@ public partial class MainWindow : Window
     {
         if (session.Connected)
             throw new IOException("此订阅的节点正在使用，请先断开，再更新该订阅。");
-        var (parsed, usage) = await NetworkServices.DownloadSubscriptionAsync(subscription.Url, session.Connected ? session.Port : null);
-        SubscriptionMerge.Replace(settings, subscription, parsed); subscription.Usage = usage;
+        var (parsed, usage, traffic) = await NetworkServices.DownloadSubscriptionAsync(subscription.Url, session.Connected ? session.Port : null);
+        SubscriptionMerge.Replace(settings, subscription, parsed); subscription.Usage = usage; subscription.Traffic = traffic;
         store.Save(settings); RefreshLists();
         Log($"订阅更新完成：{parsed.Nodes.Count} 个节点，{parsed.Warnings.Count} 个条目未支持。");
         StatusText.Text = $"订阅已更新：{parsed.Nodes.Count} 个节点";
@@ -501,6 +501,7 @@ public partial class MainWindow : Window
         }
         try { SaveUISettings(); } catch { }
     }
+    private void NetworkRequirements_Click(object sender, RoutedEventArgs e) => Process.Start(new ProcessStartInfo(NetworkServices.RequirementsUrl) { UseShellExecute = true });
     public void CloseForSmoke() { allowClose = true; Close(); }
     public void FillSmokeReport()
     {
@@ -518,10 +519,5 @@ public partial class MainWindow : Window
         Log("界面示例：节点连接失败，请检查服务器配置。", LogKind.Error);
     }
     public sealed record BrowserChoice(string Id, string Label);
-    public sealed record SubscriptionRow(Subscription Subscription, int Count)
-    {
-        public string Name => Subscription.Name;
-        public string Updated => Subscription.UpdatedAt?.ToLocalTime().ToString("MM-dd HH:mm") ?? "尚未更新";
-        public string Usage => Subscription.Usage ?? "未提供";
-    }
+
 }

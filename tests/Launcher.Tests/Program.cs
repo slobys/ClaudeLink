@@ -6,6 +6,18 @@ var checks = new List<string>();
 var output = args.Length > 0 ? Path.GetFullPath(args[0]) : Path.GetFullPath("artifacts/test-configs");
 Directory.CreateDirectory(output);
 void Assert(bool value, string name) { if (!value) throw new Exception("FAIL: " + name); checks.Add(name); Console.WriteLine("PASS " + name); }
+var quota=SubscriptionTraffic.Parse("upload=1073741824; download=3221225472; total=10737418240; expire=1900000000")!;
+Assert(quota.HasQuota && quota.Percent==40 && quota.RemainingText=="剩余 6 GB", "Subscription quota preserves byte precision and remaining usage");
+Assert(SubscriptionTraffic.Parse(null)==null && SubscriptionTraffic.Parse("no-fields")==null, "Missing subscription metadata stays unknown");
+Assert(!SubscriptionTraffic.Parse("upload=0; total=100")!.HasQuota && !SubscriptionTraffic.Parse("upload=0; download=0; total=0")!.HasQuota,"Incomplete or zero subscription totals never claim unlimited quota");
+Assert(SubscriptionTraffic.Parse("upload=-1; download=bad; total=99999999999999999999")==null,"Malformed negative and overflowing subscription fields are rejected safely");
+Assert(SubscriptionTraffic.Parse("UPLOAD=0; download=40; download=80; total=100")!.Tone=="Warning","Subscription headers accept casing and duplicate valid values with low-quota warning");
+var over=SubscriptionTraffic.Parse("upload=9223372036854775807; download=9223372036854775807; total=100; expire=253402300800")!;
+Assert(over.Percent==100 && over.RemainingText=="剩余 0 B" && over.Tone=="Error" && over.Expiry==null,"Oversized usage clamps progress without integer overflow or invalid dates");
+Assert(SubscriptionTraffic.Parse("expire=1600000000")!.Status=="已过期" && SubscriptionTraffic.Parse("expire="+DateTimeOffset.UtcNow.AddDays(1).ToUnixTimeSeconds())!.Tone=="Warning","Subscription expiry is independent from quota availability");
+Assert(SubscriptionTraffic.FromLegacy("已用 162.8 / 400.0 GB") is {WasEstimated:true} legacy && Math.Abs(legacy.Percent-40.7)<0.01,"Legacy subscription summaries migrate to explicitly estimated progress");
+var oldSubscription=System.Text.Json.JsonSerializer.Deserialize<Subscription>("{\"Name\":\"old\",\"Usage\":\"已用 1 / 10 GB\"}")!;
+Assert(oldSubscription.Traffic==null && SubscriptionTraffic.FromLegacy(oldSubscription.Usage)!.Percent==10,"Old saved subscriptions decode without structured traffic fields");
 ProxyNode One(string text)
 {
     var result = NodeImporter.Parse(text);

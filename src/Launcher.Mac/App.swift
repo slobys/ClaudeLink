@@ -29,6 +29,8 @@ import SwiftUI
                 guard let bitmap=view.bitmapImageRepForCachingDisplay(in:view.bounds) else { throw ClientError.message("Missing bitmap") }; view.cacheDisplay(in:view.bounds,to:bitmap)
                 try bitmap.representation(using:.png,properties:[:])!.write(to:url.appendingPathComponent(page+".png"))
             }
+            model.page="订阅管理"; window.setContentSize(NSSize(width:1040,height:740));try await Task.sleep(for:.milliseconds(500));try saveView(view,to:url.appendingPathComponent("subscriptions-small.png"))
+            let demoSubscriptions=model.settings.Subscriptions;model.settings.Subscriptions=Array(demoSubscriptions.suffix(2));try await Task.sleep(for:.milliseconds(500));try saveView(view,to:url.appendingPathComponent("subscriptions-states.png"));model.settings.Subscriptions=[];try await Task.sleep(for:.milliseconds(500));try saveView(view,to:url.appendingPathComponent("subscriptions-empty.png"));model.settings.Subscriptions=demoSubscriptions;window.setContentSize(NSSize(width:1280,height:850))
             model.page="节点管理"; model.fillLatencyPreview(); model.nodeSort=1; try await Task.sleep(for:.milliseconds(500)); try saveView(view,to:url.appendingPathComponent("nodes-latency.png")); model.nodeSort=0
             model.nodeTesting=true; model.nodeTestProgress="测速 3 / 10 · 界面示例"; try await Task.sleep(for:.milliseconds(500)); try saveView(view,to:url.appendingPathComponent("nodes-latency-running.png")); model.nodeTesting=false; model.nodeTestProgress="界面示例 · 非实测数据"
             model.page="节点管理"; model.nodeSearch="没有匹配的示例";try await Task.sleep(for:.milliseconds(500));try saveView(view,to:url.appendingPathComponent("nodes-empty.png"));model.nodeSearch=""

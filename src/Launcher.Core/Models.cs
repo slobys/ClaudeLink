@@ -43,6 +43,7 @@ public sealed class Subscription
     public string Url { get; set; } = "";
     public DateTimeOffset? UpdatedAt { get; set; }
     public string? Usage { get; set; }
+    public SubscriptionTraffic? Traffic { get; set; }
     public override string ToString() => Name;
 }
 

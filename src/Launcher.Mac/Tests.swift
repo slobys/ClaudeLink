@@ -12,6 +12,16 @@ import Darwin
             let defaults=Settings()
             try check(defaults.TunEnabled && defaults.StrictChecks && defaults.DisableIPv6 && defaults.MatchTimeZone && defaults.ProcessLanguage == "en-US" && defaults.CheckBrowser == "auto","Fresh install applies requested network and Chrome-first presets")
             try check(defaults.Nodes.isEmpty && defaults.Subscriptions.isEmpty && defaults.ClaudePath.isEmpty && defaults.DesktopPath.isEmpty,"Preset contains no personal nodes or executable paths")
+            let trafficParsed=try await Bridge.parse("socks5://127.0.0.1:1080#Quota",usageHeader:"upload=1073741824; download=3221225472; total=10737418240; expire=1900000000")
+            let quota=trafficParsed.Traffic!
+            try check(quota.hasQuota && quota.percent==40 && quota.remainingText.contains("6.0 GB"),"Structured subscription quota crosses the shared bridge with byte precision")
+            try check(SubscriptionTraffic().used == nil && !SubscriptionTraffic(UploadBytes:0,TotalBytes:100).hasQuota && !SubscriptionTraffic(UploadBytes:0,DownloadBytes:0,TotalBytes:0).hasQuota,"Unknown or incomplete metadata never claims an unlimited or zero-use quota")
+            let overflow=SubscriptionTraffic(UploadBytes:Int64.max,DownloadBytes:Int64.max,TotalBytes:100,ExpiresUnixSeconds:Int64.max)
+            try check(overflow.percent==100 && overflow.tone=="Error" && overflow.expiry==nil,"Large usage clamps progress and rejects invalid expiry without overflow")
+            try check(SubscriptionTraffic(ExpiresUnixSeconds:1600000000).status=="已过期" && SubscriptionTraffic(UploadBytes:0,DownloadBytes:90,TotalBytes:100).tone=="Warning","Native subscription states distinguish expiry and low quota")
+            try check(SubscriptionTraffic.legacy("已用 162.8 / 400.0 GB")?.WasEstimated==true,"Legacy native subscription summaries remain readable as estimates")
+            let oldSubscription=try JSONDecoder().decode(Subscription.self,from:Data(#"{"Id":"old","Name":"Old","Url":"https://example.com","Usage":"已用 1 / 10 GB"}"#.utf8))
+            try check(oldSubscription.Traffic==nil && oldSubscription.traffic.percent==10,"Legacy saved subscription decodes without structured traffic")
             let samples=(0..<5).map { ProxyNode(Id:"delay-\($0)",Name:"Delay",GroupId:"manual",OutboundJson:"{\"type\":\"socks\",\"server\":\"127.0.0.1\",\"server_port\":1080}") }
             let ms:[Int?]=[nil,400,80,nil,80]
             let delays=Dictionary(uniqueKeysWithValues:samples.enumerated().map{($0.element.Id,NodeLatencyResult(fingerprint:"fixture",state:ms[$0.offset] == nil ? .failed : .success,milliseconds:ms[$0.offset]))})

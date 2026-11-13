@@ -55,7 +55,7 @@ SWIFT=(xcrun swiftc -swift-version 5 -O -target "$TARGET_ARCH-apple-macos15.0" -
 /usr/bin/codesign --force --sign - "$APP/Contents/Helpers/ClaudeLinkHost"
 HOST_HASH="$(shasum -a 256 "$APP/Contents/Helpers/ClaudeLinkHost" | awk '{print $1}')"
 printf 'enum BuildInfo { static let version = "%s"; static let arch = "%s"; static let coreHash = "%s"; static let hostHash = "%s" }\n' "$VERSION" "$ARCH" "$CORE_HASH" "$HOST_HASH" > "$OUT/BuildInfo.swift"
-FILES=(src/Launcher.Mac/{Models,NodePresentation,Utilities,Networking,Session,BrowserPrivacy,Launcher,Updater,SingleInstance,Latency,AppState,Views,NodeCatalog,LaunchConfirmationView,App}.swift)
+FILES=(src/Launcher.Mac/{Models,SubscriptionTraffic,NodePresentation,Utilities,Networking,Session,BrowserPrivacy,Launcher,Updater,SingleInstance,Latency,AppState,Views,NodeCatalog,SubscriptionCatalog,LaunchConfirmationView,App}.swift)
 "${SWIFT[@]}" "${FILES[@]}" "$OUT/BuildInfo.swift" -o "$APP/Contents/MacOS/ClaudeLink" -framework SwiftUI -framework AppKit -framework Security -framework CryptoKit
 python3 - "$APP" "$VERSION" <<'PY'
 import sys,plistlib,pathlib
@@ -68,7 +68,7 @@ for size in 16 32 128 256 512; do sips -z "$size" "$size" src/Launcher.App/Asset
 iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
 /usr/bin/codesign --force --sign - "$APP"
 /usr/bin/codesign --verify --deep --strict "$APP"
-"${SWIFT[@]}" src/Launcher.Mac/{Models,NodePresentation,Utilities,Networking,Session,BrowserPrivacy,Launcher,Updater,SingleInstance,Latency,AppState,Tests}.swift "$OUT/BuildInfo.swift" -o "$APP/Contents/MacOS/ClaudeLinkTests" -framework SwiftUI -framework AppKit -framework Security -framework CryptoKit
+"${SWIFT[@]}" src/Launcher.Mac/{Models,SubscriptionTraffic,NodePresentation,Utilities,Networking,Session,BrowserPrivacy,Launcher,Updater,SingleInstance,Latency,AppState,Tests}.swift "$OUT/BuildInfo.swift" -o "$APP/Contents/MacOS/ClaudeLinkTests" -framework SwiftUI -framework AppKit -framework Security -framework CryptoKit
 /usr/bin/codesign --force --sign - "$APP/Contents/MacOS/ClaudeLinkTests"
 "$APP/Contents/MacOS/ClaudeLinkTests" "$OUT/native-results.json"
 python3 scripts/test-macos-latency.py "$APP" "$OUT/latency-results.json"

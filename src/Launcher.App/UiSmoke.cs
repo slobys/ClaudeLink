@@ -13,7 +13,10 @@ public static class UiSmoke
     public static LauncherSettings DemoSettings()
     {
         var settings = new LauncherSettings { ProjectDirectory = @"C:\Projects\my-project" };
-        var subscription=new Subscription { Name = "示例订阅", Url = "https://example.com/subscription" };settings.Subscriptions.Add(subscription);
+        var subscription=new Subscription { Name = "示例订阅", Url = "https://example.com/subscription", UpdatedAt=DateTimeOffset.UtcNow, Usage="已用 162.8 / 400.0 GB" };settings.Subscriptions.Add(subscription);
+        settings.Subscriptions.Add(new() {Name="余量较低 · 示例", Url="https://example.com/low",Traffic=SubscriptionTraffic.Parse("upload=0; download=96636764160; total=107374182400; expire=1900000000")});
+        settings.Subscriptions.Add(new() {Name="未提供流量 · 示例", Url="https://example.com/unknown"});
+        settings.Subscriptions.Add(new() {Name="已过期 · 示例", Url="https://example.com/expired",Traffic=SubscriptionTraffic.Parse("upload=0; download=10737418240; total=107374182400; expire=1600000000")});
         foreach(var name in new[]{"香港 01 · 示例","香港 02 超长名称用于核对省略显示 · 示例","日本 03 · 示例","新加坡 04 · 示例","台湾 05 · 示例","英国 06 · 示例","德国 07 · 示例","美国住宅出口 · 示例","自定义节点 · 示例"})
         {
             var node=NodeImporter.Parse("socks5://demo:example@node.example.com:1080#"+Uri.EscapeDataString(name)).Nodes.Single();
@@ -181,6 +184,21 @@ public static class UiSmoke
             await Task.Delay(150);
             Capture(window, Path.Combine(directory, page.ToLowerInvariant() + ".png"));
         }
+        window.Navigate("Subscriptions");
+        var subscriptions=(ListBox)window.FindName("SubscriptionsGrid");
+        var subscriptionRows=subscriptions.Items.OfType<MainWindow.SubscriptionRow>().ToArray();
+        if(subscriptionRows.Length!=4 || Math.Abs(subscriptionRows[0].Traffic.Percent-40.7)>0.01 || subscriptionRows[1].Traffic.Tone!="Warning" || subscriptionRows[2].Traffic.HasQuota || subscriptionRows[3].Traffic.Tone!="Error") throw new InvalidOperationException("Subscription quota states did not bind.");
+        subscriptions.SelectedIndex=1; subscriptions.UpdateLayout();
+        var subscriptionItem=(ListBoxItem)subscriptions.ItemContainerGenerator.ContainerFromIndex(1);subscriptionItem.Focus();
+        Capture(window,Path.Combine(directory,"subscriptions-selected.png"));
+        window.RefreshSubscriptions();
+        if(((MainWindow.SubscriptionRow)subscriptions.SelectedItem).Subscription.Id!=subscriptionRows[1].Subscription.Id)throw new InvalidOperationException("Subscription refresh lost selection.");
+        subscriptions.ScrollIntoView(subscriptions.Items[3]);await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
+        Capture(window,Path.Combine(directory,"subscriptions-states.png"));
+        var originalItems=subscriptions.ItemsSource;subscriptions.ItemsSource=Array.Empty<MainWindow.SubscriptionRow>();((TextBlock)window.FindName("SubscriptionsEmpty")).Visibility=Visibility.Visible;
+        Capture(window,Path.Combine(directory,"subscriptions-empty.png"));subscriptions.ItemsSource=originalItems;((TextBlock)window.FindName("SubscriptionsEmpty")).Visibility=Visibility.Collapsed;
+        assertions.Add("Subscription cards expose usage, remaining and expiry, distinguish low quota, unknown and expired, and preserve selection after refresh");
+        window.Width=1000;window.Height=740;subscriptions.ScrollIntoView(subscriptions.Items[0]);await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);Capture(window,Path.Combine(directory,"subscriptions-small.png"));window.Width=1280;window.Height=850;
         var fullWidth=window.Width;
         window.Width=1140; window.Navigate("Nodes");
         await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);

@@ -205,7 +205,7 @@ internal static class Program
                 using (var key = Registry.CurrentUser.CreateSubKey(RegistryKeyFor(target)))
                 {
                     key.SetValue("DisplayName", "Claude Link 网络启动器");
-                    key.SetValue("DisplayVersion", "1.4.1");
+                    key.SetValue("DisplayVersion", "1.5.0");
                     key.SetValue("Publisher", "Claude Link");
                     key.SetValue("InstallLocation", target);
                     key.SetValue("DisplayIcon", Path.Combine(target, "ClaudeNetworkLauncher.exe"));

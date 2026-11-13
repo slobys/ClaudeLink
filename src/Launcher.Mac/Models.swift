@@ -21,7 +21,7 @@ extension ProxyNode {
     }
 }
 struct Subscription: Codable, Identifiable, Hashable {
-    var Id = UUID().uuidString; var Name = ""; var Url = ""; var UpdatedAt: String?; var Usage: String?
+    var Id = UUID().uuidString; var Name = ""; var Url = ""; var UpdatedAt: String?; var Usage: String?; var Traffic:SubscriptionTraffic?
     var id: String { Id }
 }
 struct Settings: Codable {
@@ -48,6 +48,7 @@ struct LogEntry: Identifiable {
 struct NetworkReport {
     var generalIP = ""; var cloudflareIP = ""; var claudeIP = ""; var country = ""; var city = ""; var zone = ""
     var apiCode = 0; var webCode = 0; var apiFailure = ""; var tun = false; var ipv6Disabled = false; var zoneMatches = false
+    var signInCode = 0; var oauthCode = 0; var signInFailure = ""; var oauthFailure = ""
     var rows: [CheckRow] = []
     var apiReachable: Bool { [200,400,401,404,405].contains(apiCode) }
     var validIP: Bool { var ipv4=in_addr(); var ipv6=in6_addr(); return generalIP.withCString { inet_pton(AF_INET,$0,&ipv4) == 1 || inet_pton(AF_INET6,$0,&ipv6) == 1 } }
@@ -61,7 +62,7 @@ struct NetworkReport {
         if strict {
             if !(200..<400).contains(webCode) { result.append("Claude 登录页自动探测未通过：HTTP \(webCode)（需浏览器确认）") }
             if !sameIPv4 { result.append("三个 IPv4 出口不一致或未验证") }
-            if country != "US" { result.append("严格模式参考地区未验证为 US") }
+            if country != "US" { result.append("自定义预设参考地区未验证为 US") }
             if !tun { result.append("TUN 未启用") }; if !ipv6Disabled { result.append("活动物理网络 IPv6 未确认关闭") }; if !zoneMatches { result.append("系统时区未匹配") }
         }
         return result

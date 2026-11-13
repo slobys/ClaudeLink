@@ -109,6 +109,8 @@ public static partial class IntegrationSmoke
         var report = await NetworkServices.CheckWithClientAsync(client, true, false);
         report.IPv6Disabled = true; report.TimeZoneMatches = true;
         assert(report.ApiCode == 401 && report.ApiReachable && report.BasicReady, "API 401 represents HTTPS reachability without claiming account authorization");
+        assert(report.SignInCode==200 && report.OAuthCode==200 && report.Results.Single(x=>x.Label=="HTTPS / TLS 校验").State=="pass", "Official login and OAuth domains are probed separately and TLS reports measured transport only");
+        assert(report.Results.Single(x=>x.Label=="账户、套餐与额度").Value=="未验证" && report.Results.Single(x=>x.Label=="出口地区").State=="info", "Account authorization and actual regional eligibility are never inferred from HTTP status or IP geography");
         assert(report.WebCode == 403 && !report.WebReachable && !report.StrictReady, "Website 403 remains a separate strict-check failure");
         assert(fixture.LoginRequested && report.Results.Single(x => x.Label == "Claude 登录页").Detail.Contains("不代表 Chrome"), "Website probe targets requested login URL and separates automated rejection from browser access");
         assert(report.BlockingReasons(false).Count == 0 && report.BlockingReasons(true).Single().Contains("403"), "Strict launch prompt identifies exact website failure despite passing basic API check");
@@ -118,6 +120,7 @@ public static partial class IntegrationSmoke
         using var tlsClient = new HttpClient(new NetworkFixtureHandler(HttpRequestError.SecureConnectionError));
         var tls = await NetworkServices.CheckWithClientAsync(tlsClient, false, false);
         assert(!tls.ApiReachable && tls.ApiFailure.Contains("TLS"), "Failed API probe preserves TLS failure category");
+        assert(tls.Results.Single(x=>x.Label=="HTTPS / TLS 校验").State=="warn", "TLS failure leaves aggregate certificate check unverified");
         using var cancelled = new CancellationTokenSource(); cancelled.Cancel();
         var propagated = false;
         try { await NetworkServices.CheckWithClientAsync(client, false, false, cancellation: cancelled.Token); }
@@ -395,14 +398,17 @@ setTimeout(()=>{ip.textContent='198.51.100.24';applyAllIpMasks();window.dynamicI
         await using var server = new HttpFixture(Convert.ToBase64String(Encoding.UTF8.GetBytes(link)));
         var subscription = new Subscription { Name = "Fixture subscription", Url = $"http://127.0.0.1:{server.Port}/sub" };
         var settings = new LauncherSettings { Subscriptions = [subscription] };
+        server.UsageHeader="upload=0; download=40; total=100; expire=1900000000";
         var downloaded = await NetworkServices.DownloadSubscriptionAsync(subscription.Url);
+        subscription.Traffic=downloaded.Traffic;
+        assert(subscription.Traffic?.Percent==40 && subscription.Traffic.Expiry!=null,"Subscription HTTP metadata reaches quota and expiry display");
         SubscriptionMerge.Replace(settings, subscription, downloaded.Result);
         assert(settings.Nodes.Count == 1 && subscription.UpdatedAt is not null, "Subscription HTTP download parses and commits nodes");
         var original = settings.Nodes[0].Id; server.StatusCode = 500;
         var failed = false;
         try { var next = await NetworkServices.DownloadSubscriptionAsync(subscription.Url); SubscriptionMerge.Replace(settings, subscription, next.Result); }
         catch (IOException) { failed = true; }
-        assert(failed && settings.Nodes[0].Id == original, "HTTP failure preserves existing subscription nodes");
+        assert(failed && settings.Nodes[0].Id == original && subscription.Traffic?.Percent==40, "HTTP failure preserves existing subscription nodes and quota metadata");
         server.StatusCode = 200; server.Body = "<html>invalid subscription</html>";
         failed = false;
         try { var next = await NetworkServices.DownloadSubscriptionAsync(subscription.Url); SubscriptionMerge.Replace(settings, subscription, next.Result); }
@@ -465,6 +471,7 @@ setTimeout(()=>{ip.textContent='198.51.100.24';applyAllIpMasks();window.dynamicI
         private int requests;
         public string Body { get; set; }
         public int StatusCode { get; set; } = 200;
+        public string UsageHeader { get; set; } = "";
         public string ContentType { get; set; } = "text/plain; charset=utf-8";
         public string LastRequest { get; private set; } = "";
         public string LastTunnelRequest { get; private set; } = "";
@@ -503,7 +510,7 @@ setTimeout(()=>{ip.textContent='198.51.100.24';applyAllIpMasks();window.dynamicI
                     Interlocked.Increment(ref requests);
                     LastRequest = request;
                     var body = Encoding.UTF8.GetBytes(Body);
-                    var header = Encoding.ASCII.GetBytes($"HTTP/1.1 {StatusCode} Fixture\r\nContent-Type: {ContentType}\r\nContent-Length: {body.Length}\r\nConnection: close\r\n\r\n");
+                    var header = Encoding.ASCII.GetBytes($"HTTP/1.1 {StatusCode} Fixture\r\nContent-Type: {ContentType}\r\n{(UsageHeader.Length>0 ? "subscription-userinfo: "+UsageHeader+"\r\n" : "")}Content-Length: {body.Length}\r\nConnection: close\r\n\r\n");
                     await stream.WriteAsync(header, cancellation.Token); await stream.WriteAsync(body, cancellation.Token);
                 }
                 catch (Exception ex) when (ex is IOException or OperationCanceledException or ObjectDisposedException) { }

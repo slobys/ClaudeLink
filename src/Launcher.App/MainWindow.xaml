@@ -18,7 +18,7 @@
       <StackPanel><TextBlock Text="独立代理内核" Foreground="{StaticResource Ink}" FontSize="12"/>
        <TextBlock Text="sing-box 1.14.4 · x64" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,5,0,0"/></StackPanel>
      </Border>
-     <TextBlock Text="v1.4.1   /   本地加密存储" Foreground="{StaticResource Muted}" FontSize="11"/>
+     <TextBlock Text="v1.5.0   /   本地加密存储" Foreground="{StaticResource Muted}" FontSize="11"/>
     </StackPanel>
     <StackPanel>
      <Button x:Name="NavDashboard" Style="{StaticResource NavButton}" Content="工作台" Tag="Dashboard" Click="Navigate_Click"/>
@@ -78,7 +78,7 @@
         </Grid>
         <WrapPanel Margin="0,12,0,14">
          <CheckBox x:Name="TunCheck" Content="TUN 虚拟网卡" ToolTip="连接时请求管理员权限；将全机外网流量交给所选节点，局域网直连。" Margin="0,8,28,8"/>
-         <CheckBox x:Name="StrictCheck" Content="沿用 v1.3 严格预检" ToolTip="检查三出口 IPv4 一致、美国地区、TUN、物理网卡 IPv6 和系统时区。" />
+         <CheckBox x:Name="StrictCheck" Content="自定义严格预检" ToolTip="沿用 v1.3 的兼容预设；不是 Anthropic 官方防封要求。检查三出口 IPv4、US 参考地区、TUN、IPv6 和时区。" />
         </WrapPanel>
         <WrapPanel>
          <Button x:Name="LaunchButton" Content="准备并打开 Claude 桌面客户端" Style="{StaticResource PrimaryButton}" Click="Launch_Click" Margin="0,0,10,8"/>
@@ -96,7 +96,7 @@
       </UniformGrid>
       <Border Style="{StaticResource Card}" Padding="20">
        <StackPanel>
-        <DockPanel><Button x:Name="BrowserButton" Content="打开专用核对浏览器" Click="Browser_Click" IsEnabled="False" DockPanel.Dock="Right" Padding="12,6"/>
+        <DockPanel><Button Content="官方网络要求" Click="NetworkRequirements_Click" DockPanel.Dock="Right" Padding="12,6" Margin="8,0,0,0"/><Button x:Name="BrowserButton" Content="打开专用核对浏览器" Click="Browser_Click" IsEnabled="False" DockPanel.Dock="Right" Padding="12,6"/>
          <TextBlock Text="启动前检查" FontWeight="SemiBold" FontSize="16"/></DockPanel>
         <TextBlock x:Name="CheckSummary" Text="连接后显示检测结果。状态只代表实际测得的内容。" Style="{StaticResource MutedText}" Margin="0,9,0,12"/>
         <ItemsControl x:Name="CheckList">
@@ -112,6 +112,7 @@
           <DataTemplate.Triggers>
            <DataTrigger Binding="{Binding State}" Value="pass"><Setter TargetName="ResultRow" Property="Background" Value="{StaticResource SuccessBg}"/><Setter TargetName="ResultValue" Property="Foreground" Value="{StaticResource Success}"/><Setter TargetName="ResultState" Property="Foreground" Value="{StaticResource Success}"/><Setter TargetName="ResultGlyph" Property="Stroke" Value="{StaticResource Success}"/><Setter TargetName="ResultGlyph" Property="Data" Value="M1,6 L5,10 L12,1"/></DataTrigger>
            <DataTrigger Binding="{Binding State}" Value="warn"><Setter TargetName="ResultRow" Property="Background" Value="{StaticResource WarningBg}"/><Setter TargetName="ResultValue" Property="Foreground" Value="{StaticResource Warning}"/><Setter TargetName="ResultState" Property="Foreground" Value="{StaticResource Warning}"/><Setter TargetName="ResultGlyph" Property="Stroke" Value="{StaticResource Warning}"/><Setter TargetName="ResultGlyph" Property="Data" Value="M6,1 L12,12 L0,12 Z M6,5 L6,8 M6,10 L6,10.3"/></DataTrigger>
+           <DataTrigger Binding="{Binding State}" Value="info"><Setter TargetName="ResultRow" Property="Background" Value="{StaticResource InfoBg}"/><Setter TargetName="ResultValue" Property="Foreground" Value="{StaticResource Info}"/><Setter TargetName="ResultState" Property="Foreground" Value="{StaticResource Info}"/><Setter TargetName="ResultGlyph" Property="Stroke" Value="{StaticResource Info}"/></DataTrigger>
            <DataTrigger Binding="{Binding State}" Value="fail"><Setter TargetName="ResultRow" Property="Background" Value="{StaticResource ErrorBg}"/><Setter TargetName="ResultValue" Property="Foreground" Value="{StaticResource Error}"/><Setter TargetName="ResultState" Property="Foreground" Value="{StaticResource Error}"/><Setter TargetName="ResultGlyph" Property="Stroke" Value="{StaticResource Error}"/><Setter TargetName="ResultGlyph" Property="Data" Value="M1,1 L11,11 M11,1 L1,11"/></DataTrigger>
           </DataTemplate.Triggers>
          </DataTemplate></ItemsControl.ItemTemplate>
@@ -192,17 +193,45 @@
       <Button Content="编辑" Click="EditSubscription_Click" Margin="0,0,9,8"/>
       <Button Content="删除订阅" Click="DeleteSubscription_Click" Margin="0,0,0,8"/>
      </WrapPanel>
-     <Border Grid.Row="1" Style="{StaticResource Card}" Padding="0">
-      <Grid><DataGrid x:Name="SubscriptionsGrid">
-       <DataGrid.Columns>
-        <DataGridTextColumn Header="订阅名称" Binding="{Binding Name}" Width="1.4*"/>
-        <DataGridTextColumn Header="节点" Binding="{Binding Count}" Width="70"/>
-        <DataGridTextColumn Header="最近更新" Binding="{Binding Updated}" Width="150"/>
-        <DataGridTextColumn Header="流量" Binding="{Binding Usage}" Width="*"/>
-       </DataGrid.Columns>
-      </DataGrid><TextBlock x:Name="SubscriptionsEmpty" Text="粘贴订阅地址，集中更新你的节点。&#10;失败的更新会保留原有节点。" TextAlignment="Center" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center" LineHeight="26" IsHitTestVisible="False"/></Grid>
-     </Border>
-     <TextBlock Grid.Row="2" Text="订阅地址和节点凭据由当前 Windows 用户加密保存；内容在本机解析。" Style="{StaticResource MutedText}" Margin="0,13,0,0"/>
+     <Grid Grid.Row="1">
+      <ListBox x:Name="SubscriptionsGrid" Background="Transparent" BorderThickness="0" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch" AutomationProperties.Name="订阅卡片">
+       <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Padding" Value="0"/><Setter Property="Margin" Value="0,0,0,12"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleLabel}"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem"><Grid>
+         <Border x:Name="Tile" Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="12" Padding="18,16"><ContentPresenter/></Border>
+         <Border x:Name="FocusRing" BorderBrush="{StaticResource Accent}" BorderThickness="2" CornerRadius="12" Visibility="Collapsed" IsHitTestVisible="False"/>
+        </Grid><ControlTemplate.Triggers>
+         <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Tile" Property="BorderBrush" Value="{StaticResource Accent}"/></Trigger>
+         <Trigger Property="IsSelected" Value="True"><Setter TargetName="Tile" Property="Background" Value="{StaticResource AccentSubtle}"/><Setter TargetName="Tile" Property="BorderBrush" Value="{StaticResource Accent}"/></Trigger>
+         <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="FocusRing" Property="Visibility" Value="Visible"/></Trigger>
+        </ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+       </Style></ListBox.ItemContainerStyle>
+       <ListBox.ItemTemplate><DataTemplate><Grid>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <DockPanel Margin="0,0,0,14">
+         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"><Border x:Name="UsageState" Background="{StaticResource PendingBg}" CornerRadius="6" Padding="8,4"><TextBlock x:Name="UsageStateText" Text="{Binding Traffic.Status}" Foreground="{StaticResource Pending}" FontSize="11" FontWeight="SemiBold"/></Border><Path x:Name="SubscriptionChosen" Data="M 2,9 L 7,14 L 16,3" Stroke="{StaticResource Accent}" StrokeThickness="2" Width="18" Height="18" Margin="12,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/></StackPanel>
+         <StackPanel><TextBlock Text="{Binding Name}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/><TextBlock Text="{Binding NodesText}" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,5,0,0"/></StackPanel>
+        </DockPanel>
+        <DockPanel Grid.Row="1" Margin="0,0,0,8"><TextBlock Text="{Binding Traffic.PercentText}" DockPanel.Dock="Right" FontSize="13" FontWeight="SemiBold"/><TextBlock Text="{Binding Traffic.UsedText}" FontSize="14" TextWrapping="Wrap" ToolTip="{Binding Traffic.Hint}"/></DockPanel>
+        <ProgressBar x:Name="UsageProgress" Grid.Row="2" Minimum="0" Maximum="100" Value="{Binding Traffic.Percent}" Height="8" BorderThickness="0" Foreground="{StaticResource Accent}" Background="{StaticResource Line}" ToolTip="{Binding Traffic.Hint}" AutomationProperties.Name="订阅流量使用比例">
+         <ProgressBar.Template><ControlTemplate TargetType="ProgressBar"><Grid x:Name="PART_Track" ClipToBounds="True"><Border CornerRadius="4" Background="{TemplateBinding Background}"/><Border x:Name="PART_Indicator" HorizontalAlignment="Left" CornerRadius="4" Background="{TemplateBinding Foreground}"/></Grid></ControlTemplate></ProgressBar.Template>
+        </ProgressBar>
+        <Grid Grid.Row="3" Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+         <StackPanel><TextBlock Text="{Binding Traffic.RemainingText}" FontSize="13" FontWeight="SemiBold"/><TextBlock Text="{Binding Traffic.ExpiryText}" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,5,0,0"/></StackPanel>
+         <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Bottom"><TextBlock Text="最近更新" FontSize="11" Foreground="{StaticResource Muted}" HorizontalAlignment="Right"/><TextBlock Text="{Binding Updated}" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,5,0,0" HorizontalAlignment="Right"/></StackPanel>
+        </Grid>
+       </Grid><DataTemplate.Triggers>
+        <DataTrigger Binding="{Binding IsSelected,RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True"><Setter TargetName="SubscriptionChosen" Property="Visibility" Value="Visible"/></DataTrigger>
+        <DataTrigger Binding="{Binding Traffic.Tone}" Value="Accent"><Setter TargetName="UsageState" Property="Background" Value="{StaticResource AccentSubtle}"/><Setter TargetName="UsageStateText" Property="Foreground" Value="{StaticResource Accent}"/></DataTrigger>
+        <DataTrigger Binding="{Binding Traffic.Tone}" Value="Warning"><Setter TargetName="UsageState" Property="Background" Value="{StaticResource WarningBg}"/><Setter TargetName="UsageStateText" Property="Foreground" Value="{StaticResource Warning}"/><Setter TargetName="UsageProgress" Property="Foreground" Value="{StaticResource Warning}"/></DataTrigger>
+        <DataTrigger Binding="{Binding Traffic.Tone}" Value="Error"><Setter TargetName="UsageState" Property="Background" Value="{StaticResource ErrorBg}"/><Setter TargetName="UsageStateText" Property="Foreground" Value="{StaticResource Error}"/><Setter TargetName="UsageProgress" Property="Foreground" Value="{StaticResource Error}"/></DataTrigger>
+        <DataTrigger Binding="{Binding Traffic.Tone}" Value="Pending"><Setter TargetName="UsageProgress" Property="Foreground" Value="{StaticResource Pending}"/></DataTrigger>
+       </DataTemplate.Triggers></DataTemplate></ListBox.ItemTemplate>
+      </ListBox>
+      <TextBlock x:Name="SubscriptionsEmpty" Text="还没有订阅&#10;添加服务商提供的地址，流量与到期信息会在这里显示。" TextAlignment="Center" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center" LineHeight="26" IsHitTestVisible="False"/>
+     </Grid>
+     <StackPanel Grid.Row="2" Margin="0,12,0,0"><TextBlock x:Name="SubscriptionCountText" Style="{StaticResource MutedText}"/><TextBlock Text="流量由服务商提供；未提供时保留未知。订阅地址与凭据在本机加密保存。" Style="{StaticResource MutedText}" Margin="0,7,0,0" TextWrapping="Wrap"/></StackPanel>
     </Grid>
     <ScrollViewer x:Name="SettingsPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
      <StackPanel>
@@ -240,7 +269,7 @@
         <CheckBox x:Name="TimeZoneCheck" Content="检测出口后，临时匹配 Windows 系统时区"/>
         <TextBlock Text="需要管理员权限，影响整台电脑的时间显示；第三方地区数据无法确认时不修改。" Style="{StaticResource MutedText}" Margin="22,0,0,7"/>
         <Separator Margin="0,14"/>
-        <TextBlock Text="严格预检沿用原 v1.3：三出口均为相同 IPv4、参考地区为美国、TUN 已启用、物理网卡 IPv6 已关闭、系统时区匹配。未启用严格预检时，以代理出口和 API 基础连通性为主要结果。" Style="{StaticResource MutedText}"/>
+        <TextBlock Text="自定义严格预检沿用原 v1.3 兼容预设，不是官方防封要求：三出口均为相同 IPv4、参考地区为美国、TUN 已启用、物理网卡 IPv6 已关闭、系统时区匹配。未启用严格预检时，以代理出口和 API 基础连通性为主要结果。" Style="{StaticResource MutedText}"/>
        </StackPanel>
       </Border>
       <Border Style="{StaticResource Card}" Margin="0,0,0,16">

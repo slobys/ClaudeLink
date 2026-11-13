@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([switch]$SkipUi,[switch]$SkipInstaller)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
@@ -45,7 +45,7 @@ if(-not $SkipInstaller){
     $testRoot=[IO.Path]::GetFullPath($testRoot).TrimEnd('\')
     $expectedParent=[IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')
     if([IO.Path]::GetDirectoryName($testRoot) -ne $expectedParent){throw 'Test root containment check failed.'}
-    $setup=Join-Path $artifacts 'ClaudeLink-Setup-1.4.1.exe'
+    $setup=Join-Path $artifacts 'ClaudeLink-Setup-1.5.0.exe'
     $registryPath='HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ClaudeLink.Test.'+$testGuid
     $env:CLAUDELINK_SETUP_TEST_ROOT=$testRoot
     try{

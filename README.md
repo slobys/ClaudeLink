@@ -25,17 +25,21 @@ Claude Link 用来自动完成使用 Claude Code 前的网络与环境准备。�
 
 节点与订阅管理用于提供所需的网络连接，常用选项可以保存复用。需要系统授权或检查未通过时，程序会提示确认。
 
+订阅卡片可显示流量进度、剩余量和到期时间，余量不足或过期时会用颜色提醒；未提供的信息保持未知。启动前还会分别检查 API、登录页、登录跳转和 OAuth 域名，以及当前检测进程的 TLS 连接。账户授权、套餐与额度需要在官方客户端确认。
+
+原版严格预检保留为**自定义兼容预设**，不是官方防封要求，也不能保证账户安全。各项检测的含义与官方资料见 [启动前检查说明](docs/Claude检查说明.md)。
+
 节点管理采用地区卡片，支持搜索、地区和分组筛选，单击即可选择。点击 **一键测速** 可查看当前筛选节点的 HTTP 延迟，并按延迟升降序排列；测速前请先断开连接。需要住宅 IP 或其他出口时，可创建双跳链式代理：**本机 → 入口节点 → 最终出口 → 目标网站**。先添加两个节点，再创建并选择该链路。
 
 ## 下载安装
 
-当前版本为 **v1.4.1**，按电脑类型选择安装包：
+当前版本为 **v1.5.0**，按电脑类型选择安装包：
 
 | 你的电脑 | 下载 |
 |---|---|
-| Windows 64 位 | [EXE 安装包](https://github.com/slobys/ClaudeLink/releases/download/v1.4.1/ClaudeLink-Setup-1.4.1.exe) |
-| Mac，Apple 芯片（M 系列） | [Apple 芯片 DMG](https://github.com/slobys/ClaudeLink/releases/download/v1.4.1/ClaudeLink-1.4.1-macos-arm64.dmg) |
-| Mac，Intel 芯片 | [Intel DMG](https://github.com/slobys/ClaudeLink/releases/download/v1.4.1/ClaudeLink-1.4.1-macos-x64.dmg) |
+| Windows 64 位 | [EXE 安装包](https://github.com/slobys/ClaudeLink/releases/download/v1.5.0/ClaudeLink-Setup-1.5.0.exe) |
+| Mac，Apple 芯片（M 系列） | [Apple 芯片 DMG](https://github.com/slobys/ClaudeLink/releases/download/v1.5.0/ClaudeLink-1.5.0-macos-arm64.dmg) |
+| Mac，Intel 芯片 | [Intel DMG](https://github.com/slobys/ClaudeLink/releases/download/v1.5.0/ClaudeLink-1.5.0-macos-x64.dmg) |
 
 Windows 下载后运行 EXE；Mac 打开 DMG，把应用拖入“应用程序”。不需要预装 .NET。便携版和其他版本见 [发布页](https://github.com/slobys/ClaudeLink/releases)。
 

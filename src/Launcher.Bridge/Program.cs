@@ -30,7 +30,7 @@ catch (Exception ex) when (ex is FormatException or JsonException or InvalidOper
 static object Parse(JsonNode request)
 {
     var result = NodeImporter.Parse(request["text"]?.ToString() ?? "");
-    return new { Nodes = result.Nodes, Warnings = result.Warnings };
+    return new { Nodes = result.Nodes, Warnings = result.Warnings, Traffic = SubscriptionTraffic.Parse(request["usageHeader"]?.ToString()) };
 }
 static object Config(JsonNode request)
 {

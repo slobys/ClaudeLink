@@ -81,7 +81,9 @@ import SwiftUI
         busy=true; Task { defer { busy=false }; do {
             var item=existing ?? editingSubscription ?? Subscription(); if existing == nil { item.Name=editorName; item.Url=editorURL }; guard !item.Name.isEmpty else { throw ClientError.message("请输入订阅名称。") }
             let response=try await Web.fetch(item.Url,port:connected ? settings.ProxyPort : nil,limit:8*1024*1024,timeout:30); guard response.code == 200 else { throw ClientError.message("订阅下载失败。") }
-            let parsed=try await Bridge.parse(String(decoding:response.data,as:UTF8.self)); guard !parsed.Nodes.isEmpty else { throw ClientError.message("订阅中没有可支持的节点。") }
+            let header=response.headers.first(where:{String(describing:$0.key).lowercased()=="subscription-userinfo"}).map{String(describing:$0.value)}
+            let parsed=try await Bridge.parse(String(decoding:response.data,as:UTF8.self),usageHeader:header); guard !parsed.Nodes.isEmpty else { throw ClientError.message("订阅中没有可支持的节点。") }
+            item.Traffic=parsed.Traffic;item.Usage=nil
             let merged=try await Bridge.merge(settings,item,parsed.Nodes); let nodes=parsed.Nodes; settings.Nodes=merged.Nodes; settings.SelectedNodeId=merged.SelectedNodeId; item.UpdatedAt=ISO8601DateFormatter().string(from:Date())
             if let i=settings.Subscriptions.firstIndex(where:{$0.Id==item.Id}) { settings.Subscriptions[i]=item } else { settings.Subscriptions.append(item) }; if selectedNode == nil { settings.SelectedNodeId=nodes.first?.Id }
             saveQuietly(); showingSubscription=false; log("订阅已更新，共 \(nodes.count) 个节点。",.success)
@@ -98,10 +100,11 @@ import SwiftUI
     func installUpdate() { guard !nodeTesting, let downloaded else { return }; Task { do { try await Updater.install(downloaded,session:session) } catch { fail(error.localizedDescription); NSWorkspace.shared.activateFileViewerSelecting([downloaded]) } } }
     func fillPreview() {
         previewMode=true
+        settings.Subscriptions=[Subscription(Id:"demo",Name:"示例订阅",Url:"https://example.com/sub",UpdatedAt:ISO8601DateFormatter().string(from:Date()),Usage:"已用 162.8 / 400.0 GB"),Subscription(Id:"low",Name:"余量较低 · 示例",Url:"https://example.com/low",Traffic:SubscriptionTraffic(UploadBytes:0,DownloadBytes:96636764160,TotalBytes:107374182400,ExpiresUnixSeconds:1900000000)),Subscription(Id:"unknown",Name:"未提供流量 · 示例",Url:"https://example.com/unknown"),Subscription(Id:"expired",Name:"已过期 · 示例",Url:"https://example.com/expired",Traffic:SubscriptionTraffic(UploadBytes:0,DownloadBytes:10737418240,TotalBytes:107374182400,ExpiresUnixSeconds:1600000000))]
         let names=["香港 01 · 示例","香港 02 超长名称用于核对省略显示 · 示例","日本 03 · 示例","新加坡 04 · 示例","台湾 05 · 示例","英国 06 · 示例","德国 07 · 示例","美国住宅出口 · 示例","自定义节点 · 示例"]
-        settings.Nodes=names.enumerated().map { ProxyNode(Id:"example-\($0.offset)",Name:$0.element,GroupId:"manual",OutboundJson:"{\"type\":\"socks\",\"server\":\"127.0.0.1\",\"server_port\":1080}") }
+        settings.Nodes=names.enumerated().map { ProxyNode(Id:"example-\($0.offset)",Name:$0.element,GroupId:"demo",OutboundJson:"{\"type\":\"socks\",\"server\":\"127.0.0.1\",\"server_port\":1080}") }
         if let chain=try? ProxyChain.create("美国出口链路 · 示例",settings.Nodes[0].Id,settings.Nodes[7].Id,settings.Nodes,id:"example-chain") { settings.Nodes.insert(chain,at:0); settings.SelectedNodeId=chain.Id }
-        var sample=NetworkReport(); sample.generalIP="198.51.100.24"; sample.cloudflareIP=sample.generalIP; sample.claudeIP=sample.generalIP; sample.apiCode=401; sample.webCode=403; sample.country="US"; sample.city="界面示例"; sample.zone="America/Los_Angeles"; Web.rows(&sample); sample.rows.append(CheckRow(label:"DNS 示例",value:"请求失败",detail:"仅用于核对错误样式，不代表真实网络",level:.error)); report=sample
+        var sample=NetworkReport(); sample.generalIP="198.51.100.24"; sample.cloudflareIP=sample.generalIP; sample.claudeIP=sample.generalIP; sample.apiCode=401; sample.webCode=403; sample.signInCode=200; sample.oauthCode=200; sample.country="US"; sample.city="界面示例"; sample.zone="America/Los_Angeles"; Web.rows(&sample); sample.rows.append(CheckRow(label:"DNS 示例",value:"请求失败",detail:"仅用于核对错误样式，不代表真实网络",level:.error)); report=sample
         log("界面示例：启动器已就绪。"); log("界面示例：本地代理已启动。",.success); log("界面示例：网页检查未通过。",.warning); log("界面示例：请求失败，请检查节点。",.error)
     }
 }
