@@ -13,6 +13,11 @@ public partial class App : Application
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
         DispatcherUnhandledException += (_, args) =>
         {
+            if (e.Args.Length==2 && e.Args[0]=="--smoke-test")
+            {
+                AppPaths.WriteJson(Path.Combine(e.Args[1],"ui-failure.json"),new { Error=args.Exception.ToString() });
+                args.Handled=true; Shutdown(1); return;
+            }
             AppDialog.Notify(Current?.MainWindow, "操作未完成，请检查输入或文件权限后重试。", "Claude Link", "Error");
             args.Handled = true;
         };
@@ -55,6 +60,12 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
+            if (e.Args.Length==2 && e.Args[0]=="--smoke-test")
+            {
+                Directory.CreateDirectory(e.Args[1]);
+                AppPaths.WriteJson(Path.Combine(e.Args[1],"ui-failure.json"),new { Error=ex.ToString() });
+                Shutdown(1); return;
+            }
             if (e.Args.FirstOrDefault() is "--engine-host" or "--recover") { Shutdown(1); return; }
             var message = ex is CryptographicException
                 ? "无法解密本地配置。请使用原 Windows 用户登录；原配置未被覆盖。"

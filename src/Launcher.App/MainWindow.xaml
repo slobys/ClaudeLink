@@ -194,7 +194,7 @@
       <Button Content="删除订阅" Click="DeleteSubscription_Click" Margin="0,0,0,8"/>
      </WrapPanel>
      <Grid Grid.Row="1">
-      <ListBox x:Name="SubscriptionsGrid" Background="Transparent" BorderThickness="0" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch" AutomationProperties.Name="订阅卡片">
+      <ListBox x:Name="SubscriptionsGrid" Foreground="{StaticResource Ink}" Background="Transparent" BorderThickness="0" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch" AutomationProperties.Name="订阅卡片">
        <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem">
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Padding" Value="0"/><Setter Property="Margin" Value="0,0,0,12"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleLabel}"/>
@@ -210,11 +210,11 @@
        <ListBox.ItemTemplate><DataTemplate><Grid>
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <DockPanel Margin="0,0,0,14">
-         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"><Border x:Name="UsageState" Background="{StaticResource PendingBg}" CornerRadius="6" Padding="8,4"><TextBlock x:Name="UsageStateText" Text="{Binding Traffic.Status}" Foreground="{StaticResource Pending}" FontSize="11" FontWeight="SemiBold"/></Border><Path x:Name="SubscriptionChosen" Data="M 2,9 L 7,14 L 16,3" Stroke="{StaticResource Accent}" StrokeThickness="2" Width="18" Height="18" Margin="12,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/></StackPanel>
+         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"><Border x:Name="UsageState" VerticalAlignment="Center" Background="{StaticResource PendingBg}" CornerRadius="6" Padding="8,4"><TextBlock x:Name="UsageStateText" Text="{Binding Traffic.Status}" Foreground="{StaticResource Pending}" FontSize="11" FontWeight="SemiBold"/></Border><Path x:Name="SubscriptionChosen" Data="M 2,9 L 7,14 L 16,3" Stroke="{StaticResource Accent}" StrokeThickness="2" Width="18" Height="18" Margin="12,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/></StackPanel>
          <StackPanel><TextBlock Text="{Binding Name}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/><TextBlock Text="{Binding NodesText}" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,5,0,0"/></StackPanel>
         </DockPanel>
         <DockPanel Grid.Row="1" Margin="0,0,0,8"><TextBlock Text="{Binding Traffic.PercentText}" DockPanel.Dock="Right" FontSize="13" FontWeight="SemiBold"/><TextBlock Text="{Binding Traffic.UsedText}" FontSize="14" TextWrapping="Wrap" ToolTip="{Binding Traffic.Hint}"/></DockPanel>
-        <ProgressBar x:Name="UsageProgress" Grid.Row="2" Minimum="0" Maximum="100" Value="{Binding Traffic.Percent}" Height="8" BorderThickness="0" Foreground="{StaticResource Accent}" Background="{StaticResource Line}" ToolTip="{Binding Traffic.Hint}" AutomationProperties.Name="订阅流量使用比例">
+        <ProgressBar x:Name="UsageProgress" Grid.Row="2" Minimum="0" Maximum="100" Value="{Binding Traffic.Percent,Mode=OneWay}" Height="8" BorderThickness="0" Foreground="{StaticResource Accent}" Background="{StaticResource Line}" ToolTip="{Binding Traffic.Hint}" AutomationProperties.Name="订阅流量使用比例">
          <ProgressBar.Template><ControlTemplate TargetType="ProgressBar"><Grid x:Name="PART_Track" ClipToBounds="True"><Border CornerRadius="4" Background="{TemplateBinding Background}"/><Border x:Name="PART_Indicator" HorizontalAlignment="Left" CornerRadius="4" Background="{TemplateBinding Foreground}"/></Grid></ControlTemplate></ProgressBar.Template>
         </ProgressBar>
         <Grid Grid.Row="3" Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>

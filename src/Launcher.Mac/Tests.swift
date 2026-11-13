@@ -120,6 +120,9 @@ import Darwin
             try check(rejected,"Fallback API metadata cannot redirect trust to a different host")
             try check(shellQuote("a'b").contains("'\\''"),"Launch arguments preserve single quotes")
             try check(appleLiteral("a\"b\n").contains("\\\""),"Administrator dialog safely quotes paths")
+            var supplemental=NetworkReport();supplemental.generalIP="198.51.100.24";supplemental.apiCode=401;supplemental.webCode=403;supplemental.signInCode=200;supplemental.oauthCode=200;Web.rows(&supplemental)
+            try check(supplemental.rows.contains(where:{$0.label=="HTTPS / TLS 校验" && $0.level == .success}),"HTTP 403 remains separate from a successful TLS handshake")
+            try check(supplemental.rows.contains(where:{$0.label=="账户、套餐与额度" && $0.value=="未验证"}),"Native diagnostics never infer account authorization from HTTP 401")
             let model=AppState(preview:true); model.connected=true; model.disconnect()
             for _ in 0..<30 { if !model.busy { break }; try await Task.sleep(for:.milliseconds(100)) }
             try check(!model.connected && model.report == nil,"Disconnect clears stale transport results and semantic metric colors")
