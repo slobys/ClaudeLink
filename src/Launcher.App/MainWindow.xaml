@@ -185,13 +185,17 @@
      <DockPanel Grid.Row="3" Margin="0,10,0,0"><TextBlock x:Name="NodeTestProgress" DockPanel.Dock="Right" Style="{StaticResource MutedText}" Margin="12,0,0,0"/><TextBlock x:Name="NodeCountText" Style="{StaticResource MutedText}"/><TextBlock Text="单击选择，双击进入工作台。切换前请先断开。" Style="{StaticResource MutedText}" HorizontalAlignment="Right"/></DockPanel>
     </Grid>
     <Grid x:Name="SubscriptionsPage" Visibility="Collapsed">
+     <Grid.Resources>
+      <Style x:Key="SubscriptionAction" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding SelectedItem,ElementName=SubscriptionsGrid}" Value="{x:Null}"><Setter Property="IsEnabled" Value="False"/></DataTrigger></Style.Triggers></Style>
+      <Style x:Key="SubscriptionUpdateAll" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding HasItems,ElementName=SubscriptionsGrid}" Value="False"><Setter Property="IsEnabled" Value="False"/></DataTrigger></Style.Triggers></Style>
+     </Grid.Resources>
      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
      <WrapPanel Margin="0,0,0,16">
       <Button Content="添加订阅" Style="{StaticResource PrimaryButton}" Click="AddSubscription_Click" Margin="0,0,9,8"/>
-      <Button Content="更新选中" Click="UpdateSubscription_Click" Margin="0,0,9,8"/>
-      <Button Content="更新全部" Click="UpdateAllSubscriptions_Click" Margin="0,0,9,8"/>
-      <Button Content="编辑" Click="EditSubscription_Click" Margin="0,0,9,8"/>
-      <Button Content="删除订阅" Click="DeleteSubscription_Click" Margin="0,0,0,8"/>
+      <Button x:Name="SubscriptionUpdateButton" Content="更新选中" Style="{StaticResource SubscriptionAction}" Click="UpdateSubscription_Click" Margin="0,0,9,8"/>
+      <Button x:Name="SubscriptionUpdateAllButton" Content="更新全部" Style="{StaticResource SubscriptionUpdateAll}" Click="UpdateAllSubscriptions_Click" Margin="0,0,9,8"/>
+      <Button x:Name="SubscriptionEditButton" Content="编辑" Style="{StaticResource SubscriptionAction}" Click="EditSubscription_Click" Margin="0,0,9,8"/>
+      <Button x:Name="SubscriptionDeleteButton" Content="删除订阅" Style="{StaticResource SubscriptionAction}" Click="DeleteSubscription_Click" Margin="0,0,0,8"/>
      </WrapPanel>
      <Grid Grid.Row="1">
       <ListBox x:Name="SubscriptionsGrid" Foreground="{StaticResource Ink}" Background="Transparent" BorderThickness="0" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch" AutomationProperties.Name="订阅卡片">

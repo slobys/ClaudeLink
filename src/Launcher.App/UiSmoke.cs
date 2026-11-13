@@ -197,7 +197,13 @@ public static class UiSmoke
         Capture(window,Path.Combine(directory,"subscriptions-states.png"));
         var emptyWindow=new MainWindow(new LauncherSettings { ProjectDirectory=@"C:\Projects\my-project" },true) {Owner=window,Width=window.Width,Height=window.Height};
         emptyWindow.Navigate("Subscriptions");emptyWindow.Show();
-        await emptyWindow.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);await Task.Delay(150);Capture(emptyWindow,Path.Combine(directory,"subscriptions-empty.png"),true);emptyWindow.CloseForSmoke();
+        await emptyWindow.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);await Task.Delay(150);
+        if(new[]{"SubscriptionUpdateButton","SubscriptionUpdateAllButton","SubscriptionEditButton","SubscriptionDeleteButton"}.Any(name=>((Button)emptyWindow.FindName(name)).IsEnabled))throw new InvalidOperationException("Empty subscription actions must be disabled.");
+        Capture(emptyWindow,Path.Combine(directory,"subscriptions-empty.png"),true);emptyWindow.CloseForSmoke();
+        subscriptions.SelectedItem=null;await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
+        if(((Button)window.FindName("SubscriptionEditButton")).IsEnabled || !((Button)window.FindName("SubscriptionUpdateAllButton")).IsEnabled)throw new InvalidOperationException("Selection-dependent subscription actions must follow selection without disabling update-all.");
+        subscriptions.SelectedIndex=1;
+        assertions.Add("Empty subscription actions are disabled; selecting a card enables scoped actions independently from update-all");
         assertions.Add("Subscription cards expose usage, remaining and expiry, distinguish low quota, unknown and expired, and preserve selection after refresh");
         window.Width=1000;window.Height=740;subscriptions.ScrollIntoView(subscriptions.Items[0]);await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);Capture(window,Path.Combine(directory,"subscriptions-small.png"));window.Width=1280;window.Height=850;
         var fullWidth=window.Width;
