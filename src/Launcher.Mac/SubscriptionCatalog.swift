@@ -6,7 +6,7 @@ struct SubscriptionCatalog:View {
     private var chosen:Subscription? { model.settings.Subscriptions.first{$0.Id==selected} }
     private var locked:Bool { model.busy || model.connected || model.nodeTesting }
     var body:some View {
-        VStack(alignment:.leading,spacing:16) {
+        VStack(alignment:.leading,spacing:12) {
             HStack {
                 Button("添加订阅") {model.editingSubscription=nil;model.editorName="";model.editorURL="";model.showingSubscription=true}.buttonStyle(.borderedProminent)
                 Button("更新选中") {if let chosen {model.updateSubscription(chosen)}}.disabled(chosen==nil)
@@ -30,9 +30,10 @@ private struct SubscriptionTile:View {
     let item:Subscription;let count:Int;let selected:Bool
     private var traffic:SubscriptionTraffic {item.traffic}
     var body:some View {
-        VStack(alignment:.leading,spacing:10) {
-            HStack(alignment:.top) {
-                VStack(alignment:.leading,spacing:5) {Text(item.Name).font(.system(size:17,weight:.semibold)).lineLimit(1).help(item.Name);Text("\(count) 个节点").font(.system(size:12)).foregroundStyle(Palette.color("Muted"))}
+        VStack(alignment:.leading,spacing:6) {
+            HStack(spacing:10) {
+                Text(item.Name).font(.system(size:17,weight:.semibold)).lineLimit(1).help(item.Name)
+                Text("\(count) 个节点").font(.system(size:12)).foregroundStyle(Palette.color("Muted")).fixedSize()
                 Spacer()
                 Text(traffic.status).font(.system(size:11,weight:.semibold)).padding(.horizontal,8).padding(.vertical,4).foregroundStyle(Palette.color(traffic.tone)).background(Palette.color(traffic.tone=="Accent" ? "AccentSubtle" : traffic.tone+"Bg"),in:RoundedRectangle(cornerRadius:6))
                 if selected {Image(systemName:"checkmark").foregroundStyle(Palette.color("Accent")).accessibilityHidden(true)}
@@ -43,11 +44,12 @@ private struct SubscriptionTile:View {
             } else {
                 Capsule().fill(Palette.color("Line")).frame(height:6).accessibilityHidden(true)
             }
-            HStack(alignment:.bottom) {
-                VStack(alignment:.leading,spacing:5) {Text(traffic.remainingText).font(.system(size:13,weight:.semibold));Text(traffic.expiryText).font(.system(size:12)).foregroundStyle(Palette.color("Muted"))}
+            HStack(spacing:14) {
+                Text(traffic.remainingText).font(.system(size:13,weight:.semibold))
+                Text(traffic.expiryText).font(.system(size:12)).foregroundStyle(Palette.color("Muted"))
                 Spacer()
-                VStack(alignment:.trailing,spacing:5) {Text("最近更新").font(.system(size:11));Text(item.updatedText).font(.system(size:12))}.foregroundStyle(Palette.color("Muted"))
+                Text(item.UpdatedAt==nil ? item.updatedText : "更新 "+item.updatedText).font(.system(size:11)).foregroundStyle(Palette.color("Muted")).help("最近更新："+item.updatedText)
             }
-        }.padding(18).frame(maxWidth:.infinity,alignment:.leading).foregroundStyle(Palette.color("Ink")).background(Palette.color(selected ? "AccentSubtle" : "Surface"),in:RoundedRectangle(cornerRadius:12)).overlay(RoundedRectangle(cornerRadius:12).stroke(Palette.color(selected ? "Accent" : "Line"),lineWidth:1))
+        }.padding(.horizontal,12).padding(.vertical,10).frame(maxWidth:.infinity,alignment:.leading).foregroundStyle(Palette.color("Ink")).background(Palette.color(selected ? "AccentSubtle" : "Surface"),in:RoundedRectangle(cornerRadius:12)).overlay(RoundedRectangle(cornerRadius:12).stroke(Palette.color(selected ? "Accent" : "Line"),lineWidth:1))
     }
 }

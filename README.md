@@ -33,13 +33,13 @@ Claude Link 用来自动完成使用 Claude Code 前的网络与环境准备。�
 
 ## 下载安装
 
-当前版本为 **v1.5.0**，按电脑类型选择安装包：
+当前版本为 **v1.5.1**，按电脑类型选择安装包：
 
 | 你的电脑 | 下载 |
 |---|---|
-| Windows 64 位 | [EXE 安装包](https://github.com/slobys/ClaudeLink/releases/download/v1.5.0/ClaudeLink-Setup-1.5.0.exe) |
-| Mac，Apple 芯片（M 系列） | [Apple 芯片 DMG](https://github.com/slobys/ClaudeLink/releases/download/v1.5.0/ClaudeLink-1.5.0-macos-arm64.dmg) |
-| Mac，Intel 芯片 | [Intel DMG](https://github.com/slobys/ClaudeLink/releases/download/v1.5.0/ClaudeLink-1.5.0-macos-x64.dmg) |
+| Windows 64 位 | [EXE 安装包](https://github.com/slobys/ClaudeLink/releases/download/v1.5.1/ClaudeLink-Setup-1.5.1.exe) |
+| Mac，Apple 芯片（M 系列） | [Apple 芯片 DMG](https://github.com/slobys/ClaudeLink/releases/download/v1.5.1/ClaudeLink-1.5.1-macos-arm64.dmg) |
+| Mac，Intel 芯片 | [Intel DMG](https://github.com/slobys/ClaudeLink/releases/download/v1.5.1/ClaudeLink-1.5.1-macos-x64.dmg) |
 
 Windows 下载后运行 EXE；Mac 打开 DMG，把应用拖入“应用程序”。不需要预装 .NET。便携版和其他版本见 [发布页](https://github.com/slobys/ClaudeLink/releases)。
 

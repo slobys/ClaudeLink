@@ -17,7 +17,7 @@ public partial class MainWindow
         public Subscription Subscription { get; }=subscription;
         public string Name=>Subscription.Name;
         public string NodesText=>$"{count} 个节点";
-        public string Updated=>Subscription.UpdatedAt?.ToLocalTime().ToString("MM-dd HH:mm") ?? "尚未更新";
+        public string Updated=>Subscription.UpdatedAt is { } updated ? "更新 "+updated.ToLocalTime().ToString("MM-dd HH:mm") : "尚未更新";
         public SubscriptionTraffic Traffic { get; }=subscription.Traffic ?? SubscriptionTraffic.FromLegacy(subscription.Usage) ?? new();
         public string AccessibleLabel=>$"{Name}，{NodesText}，{Traffic.UsedText}，{Traffic.RemainingText}，{Traffic.ExpiryText}，{Traffic.Status}";
     }

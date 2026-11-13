@@ -18,7 +18,7 @@
       <StackPanel><TextBlock Text="独立代理内核" Foreground="{StaticResource Ink}" FontSize="12"/>
        <TextBlock Text="sing-box 1.14.4 · x64" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,5,0,0"/></StackPanel>
      </Border>
-     <TextBlock Text="v1.5.0   /   本地加密存储" Foreground="{StaticResource Muted}" FontSize="11"/>
+     <TextBlock Text="v1.5.1   /   本地加密存储" Foreground="{StaticResource Muted}" FontSize="11"/>
     </StackPanel>
     <StackPanel>
      <Button x:Name="NavDashboard" Style="{StaticResource NavButton}" Content="工作台" Tag="Dashboard" Click="Navigate_Click"/>
@@ -200,10 +200,10 @@
      <Grid Grid.Row="1">
       <ListBox x:Name="SubscriptionsGrid" Foreground="{StaticResource Ink}" Background="Transparent" BorderThickness="0" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch" AutomationProperties.Name="订阅卡片">
        <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem">
-        <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Padding" Value="0"/><Setter Property="Margin" Value="0,0,0,12"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Padding" Value="0"/><Setter Property="Margin" Value="0,0,0,8"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleLabel}"/>
         <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem"><Grid>
-         <Border x:Name="Tile" Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="12" Padding="18,16"><ContentPresenter/></Border>
+         <Border x:Name="Tile" Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="12" Padding="12,10"><ContentPresenter/></Border>
          <Border x:Name="FocusRing" BorderBrush="{StaticResource Accent}" BorderThickness="2" CornerRadius="12" Visibility="Collapsed" IsHitTestVisible="False"/>
         </Grid><ControlTemplate.Triggers>
          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Tile" Property="BorderBrush" Value="{StaticResource Accent}"/></Trigger>
@@ -213,18 +213,18 @@
        </Style></ListBox.ItemContainerStyle>
        <ListBox.ItemTemplate><DataTemplate><Grid>
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-        <DockPanel Margin="0,0,0,14">
+        <DockPanel Margin="0,0,0,8">
          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"><Border x:Name="UsageState" VerticalAlignment="Center" Background="{StaticResource PendingBg}" CornerRadius="6" Padding="8,4"><TextBlock x:Name="UsageStateText" Text="{Binding Traffic.Status}" Foreground="{StaticResource Pending}" FontSize="11" FontWeight="SemiBold"/></Border><Path x:Name="SubscriptionChosen" Data="M 2,9 L 7,14 L 16,3" Stroke="{StaticResource Accent}" StrokeThickness="2" Width="18" Height="18" Margin="12,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/></StackPanel>
-         <StackPanel><TextBlock Text="{Binding Name}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/><TextBlock Text="{Binding NodesText}" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,5,0,0"/></StackPanel>
+         <DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding NodesText}" Foreground="{StaticResource Muted}" FontSize="12" Margin="12,0,12,0"/><TextBlock Text="{Binding Name}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/></DockPanel>
         </DockPanel>
-        <DockPanel Grid.Row="1" Margin="0,0,0,8"><TextBlock Text="{Binding Traffic.PercentText}" DockPanel.Dock="Right" FontSize="13" FontWeight="SemiBold"/><TextBlock Text="{Binding Traffic.UsedText}" FontSize="14" TextWrapping="Wrap" ToolTip="{Binding Traffic.Hint}"/></DockPanel>
-        <Border x:Name="UsageUnknownTrack" Grid.Row="2" Height="8" CornerRadius="4" Background="{StaticResource Line}" Visibility="Collapsed"/>
-        <ProgressBar x:Name="UsageProgress" Grid.Row="2" Minimum="0" Maximum="100" Value="{Binding Traffic.Percent,Mode=OneWay}" Height="8" BorderThickness="0" Foreground="{StaticResource Accent}" Background="{StaticResource Line}" ToolTip="{Binding Traffic.Hint}" AutomationProperties.Name="订阅流量使用比例">
+        <DockPanel Grid.Row="1" Margin="0,0,0,6"><TextBlock Text="{Binding Traffic.PercentText}" DockPanel.Dock="Right" FontSize="13" FontWeight="SemiBold"/><TextBlock Text="{Binding Traffic.UsedText}" FontSize="14" TextWrapping="Wrap" ToolTip="{Binding Traffic.Hint}"/></DockPanel>
+        <Border x:Name="UsageUnknownTrack" Grid.Row="2" Height="6" CornerRadius="3" Background="{StaticResource Line}" Visibility="Collapsed"/>
+        <ProgressBar x:Name="UsageProgress" Grid.Row="2" Minimum="0" Maximum="100" Value="{Binding Traffic.Percent,Mode=OneWay}" Height="6" BorderThickness="0" Foreground="{StaticResource Accent}" Background="{StaticResource Line}" ToolTip="{Binding Traffic.Hint}" AutomationProperties.Name="订阅流量使用比例">
          <ProgressBar.Template><ControlTemplate TargetType="ProgressBar"><Grid x:Name="PART_Track" ClipToBounds="True"><Border CornerRadius="4" Background="{TemplateBinding Background}"/><Border x:Name="PART_Indicator" HorizontalAlignment="Left" CornerRadius="4" Background="{TemplateBinding Foreground}"/></Grid></ControlTemplate></ProgressBar.Template>
         </ProgressBar>
-        <Grid Grid.Row="3" Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-         <StackPanel><TextBlock Text="{Binding Traffic.RemainingText}" FontSize="13" FontWeight="SemiBold"/><TextBlock Text="{Binding Traffic.ExpiryText}" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,5,0,0"/></StackPanel>
-         <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Bottom"><TextBlock Text="最近更新" FontSize="11" Foreground="{StaticResource Muted}" HorizontalAlignment="Right"/><TextBlock Text="{Binding Updated}" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,5,0,0" HorizontalAlignment="Right"/></StackPanel>
+        <Grid Grid.Row="3" Margin="0,8,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+         <WrapPanel VerticalAlignment="Center"><TextBlock Text="{Binding Traffic.RemainingText}" FontSize="13" FontWeight="SemiBold"/><TextBlock Text="{Binding Traffic.ExpiryText}" Foreground="{StaticResource Muted}" FontSize="12" Margin="14,0,0,0"/></WrapPanel>
+         <TextBlock Grid.Column="1" Margin="12,0,0,0" Foreground="{StaticResource Muted}" FontSize="11" Text="{Binding Updated}" ToolTip="最近更新"/>
         </Grid>
        </Grid><DataTemplate.Triggers>
         <DataTrigger Binding="{Binding Traffic.HasQuota}" Value="False"><Setter TargetName="UsageProgress" Property="Visibility" Value="Collapsed"/><Setter TargetName="UsageUnknownTrack" Property="Visibility" Value="Visible"/></DataTrigger>
