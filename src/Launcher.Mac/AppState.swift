@@ -57,7 +57,8 @@ import SwiftUI
     func disconnect() { resolveLaunch(false); operation?.cancel(); busy=true; Task { defer { busy=false; progress="" }; do { try await session.stop(); connected=false; report=nil; log("会话已结束，临时设置已恢复。",.success) } catch { fail(error.localizedDescription) } } }
     func browser() { Task { do { guard connected else { throw ClientError.message("请先连接节点。") }; let hidden=try await Launcher.browser(settings); log(hidden ? "已打开专用核对页，页面 IP 已隐藏；所选语言 "+settings.ProcessLanguage+"。" : "核对窗口已打开，请手动确认网页的隐藏 IP 开关。",hidden ? .success : .warning) } catch { fail(error.localizedDescription) } } }
     func importNode() { guard !nodeTesting else { return }; busy=true; Task { defer { busy=false }; do {
-        let parsed=try await Bridge.parse(editor); guard !parsed.Nodes.isEmpty else { throw ClientError.message("未识别到支持的节点。") }
+        let parsed=try await Bridge.parse(editor)
+        guard !parsed.Nodes.isEmpty else { fail(parsed.Warnings.first ?? "未识别到支持的节点。"); return }
         if let old=editingNode { guard parsed.Nodes.count == 1 else { throw ClientError.message("编辑节点时只可提交一个节点。") }; var node=parsed.Nodes[0]; node.Id=old.Id; node.GroupId=old.GroupId; if !editorName.isEmpty { node.Name=editorName }; if let index=settings.Nodes.firstIndex(where:{$0.Id==old.Id}) { settings.Nodes[index]=node } }
         else { settings.Nodes.append(contentsOf:parsed.Nodes); if settings.SelectedNodeId == nil { settings.SelectedNodeId=parsed.Nodes.first?.Id } }
         saveQuietly(); showingNode=false; log("节点已保存，共 \(parsed.Nodes.count) 个。",.success); for warning in parsed.Warnings { log(warning,.warning) }
@@ -80,14 +81,17 @@ import SwiftUI
         guard !nodeTesting else { return }
         busy=true; Task { defer { busy=false }; do {
             var item=existing ?? editingSubscription ?? Subscription(); if existing == nil { item.Name=editorName; item.Url=editorURL }; guard !item.Name.isEmpty else { throw ClientError.message("请输入订阅名称。") }
-            let response=try await Web.fetch(item.Url,port:connected ? settings.ProxyPort : nil,limit:8*1024*1024,timeout:30); guard response.code == 200 else { throw ClientError.message("订阅下载失败。") }
+            let response=try await Web.fetch(item.Url,port:connected ? settings.ProxyPort : nil,limit:8*1024*1024,timeout:30)
+            guard (200..<300).contains(response.code) else { throw ClientError.message("订阅下载失败（HTTP \(response.code)），原节点已保留。") }
             let header=response.headers.first(where:{String(describing:$0.key).lowercased()=="subscription-userinfo"}).map{String(describing:$0.value)}
-            let parsed=try await Bridge.parse(String(decoding:response.data,as:UTF8.self),usageHeader:header); guard !parsed.Nodes.isEmpty else { throw ClientError.message("订阅中没有可支持的节点。") }
+            let parsed=try await Bridge.parse(String(decoding:response.data,as:UTF8.self),usageHeader:header,subscription:true)
             item.Traffic=parsed.Traffic;item.Usage=nil
             let merged=try await Bridge.merge(settings,item,parsed.Nodes); let nodes=parsed.Nodes; settings.Nodes=merged.Nodes; settings.SelectedNodeId=merged.SelectedNodeId; item.UpdatedAt=ISO8601DateFormatter().string(from:Date())
             if let i=settings.Subscriptions.firstIndex(where:{$0.Id==item.Id}) { settings.Subscriptions[i]=item } else { settings.Subscriptions.append(item) }; if selectedNode == nil { settings.SelectedNodeId=nodes.first?.Id }
             saveQuietly(); showingSubscription=false; log("订阅已更新，共 \(nodes.count) 个节点。",.success)
-        } catch { fail("订阅更新失败，原节点已保留。请检查地址与网络。") } }
+            for warning in parsed.Warnings { log(warning,.warning) }
+        } catch ClientError.message(let message) { fail(message) }
+        catch { fail("订阅更新失败，原节点已保留。请检查地址与网络。") } }
     }
     func deleteSubscription(_ item:Subscription) {
         guard !nodeTesting else { return }

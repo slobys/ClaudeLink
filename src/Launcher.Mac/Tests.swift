@@ -40,6 +40,13 @@ import Darwin
             try check(BrowserPrivacy.checkURL == "https://ip.net.coffee/claude/" && privacyScript.contains("ipMaskToggle") && privacyScript.replacingOccurrences(of:"\\/",with:"/").contains("https://ip.net.coffee") && !privacyScript.contains("__CLAUDELINK_ORIGIN__"),"Dedicated browser bundles scoped IP-hiding script and a single requested destination")
             let parsed=try await Bridge.parse("socks5://user:secret@127.0.0.1:1080#Local")
             try check(parsed.Nodes.count == 1,"Shared bridge imports SOCKS credentials")
+            let webLink=try await Bridge.parse("https://example.invalid:443/subscribe?token=fixture-private")
+            try check(webLink.Nodes.isEmpty && webLink.Warnings.first?.contains("订阅管理") == true,"Native import points subscription URLs to the correct page")
+            let placeholder="ss://aes-128-gcm:fixture-secret@example.invalid:8388#%E8%AF%B7%E5%9C%A8%E5%AE%A2%E6%88%B7%E7%AB%AF%E4%B8%AD%E5%AF%BC%E5%85%A5"
+            var placeholderRejected=false
+            do { _=try await Bridge.parse(Data(placeholder.utf8).base64EncodedString(),subscription:true) }
+            catch ClientError.message(let message) { placeholderRejected=message.contains("客户端导入提示") && !message.contains("fixture-secret") }
+            try check(placeholderRejected,"Placeholder-only subscription is rejected with safe guidance by the native bridge")
             let node=parsed.Nodes[0]
             let legacyNode=try JSONDecoder().decode(ProxyNode.self,from:Data("{\"Id\":\"legacy\",\"Name\":\"旧节点\",\"GroupId\":\"manual\",\"OutboundJson\":\"{}\"}".utf8))
             try check(!legacyNode.isChain && legacyNode.ChainNodeIds.isEmpty,"Legacy nodes decode without optional chain fields")

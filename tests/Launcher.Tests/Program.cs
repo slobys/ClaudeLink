@@ -51,6 +51,18 @@ var socks = One("socks5://user:secret@127.0.0.1:1080#Local");
 Assert(socks.Protocol == "socks", "SOCKS5 authenticated endpoint");
 var http = One("https://user:secret@example.com:443#HTTP");
 Assert(JsonNode.Parse(http.OutboundJson)!["tls"]!["enabled"]!.GetValue<bool>(), "HTTPS proxy TLS");
+Assert(new[] { "http://example.com:80", "http://[::1]:80" }.All(link => JsonNode.Parse(One(link).OutboundJson)!["server_port"]!.GetValue<int>() == 80),
+    "Explicit default port preserves HTTP proxy links for hostnames and IPv6");
+foreach (var address in new[] { "https://example.com", "https://example.com:443/subscribe?token=fixture-private-token", "https://example.com:443/?token=fixture-private-token", "https://[2001:db8::1]" })
+{
+    var invalid = NodeImporter.Parse(address);
+    Assert(invalid.Nodes.Count == 0 && invalid.Warnings.Single().Contains("订阅管理") && !invalid.Warnings.Single().Contains("example.com"),
+        "Website or subscription URL yields safe guidance instead of a false HTTP proxy");
+}
+var placeholder = "ss://aes-128-gcm:fixture-secret@example.invalid:8388#" + Uri.EscapeDataString("请在客户端中导入订阅");
+var realAndPlaceholder = NodeImporter.ParseSubscription(Convert.ToBase64String(Encoding.UTF8.GetBytes(placeholder + "\nhttp://example.com:8080")));
+Assert(realAndPlaceholder.Nodes.Count == 1 && realAndPlaceholder.Nodes[0].Protocol == "http" && realAndPlaceholder.Warnings.Single().Contains("客户端导入提示"),
+    "Mixed Base64 subscription keeps real nodes and skips instructional placeholders");
 var yaml = $$$"""
 proxies:
   - name: YAML Reality

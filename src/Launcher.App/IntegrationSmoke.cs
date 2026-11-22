@@ -404,7 +404,9 @@ setTimeout(()=>{ip.textContent='198.51.100.24';applyAllIpMasks();window.dynamicI
         assert(subscription.Traffic?.Percent==40 && subscription.Traffic.Expiry!=null,"Subscription HTTP metadata reaches quota and expiry display");
         SubscriptionMerge.Replace(settings, subscription, downloaded.Result);
         assert(settings.Nodes.Count == 1 && subscription.UpdatedAt is not null, "Subscription HTTP download parses and commits nodes");
-        var original = settings.Nodes[0].Id; server.StatusCode = 500;
+        var original = settings.Nodes[0].Id;
+        var updated = subscription.UpdatedAt;
+        server.StatusCode = 500;
         var failed = false;
         try { var next = await NetworkServices.DownloadSubscriptionAsync(subscription.Url); SubscriptionMerge.Replace(settings, subscription, next.Result); }
         catch (IOException) { failed = true; }
@@ -412,8 +414,16 @@ setTimeout(()=>{ip.textContent='198.51.100.24';applyAllIpMasks();window.dynamicI
         server.StatusCode = 200; server.Body = "<html>invalid subscription</html>";
         failed = false;
         try { var next = await NetworkServices.DownloadSubscriptionAsync(subscription.Url); SubscriptionMerge.Replace(settings, subscription, next.Result); }
-        catch (IOException) { failed = true; }
-        assert(failed && settings.Nodes[0].Id == original, "Malformed subscription preserves existing nodes");
+        catch (IOException ex) { failed = ex.Message.Contains("返回了网页"); }
+        assert(failed && settings.Nodes[0].Id == original, "HTML subscription response reports website and preserves existing nodes");
+
+        var placeholder = "ss://aes-128-gcm:fixture-password@example.invalid:8388#" + Uri.EscapeDataString("请在客户端中导入订阅");
+        server.Body = Convert.ToBase64String(Encoding.UTF8.GetBytes(placeholder));
+        failed = false;
+        try { var next = await NetworkServices.DownloadSubscriptionAsync(subscription.Url); SubscriptionMerge.Replace(settings, subscription, next.Result); }
+        catch (IOException ex) { failed = ex.Message.Contains("客户端导入提示") && !ex.Message.Contains("fixture-password"); }
+        assert(failed && settings.Nodes[0].Id == original && subscription.UpdatedAt == updated && subscription.Traffic?.Percent == 40,
+            "Placeholder-only subscription does not replace nodes, timestamp, or traffic information");
     }
     private static async Task CheckClaudeEnvironmentAsync(Action<bool, string> assert)
     {

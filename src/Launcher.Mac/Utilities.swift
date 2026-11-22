@@ -60,8 +60,9 @@ enum Bridge {
         let result = try await Commands.run(executable,[],input:JSONSerialization.data(withJSONObject:object),timeout:25)
         if result.code != 0 { let message = ((try? JSONSerialization.jsonObject(with:result.output)) as? [String:Any])?["Error"] as? String ?? "节点解析失败，请检查格式。"; throw ClientError.message(message) }; return result.output
     }
-    static func parse(_ text:String,usageHeader:String?=nil) async throws -> Parsed {
-        var request:[String:Any]=["operation":"parse","text":text];if let usageHeader {request["usageHeader"]=usageHeader}
+    static func parse(_ text:String,usageHeader:String?=nil,subscription:Bool=false) async throws -> Parsed {
+        var request:[String:Any]=["operation":"parse","text":text,"subscription":subscription]
+        if let usageHeader {request["usageHeader"]=usageHeader}
         return try JSONDecoder().decode(Parsed.self,from:await call(request))
     }
     static func merge(_ settings: Settings,_ subscription: Subscription,_ nodes: [ProxyNode]) async throws -> Merged {

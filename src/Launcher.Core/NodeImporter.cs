@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using YamlDotNet.RepresentationModel;
 
@@ -11,6 +12,26 @@ public static class NodeImporter
     public const int MaxNodes = 5000;
     private static readonly HashSet<string> Protocols =
         ["vless", "vmess", "trojan", "shadowsocks", "hysteria2", "tuic", "socks", "http", "anytls"];
+    private static readonly HashSet<string> HttpProxyOptions = new(StringComparer.OrdinalIgnoreCase)
+        { "security", "sni", "peer", "insecure", "allowInsecure", "alpn", "fp", "pbk", "sid" };
+
+    public static ImportResult ParseSubscription(string text)
+    {
+        if (text.TrimStart('\uFEFF', ' ', '\t', '\r', '\n').StartsWith('<'))
+            throw new FormatException("订阅服务器返回了网页。请从服务商后台复制通用订阅地址，原节点已保留。");
+
+        ImportResult result;
+        try { result = Parse(text); }
+        catch (Exception ex) when (ex is FormatException or JsonException or YamlDotNet.Core.YamlException or ArgumentException or InvalidOperationException)
+        { throw new FormatException("订阅内容无法解析。请使用服务商提供的通用或 Clash 订阅地址，原节点已保留。"); }
+
+        if (result.Nodes.Count == 0)
+        {
+            var reason = result.Warnings.FirstOrDefault() ?? "订阅没有可导入的节点。";
+            throw new FormatException(reason + "原节点已保留。");
+        }
+        return result;
+    }
 
     public static ImportResult Parse(string text, string groupId = "manual")
     {
@@ -69,6 +90,9 @@ public static class NodeImporter
             var node = factory();
             Validate(JsonNode.Parse(node.OutboundJson)!.AsObject());
             node.Name = new string(node.Name.Where(c => !char.IsControl(c)).Take(160).ToArray());
+            if (node.Name.Contains("请在客户端中导入", StringComparison.Ordinal) ||
+                node.Name.Contains("请在官方客户端中导入", StringComparison.Ordinal))
+                throw new NodeFormatException("服务商返回了客户端导入提示。请在服务商后台复制通用或 Clash 订阅，或使用其指定客户端");
             if (string.IsNullOrWhiteSpace(node.Name)) node.Name = $"{node.Protocol} 节点";
             node.GroupId = groupId;
             result.Nodes.Add(node);
@@ -101,6 +125,17 @@ public static class NodeImporter
             throw new NodeFormatException("此协议暂不支持");
         var uri = new Uri(link);
         var q = ParseQuery(uri.Query);
+        if (scheme is "http" or "https")
+        {
+            var authority = link[(schemeIndex + 3)..].Split(['/', '?', '#'], 2)[0];
+            var hostAndPort = authority[(authority.LastIndexOf('@') + 1)..];
+            // For IPv6, only a colon after the closing bracket denotes a port.
+            var separator = hostAndPort.LastIndexOf(':');
+            var hasExplicitPort = separator > hostAndPort.LastIndexOf(']') && separator < hostAndPort.Length - 1;
+            if (uri.AbsolutePath != "/" || q.Keys.Any(key => !HttpProxyOptions.Contains(key)) ||
+                (!hasExplicitPort && uri.UserInfo.Length == 0))
+                throw new NodeFormatException("网页地址或订阅链接不能作为代理节点。订阅链接请添加到「订阅管理」，HTTP 代理请提供服务器和端口");
+        }
         var protocol = scheme switch { "hy2" => "hysteria2", "socks5" => "socks", "https" => "http", _ => scheme };
         var port = uri.Port > 0 ? uri.Port : scheme == "https" ? 443 : scheme == "http" ? 80 : -1;
         var o = Base(protocol, uri.Host.Trim('[', ']'), port);

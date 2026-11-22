@@ -91,10 +91,8 @@ public static class NetworkServices
         }
         var text = Encoding.UTF8.GetString(buffer.ToArray());
         ImportResult parsed;
-        try { parsed = await Task.Run(() => NodeImporter.Parse(text)); }
-        catch (Exception ex) when (ex is not OutOfMemoryException)
-        { throw new IOException("订阅格式无法解析，原节点已保留。请确认提供的是节点订阅。"); }
-        if (parsed.Nodes.Count == 0) throw new IOException("订阅未包含可支持的节点，原节点已保留。");
+        try { parsed = await Task.Run(() => NodeImporter.ParseSubscription(text)); }
+        catch (FormatException ex) { throw new IOException(ex.Message, ex); }
         var traffic = response.Headers.TryGetValues("subscription-userinfo", out var headers) ? SubscriptionTraffic.Parse(headers.FirstOrDefault()) : null;
         return (parsed, traffic?.LegacySummary, traffic);
     }
