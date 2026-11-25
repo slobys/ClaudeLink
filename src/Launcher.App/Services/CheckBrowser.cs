@@ -60,7 +60,7 @@ public static class CheckBrowser
     public static ProcessStartInfo StartInfo(BrowserInstallation browser, string profile, string language, int? proxyPort, IEnumerable<string> targets)
     {
         var info = ProcessTools.Hidden(browser.Path);
-        foreach (var arg in new[] { "--user-data-dir=" + profile, "--no-first-run", "--no-default-browser-check",
+        foreach (var arg in new[] { "--user-data-dir=" + profile, "--no-first-run", "--no-default-browser-check", "--disable-background-mode",
             "--lang=" + NormalizeLanguage(language), "--accept-lang=" + LanguageList(language), "--disable-quic",
             "--force-webrtc-ip-handling-policy=disable_non_proxied_udp" }) info.ArgumentList.Add(arg);
         if (proxyPort is { } port) info.ArgumentList.Add($"--proxy-server=http://127.0.0.1:{port}");
@@ -72,18 +72,67 @@ public static class CheckBrowser
     public static async Task<BrowserCheckLaunch> OpenAsync(string sessionDirectory, int port, string language, string preference)
     {
         var browser = Select(preference);
-        var directory = Path.Combine(sessionDirectory, "browser-checks", Guid.NewGuid().ToString("N"));
+        var parent = Path.Combine(sessionDirectory, "browser-checks");
+        var browserId = Guid.NewGuid().ToString("N");
+        var directory = Path.Combine(parent, browserId);
         var profile = Path.Combine(directory, "profile");
-        PrepareProfile(profile, language);
-        var info = StartInfo(browser, profile, language, port, ["about:blank"]);
-        info.ArgumentList.Add("--new-window");
-        info.ArgumentList.Add("--remote-debugging-port=0");
-        info.ArgumentList.Add("--remote-debugging-address=127.0.0.1");
-        using var process = Process.Start(info) ?? throw new IOException("无法打开核对浏览器。");
+        Process process;
+        try
+        {
+            PrepareProfile(profile, language);
+            var info = StartInfo(browser, profile, language, port, ["about:blank"]);
+            info.ArgumentList.Add("--new-window");
+            info.ArgumentList.Add("--remote-debugging-port=0");
+            info.ArgumentList.Add("--remote-debugging-address=127.0.0.1");
+            process = Process.Start(info) ?? throw new IOException("无法打开核对浏览器。");
+        }
+        catch
+        {
+            TemporaryData.TryRemoveTree(parent, browserId);
+            throw;
+        }
+        using (process) StartProfileWatcher(process, Path.GetFileName(sessionDirectory), browserId, directory);
         var hidden = false;
         try { hidden = await BrowserPrivacy.ConfigureAsync(profile); }
         catch (Exception ex) when (ex is IOException or HttpRequestException or OperationCanceledException or WebSocketException or JsonException) { }
         return new(browser.Name, language, profile, hidden);
+    }
+
+    internal static void StartProfileWatcher(Process browser, string sessionId, string browserId, string directory)
+    {
+        if (!Guid.TryParseExact(sessionId, "N", out _) || !Guid.TryParseExact(browserId, "N", out _)) return;
+        try
+        {
+            var started = browser.HasExited ? 0 : browser.StartTime.ToUniversalTime().Ticks;
+            var executable = ProcessTools.PsLiteral(Environment.ProcessPath!);
+            var profile = ProcessTools.PsLiteral(directory);
+            var script = $$"""
+                $initial = Get-Process -Id {{browser.Id}} -ErrorAction SilentlyContinue
+                if ($null -ne $initial -and $initial.StartTime.ToUniversalTime().Ticks -eq {{started}}) {
+                    $initial.WaitForExit()
+                }
+                $session = (Get-Process -Id $PID).SessionId
+                # Edge can hand a fresh profile to a second process. Give it time to appear.
+                Start-Sleep -Seconds 2
+                $idle = 0
+                while ($idle -lt 2) {
+                    $active = Get-CimInstance Win32_Process -Filter "SessionId=$session AND (Name='chrome.exe' OR Name='msedge.exe')" |
+                        Where-Object { $_.CommandLine -and $_.CommandLine.IndexOf({{profile}}, [StringComparison]::OrdinalIgnoreCase) -ge 0 }
+                    if ($active) { $idle = 0; Start-Sleep -Seconds 5 }
+                    else { $idle++; Start-Sleep -Seconds 1 }
+                }
+                & {{executable}} '--clean-browser' '{{sessionId}}' '{{browserId}}'
+                """;
+            var info = ProcessTools.PowerShellStartInfo(script);
+            info.RedirectStandardOutput = false;
+            info.RedirectStandardError = false;
+            info.WorkingDirectory = Environment.SystemDirectory;
+            using var watcher = Process.Start(info);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or IOException)
+        {
+            // If the detached watcher cannot start, the regular startup sweep can reclaim the profile.
+        }
     }
     public static string LanguagePage(string language)
     {

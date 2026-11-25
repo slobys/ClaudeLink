@@ -19,11 +19,20 @@ import Foundation
         let chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", edge="/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"
         let executable = settings.CheckBrowser == "edge" ? edge : settings.CheckBrowser == "chrome" ? chrome : FileManager.default.isExecutableFile(atPath:chrome) ? chrome : edge
         guard FileManager.default.isExecutableFile(atPath:executable) else { throw ClientError.message("请安装所选的 Chrome 或 Edge 浏览器。") }
-        let profile = AppPaths.root.appendingPathComponent("browser-"+UUID().uuidString)
+        let browserId = UUID().uuidString
+        let profile = AppPaths.root.appendingPathComponent("browser-"+browserId)
         let prefs: [String:Any] = ["intl":["accept_languages":settings.ProcessLanguage+",en","selected_languages":settings.ProcessLanguage+",en"]]
         try AppPaths.write(JSONSerialization.data(withJSONObject:prefs),to:profile.appendingPathComponent("Default/Preferences"))
         let language = settings.ProcessLanguage
-        let process=Process(); process.executableURL=URL(fileURLWithPath:executable); process.arguments=["--user-data-dir="+profile.path,"--lang="+language,"--accept-lang="+language+",en","--no-first-run","--no-default-browser-check","--remote-debugging-port=0","--remote-debugging-address=127.0.0.1","--disable-quic","--force-webrtc-ip-handling-policy=disable_non_proxied_udp","--proxy-server=http://127.0.0.1:\(settings.ProxyPort)","--new-window","about:blank"]; process.standardOutput=FileHandle.nullDevice; process.standardError=FileHandle.nullDevice; try process.run()
+        let process=Process(); process.executableURL=URL(fileURLWithPath:executable); process.arguments=["--user-data-dir="+profile.path,"--lang="+language,"--accept-lang="+language+",en","--no-first-run","--no-default-browser-check","--disable-background-mode","--remote-debugging-port=0","--remote-debugging-address=127.0.0.1","--disable-quic","--force-webrtc-ip-handling-policy=disable_non_proxied_udp","--proxy-server=http://127.0.0.1:\(settings.ProxyPort)","--new-window","about:blank"]; process.standardOutput=FileHandle.nullDevice; process.standardError=FileHandle.nullDevice
+        do { try process.run() }
+        catch { TemporaryData.remove(profile, under: AppPaths.root, prefix: "browser-"); throw error }
+        let monitor = Process()
+        monitor.executableURL = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/ClaudeLinkHost")
+        monitor.arguments = ["--watch-browser", browserId]
+        monitor.standardOutput = FileHandle.nullDevice; monitor.standardError = FileHandle.nullDevice
+        do { try monitor.run() }
+        catch { Task.detached { await TemporaryData.watchBrowser(browserId) } }
         return try await BrowserPrivacy.configure(profile)
     }
 }

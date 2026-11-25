@@ -8,7 +8,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyName>ClaudeNetworkLauncher</AssemblyName>
     <RootNamespace>Launcher.App</RootNamespace>
-    <Version>1.5.2</Version>
+    <Version>1.5.3</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\App.ico</ApplicationIcon>
     <PublishSingleFile>true</PublishSingleFile>

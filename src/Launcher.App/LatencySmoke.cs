@@ -9,8 +9,9 @@ public static partial class IntegrationSmoke
 {
     public static async Task<int> RunLatencyAsync(string output)
     {
-        AppPaths.Root=Path.Combine(Path.GetTempPath(),"ClaudeLink-LatencyTest-"+Guid.NewGuid().ToString("N")); Directory.CreateDirectory(AppPaths.Root);var checks=new List<string>();
-        try { await CheckNodeLatencyAsync((pass,name)=>{if(!pass)throw new InvalidOperationException(name);checks.Add(name);});AppPaths.WriteJson(output,new {Passed=checks.Count,Checks=checks,TestData=AppPaths.Root});return 0; }
+        using var workspace = new TemporaryData.TestWorkspace();
+        var checks=new List<string>();
+        try { await CheckNodeLatencyAsync((pass,name)=>{if(!pass)throw new InvalidOperationException(name);checks.Add(name);});AppPaths.WriteJson(output,new {Passed=checks.Count,Checks=checks,TestData=AppPaths.Root}); return 0; }
         catch(Exception ex) {AppPaths.WriteJson(output,new {Passed=checks.Count,Failed=ex.Message,TestData=AppPaths.Root});return 1;}
     }
     private static async Task CheckNodeLatencyAsync(Action<bool,string> assert)

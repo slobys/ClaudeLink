@@ -13,6 +13,7 @@ import SwiftUI
     func applicationShouldTerminateAfterLastWindowClosed(_ sender:NSApplication) -> Bool { true }
     func applicationWillTerminate(_ notification:Notification) {
         if let index=CommandLine.arguments.firstIndex(of:"--shutdown-smoke"), CommandLine.arguments.count > index+1 { try? AppPaths.write(Data("{\"Passed\":1,\"RestoredBeforeQuit\":true}".utf8),to:URL(fileURLWithPath:CommandLine.arguments[index+1])) }
+        if Self.model?.previewMode == true { TemporaryData.remove(AppPaths.root, under: TemporaryData.systemTemp, prefix: "ClaudeLink-ui-") }
     }
 }
 @main struct ClaudeLinkApp:App {
@@ -60,8 +61,9 @@ import SwiftUI
             var many=model.launchConfirmation!; many.reasons=(1...18).map { "检查示例 \($0)：此项目尚未验证，请返回结果页面核对网络、地区与环境设置。" }; model.launchConfirmation=many; try await Task.sleep(for:.milliseconds(700))
             if let longSheet=window.sheets.first?.contentView { try saveView(longSheet,to:url.appendingPathComponent("launch-confirmation-long.png")) }; model.resolveLaunch(false)
             let pngCount=try FileManager.default.contentsOfDirectory(at:url,includingPropertiesForKeys:nil).filter{$0.pathExtension == "png"}.count
-            try JSONSerialization.data(withJSONObject:["CapturedViews":pngCount,"NativeViews":true,"ScreenCapture":false]).write(to:url.appendingPathComponent("ui-results.json")); exit(0)
-        } catch { fputs("Native rendering failed\n",stderr); exit(1) }
+            try JSONSerialization.data(withJSONObject:["CapturedViews":pngCount,"NativeViews":true,"ScreenCapture":false]).write(to:url.appendingPathComponent("ui-results.json"))
+            TemporaryData.remove(AppPaths.root, under: TemporaryData.systemTemp, prefix: "ClaudeLink-ui-"); exit(0)
+        } catch { TemporaryData.remove(AppPaths.root, under: TemporaryData.systemTemp, prefix: "ClaudeLink-ui-"); fputs("Native rendering failed\n",stderr); exit(1) }
     }
     @MainActor func saveView(_ view:NSView,to url:URL) throws {
         view.layoutSubtreeIfNeeded(); view.displayIfNeeded()

@@ -29,9 +29,9 @@ while(-not $process.WaitForExit(500)){
 }
 $report=Get-Content -LiteralPath $integration -Raw | ConvertFrom-Json
 if($process.ExitCode -ne 0 -or $report.Failed -or $report.InProgress){throw ('Integration test failed: '+$report.Failed)}
-$latencyPerformance=Join-Path $report.TestData 'latency-performance.json'
+$latencyPerformance=Join-Path $artifacts 'latency-performance-results.json'
 if(-not(Test-Path -LiteralPath $latencyPerformance)){throw 'Latency performance evidence missing.'}
-Copy-Item -LiteralPath $latencyPerformance -Destination (Join-Path $artifacts 'latency-performance-results.json') -Force
+if(-not $report.TestData -or (Test-Path -LiteralPath $report.TestData)){throw 'Integration temporary data was not removed.'}
 if(-not $SkipUi){
     $ui=Join-Path $artifacts 'ui-check'
     $process=Start-Process -FilePath $app -ArgumentList @('--smoke-test',('"'+$ui+'"')) -WindowStyle Hidden -PassThru
@@ -45,7 +45,7 @@ if(-not $SkipInstaller){
     $testRoot=[IO.Path]::GetFullPath($testRoot).TrimEnd('\')
     $expectedParent=[IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')
     if([IO.Path]::GetDirectoryName($testRoot) -ne $expectedParent){throw 'Test root containment check failed.'}
-    $setup=Join-Path $artifacts 'ClaudeLink-Setup-1.5.2.exe'
+    $setup=Join-Path $artifacts 'ClaudeLink-Setup-1.5.3.exe'
     $registryPath='HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ClaudeLink.Test.'+$testGuid
     $env:CLAUDELINK_SETUP_TEST_ROOT=$testRoot
     try{
@@ -55,6 +55,9 @@ if(-not $SkipInstaller){
         $installedApp=Join-Path $testRoot 'ClaudeNetworkLauncher.exe'
         if((Get-FileHash -LiteralPath $installedApp).Hash -ne (Get-FileHash -LiteralPath $app).Hash){throw 'Installed app hash mismatch.'}
         if(-not (Test-Path -LiteralPath $registryPath)){throw 'Uninstall registration missing.'}
+        $taskInstalledBytes=(Get-ChildItem -LiteralPath $testRoot -File -Recurse | Measure-Object Length -Sum).Sum
+        if((Get-ItemProperty -LiteralPath $registryPath).EstimatedSize -ne [math]::Ceiling($taskInstalledBytes / 1KB)){throw 'Installed size registration does not match payload.'}
+        $installerChecks+='Registered installed size matches verified payload'
         $installerChecks+='Current-user installation and file hash verified'
         $installerChecks+='Isolated uninstall registration verified'
         Set-Content -LiteralPath (Join-Path $testRoot 'user-added-test.txt') -Value 'preserve-test'

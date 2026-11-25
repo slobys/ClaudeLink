@@ -7,9 +7,8 @@ public static class ReleaseProbe
 {
     public static async Task<int> RunAsync(string output)
     {
-        var testId = Guid.NewGuid().ToString("N");
-        AppPaths.Root = Path.Combine(AppPaths.Root, "tests", testId);
-        Directory.CreateDirectory(AppPaths.Root);
+        using var workspace = new TemporaryData.TestWorkspace();
+        var testId = Path.GetFileName(workspace.DirectoryPath);
         new SettingsStore().Save(new LauncherSettings { Subscriptions = [new Subscription { Url = "https://example.invalid/test-only-secret-" + testId }] });
         try
         {

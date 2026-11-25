@@ -10,10 +10,8 @@ public static partial class IntegrationSmoke
     public static async Task<int> RunAsync(string outputPath)
     {
         var checks = new List<string>();
-        var testId = Guid.NewGuid().ToString("N");
-        Environment.SetEnvironmentVariable("CLAUDELINK_TEST_ID", testId);
-        AppPaths.Root = Path.Combine(AppPaths.Root, "tests", testId);
-        Directory.CreateDirectory(AppPaths.Root);
+        using var workspace = new TemporaryData.TestWorkspace();
+        var testId = Path.GetFileName(workspace.DirectoryPath);
         SessionController? controller = null;
         void Assert(bool condition, string name)
         {
@@ -34,6 +32,7 @@ public static partial class IntegrationSmoke
             await CheckNetworkReportingAsync(Assert);
             await FeatureSmoke.RunAsync(Assert, outputPath);
             await CheckBrowserLanguagesAsync(outputPath, Assert);
+            await CheckTemporaryCleanupAsync(Assert);
             await CheckProxyChainAsync(Assert);
             await CheckNodeLatencyAsync(Assert);
 
@@ -89,8 +88,10 @@ public static partial class IntegrationSmoke
                 Assert(recovery.ExitCode == 0 && AppPaths.ReadJson<EnvironmentJournal>(Path.Combine(recoveryDirectory, "environment.json"))!.Restored, "Recovery helper completes idempotent empty journal");
             }
             Assert(SessionController.PendingRecovery().Count == 0, "Completed recovery clears pending gate");
-            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputPath))!);
-            AppPaths.WriteJson(outputPath, new { Passed = checks.Count, Checks = checks, LiveTunTested = false, RealSubscriptionTested = false, TestData = AppPaths.Root });
+            var evidence = Path.GetDirectoryName(Path.GetFullPath(outputPath))!;
+            Directory.CreateDirectory(evidence);
+            File.Copy(Path.Combine(AppPaths.Root, "latency-performance.json"), Path.Combine(evidence, "latency-performance-results.json"), overwrite: true);
+            AppPaths.WriteJson(outputPath, new { Passed = checks.Count, Checks = checks, LiveTunTested = false, RealSubscriptionTested = false, TestData = workspace.DirectoryPath });
             return 0;
         }
         catch (Exception ex)

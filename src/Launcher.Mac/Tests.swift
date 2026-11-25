@@ -8,8 +8,17 @@ import Darwin
         var checks:[String]=[]
         func check(_ condition:Bool,_ text:String) throws { guard condition else { throw ClientError.message(text) }; checks.append(text); print("PASS "+text) }
         do {
-            AppPaths.root=FileManager.default.temporaryDirectory.appendingPathComponent("ClaudeLink-tests-"+UUID().uuidString)
+            AppPaths.root=TemporaryData.systemTemp.appendingPathComponent("ClaudeLink-tests-"+UUID().uuidString)
+            defer { TemporaryData.remove(AppPaths.root, under: TemporaryData.systemTemp, prefix: "ClaudeLink-tests-") }
             let defaults=Settings()
+            let fixtureBrowserId = UUID().uuidString
+            let fixtureBrowser = AppPaths.root.appendingPathComponent("browser-" + fixtureBrowserId)
+            let fixtureKeep = AppPaths.root.appendingPathComponent("keep.txt")
+            try AppPaths.write(Data("keep".utf8), to: fixtureKeep)
+            try AppPaths.write(Data("temporary".utf8), to: fixtureBrowser.appendingPathComponent("Default/Preferences"))
+            try FileManager.default.createSymbolicLink(at: fixtureBrowser.appendingPathComponent("link"), withDestinationURL: fixtureKeep)
+            await TemporaryData.watchBrowser(fixtureBrowserId, root: AppPaths.root)
+            try check(!FileManager.default.fileExists(atPath: fixtureBrowser.path) && FileManager.default.fileExists(atPath: fixtureKeep.path), "Browser watcher removes the owned profile without following its links")
             try check(defaults.TunEnabled && defaults.StrictChecks && defaults.DisableIPv6 && defaults.MatchTimeZone && defaults.ProcessLanguage == "en-US" && defaults.CheckBrowser == "auto","Fresh install applies requested network and Chrome-first presets")
             try check(defaults.Nodes.isEmpty && defaults.Subscriptions.isEmpty && defaults.ClaudePath.isEmpty && defaults.DesktopPath.isEmpty,"Preset contains no personal nodes or executable paths")
             let trafficParsed=try await Bridge.parse("socks5://127.0.0.1:1080#Quota",usageHeader:"upload=1073741824; download=3221225472; total=10737418240; expire=1900000000")

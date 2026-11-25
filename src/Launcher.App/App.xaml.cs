@@ -7,6 +7,7 @@ public partial class App : Application
 {
     private Mutex? instance;
     private bool ownsMutex;
+    private TemporaryData.TestWorkspace? smokeWorkspace;
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -24,7 +25,22 @@ public partial class App : Application
         try
         {
             if (Guid.TryParseExact(Environment.GetEnvironmentVariable("CLAUDELINK_TEST_ID"), "N", out var testId))
-                AppPaths.Root = Path.Combine(AppPaths.Root, "tests", testId.ToString("N"));
+                AppPaths.Root = Path.Combine(TemporaryData.TestParent, testId.ToString("N"));
+            if (e.Args.Length == 3 && e.Args[0] == "--clean-browser")
+            {
+                var clean = false;
+                for (var attempt = 0; attempt < 4 && !clean; attempt++)
+                {
+                    clean = await TemporaryData.CleanBrowserAsync(e.Args[1], e.Args[2]);
+                    if (!clean && attempt < 3) await Task.Delay(500);
+                }
+                Shutdown(clean ? 0 : 1); return;
+            }
+            if (e.Args.Length == 2 && e.Args[0] == "--clean-temporary")
+            {
+                AppPaths.WriteJson(e.Args[1], new { Removed = await TemporaryData.SweepAsync(AppPaths.Root) });
+                Shutdown(); return;
+            }
             if (e.Args.Length == 2 && e.Args[0] is "--engine-host" or "--recover")
             {
                 Shutdown(await EngineHost.RunAsync(e.Args[1], e.Args[0] == "--recover")); return;
@@ -45,7 +61,7 @@ public partial class App : Application
             var smoke = e.Args.Length == 2 && e.Args[0] == "--smoke-test";
             if(smoke)System.Windows.Media.RenderOptions.ProcessRenderMode=System.Windows.Interop.RenderMode.SoftwareOnly;
             if (smoke)
-                AppPaths.Root = Path.Combine(AppPaths.Root, "ui-tests", Guid.NewGuid().ToString("N"));
+                smokeWorkspace = new TemporaryData.TestWorkspace();
             if (!smoke)
             {
                 var sid = System.Security.Principal.WindowsIdentity.GetCurrent().User!.Value;
@@ -54,6 +70,11 @@ public partial class App : Application
             }
             Directory.CreateDirectory(AppPaths.Root);
             SessionController.CleanupStaleSessions();
+            if (!smoke) _ = Task.Run(async () =>
+            {
+                try { await TemporaryData.SweepAsync(AppPaths.Root); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            });
             var settings = smoke ? UiSmoke.DemoSettings() : new SettingsStore().Load();
             var window = new MainWindow(settings, smoke);
             MainWindow = window; ShutdownMode = ShutdownMode.OnMainWindowClose; window.Show();
@@ -67,7 +88,7 @@ public partial class App : Application
                 AppPaths.WriteJson(Path.Combine(e.Args[1],"ui-failure.json"),new { Error=ex.ToString() });
                 Shutdown(1); return;
             }
-            if (e.Args.FirstOrDefault() is "--engine-host" or "--recover") { Shutdown(1); return; }
+            if (e.Args.FirstOrDefault() is "--engine-host" or "--recover" or "--clean-browser" or "--clean-temporary") { Shutdown(1); return; }
             var message = ex is CryptographicException
                 ? "无法解密本地配置。请使用原 Windows 用户登录；原配置未被覆盖。"
                 : "启动器无法完成初始化，请检查安装文件与当前用户目录的访问权限。";
@@ -77,6 +98,7 @@ public partial class App : Application
     }
     protected override void OnExit(ExitEventArgs e)
     {
+        smokeWorkspace?.Dispose();
         if (ownsMutex) instance?.ReleaseMutex();
         instance?.Dispose();
         base.OnExit(e);

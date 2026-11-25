@@ -39,13 +39,15 @@ public static class ProcessTools
     public static string PsLiteral(string value) => "'" + value.Replace("'", "''") + "'";
     public static async Task<(int Code, string Output)> PowerShellAsync(string script, int timeout = 30)
     {
-        var result = await RunDetailedAsync(Hidden(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"WindowsPowerShell\v1.0\powershell.exe"),
-            "-NoProfile", "-NonInteractive", "-EncodedCommand", Convert.ToBase64String(Encoding.Unicode.GetBytes(
-                "$ErrorActionPreference='Stop';$ProgressPreference='SilentlyContinue';[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);" + script))), timeout);
+        var result = await RunDetailedAsync(PowerShellStartInfo(script), timeout);
         // PowerShell 5.1 can emit successful module-import progress as CLIXML on stderr.
         // Structured output must NEVER be concatenated with diagnostic/error streams.
         return (result.Code, result.StandardOutput);
     }
+    internal static ProcessStartInfo PowerShellStartInfo(string script) => Hidden(
+        Path.Combine(Environment.SystemDirectory, @"WindowsPowerShell\v1.0\powershell.exe"),
+        "-NoProfile", "-NonInteractive", "-EncodedCommand", Convert.ToBase64String(Encoding.Unicode.GetBytes(
+            "$ErrorActionPreference='Stop';$ProgressPreference='SilentlyContinue';[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);" + script)));
     public static bool IsAlive(int pid, long started)
     {
         try { using var p = Process.GetProcessById(pid); return !p.HasExited && p.StartTime.ToUniversalTime().Ticks == started; }

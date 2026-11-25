@@ -240,10 +240,6 @@ public static class UiSmoke
         Capture(window, Path.Combine(directory, "nodes-small.png"));
         AppPaths.WriteJson(Path.Combine(directory, "ui-results.json"), new { Passed = assertions.Count, Checks = assertions });
         window.CloseForSmoke();
-        // This exact GUID directory was created solely for this smoke test.
-        var testRoot = Path.GetFullPath(AppPaths.Root);
-        if (Guid.TryParseExact(Path.GetFileName(testRoot), "N", out _) && Path.GetFileName(Path.GetDirectoryName(testRoot)) == "ui-tests" && Directory.Exists(testRoot))
-            Directory.Delete(testRoot, true);
     }
     private static void SubmitDialog(NodeDialog dialog, Action submit)
     {

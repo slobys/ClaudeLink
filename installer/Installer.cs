@@ -205,9 +205,12 @@ internal static class Program
                 using (var key = Registry.CurrentUser.CreateSubKey(RegistryKeyFor(target)))
                 {
                     key.SetValue("DisplayName", "Claude Link 网络启动器");
-                    key.SetValue("DisplayVersion", "1.5.2");
+                    key.SetValue("DisplayVersion", "1.5.3");
                     key.SetValue("Publisher", "Claude Link");
                     key.SetValue("InstallLocation", target);
+                    long installedBytes = marker.Files.Sum(relative => new FileInfo(ChildPath(target, relative)).Length)
+                        + new FileInfo(Path.Combine(target, "claudelink-install.json")).Length;
+                    key.SetValue("EstimatedSize", (int)Math.Min(int.MaxValue, (installedBytes + 1023) / 1024), RegistryValueKind.DWord);
                     key.SetValue("DisplayIcon", Path.Combine(target, "ClaudeNetworkLauncher.exe"));
                     key.SetValue("UninstallString", Quote(Path.Combine(target, "Uninstall.exe")) + " /uninstall");
                     key.SetValue("QuietUninstallString", Quote(Path.Combine(target, "Uninstall.exe")) + " /uninstall /silent");
