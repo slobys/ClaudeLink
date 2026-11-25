@@ -45,8 +45,9 @@ public static partial class IntegrationSmoke
             using var lease = File.Open(Path.Combine(activeTest, ".active"), FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
             Age(activeTest);
 
-            await TemporaryData.SweepAsync(root, scopedTemp);
-            assert(!Directory.Exists(stale) && !Directory.Exists(staleTest) && Directory.Exists(activeTest), "Startup cleanup removes stale fixtures and respects an active test lease");
+            var removed = await TemporaryData.SweepAsync(root, scopedTemp);
+            assert(removed == 2 && !Directory.Exists(stale) && !Directory.Exists(staleTest) && Directory.Exists(activeTest),
+                "Startup cleanup removes stale fixtures and respects an active test lease");
             assert(Directory.Exists(owned) && File.Exists(journals) && File.Exists(Path.Combine(root, "settings.dat")),
                 "An open browser profile, saved settings and network recovery records survive cleanup");
         }

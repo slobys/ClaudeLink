@@ -118,13 +118,16 @@ internal static class TemporaryData
     {
         try
         {
-            var (code, output) = await ProcessTools.PowerShellAsync("$session=(Get-Process -Id $PID).SessionId; " +
+            var info = ProcessTools.PowerShellStartInfo("$session=(Get-Process -Id $PID).SessionId; " +
                 "$processes=@(Get-CimInstance Win32_Process -Filter \"SessionId=$session\" | Where-Object { $_.Name -in 'chrome.exe','msedge.exe','ClaudeNetworkLauncher.exe','sing-box.exe' }); " +
                 "if($processes | Where-Object { -not $_.CommandLine -and $_.Name -in 'chrome.exe','msedge.exe' }){exit 1}; " +
-                "ConvertTo-Json -InputObject @($processes | Where-Object CommandLine | ForEach-Object CommandLine) -Compress", 15);
-            return code == 0 ? JsonSerializer.Deserialize<string[]>(output) : null;
+                "ConvertTo-Json -InputObject @($processes | Where-Object CommandLine | ForEach-Object CommandLine) -Compress");
+            // Match PowerShell's UTF-8 output so Unicode profile paths survive the process snapshot.
+            info.StandardOutputEncoding = Encoding.UTF8;
+            var result = await ProcessTools.RunDetailedAsync(info, 15);
+            return result.Code == 0 ? JsonSerializer.Deserialize<string[]>(result.StandardOutput) : null;
         }
-        catch (Exception ex) when (ex is IOException or Win32Exception or TimeoutException or JsonException) { return null; }
+        catch (Exception ex) when (ex is IOException or Win32Exception or JsonException or OperationCanceledException) { return null; }
     }
 
     internal static async Task<bool> CleanBrowserAsync(string sessionId, string browserId)
